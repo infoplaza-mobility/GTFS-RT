@@ -1,0 +1,6 @@
+<component name="CopyrightManager">
+  <copyright>
+    <option name="notice" value="Copyright (c) &amp;#36;originalComment.match(&quot;Copyright \(c\) (\d+)&quot;, 1, &quot;-&quot;, &quot;&amp;#36;today.year&quot;)&amp;#36;today.year. R-OV / Tristan van Triest&#10;This file is part of the R-OV source code and thus shall not be shared. Please respect the copyright of the original owner.&#10;Questions? Email: tristantriest@gmail.com" />
+    <option name="myName" value="R-OV" />
+  </copyright>
+</component>
