@@ -23,10 +23,12 @@
   "dependencies": {
     "@types/knex": "^0.16.1",
     "axios": "^1.2.2",
+    "dotenv": "^16.0.3",
     "gtfs-rb": "^1.2.8",
     "gtfs-realtime-bindings": "^0.0.6",
     "knex": "^2.4.0",
     "node-fetch": "^3.3.0",
+    "pg": "^8.8.0",
     "request": "^2.88.2"
   },
   "devDependencies": {

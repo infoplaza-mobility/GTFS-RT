@@ -1,84 +1,35 @@
-import { writeFileSync } from 'fs';
-import { transit_realtime } from 'gtfs-rb';
-import axios from 'axios';
+/*
+ * Copyright (c) 2022. R-OV / Tristan van Triest
+ * This file is part of the R-OV source code and thus shall not be shared. Please respect the copyright of the original owner.
+ * Questions? Email: tristantriest@gmail.com
+ */
 
-// Deconstruct these classes from GTFS Realtime Bindings
-const { FeedMessage, FeedHeader, FeedEntity, TripUpdate, TripDescriptor } = transit_realtime
+require('dotenv').config();
+
+import {FeedManager} from "./Services/FeedManager";
 
 /**
- * Fetches the train updates from OpenOV.
+ * Main class of the ProtoBuf constructor. Set's up a timer that runs every 30 seconds to create a new ProtoBuf file.
  */
-const fetchFromOVApi = async (): Promise<transit_realtime.FeedMessage> => {
-  try {
-    console.info('Fetching train updates...');
-    const res = await axios.get('http://gtfs.ovapi.nl/nl/trainUpdates.pb', {
-      responseType: 'arraybuffer'
-    });
-    if (res.status !== 200) {
-      const error = new Error(`${res.request}: ${res.status} ${res.statusText}`);
-      throw error;
-    }
+export class Main {
 
-    const buffer = await res.data;
-    const feed = transit_realtime.FeedMessage.decode(
-      new Uint8Array(buffer)
-    );
-
-    return feed;
-
-  } catch (error) {
-    console.log(error);
-    throw error;
+  constructor() {
+    (async() => {
+      await this.setUpTimer();
+    })();
   }
+
+  /**
+   *
+   * @private
+   */
+  private async setUpTimer() {
+    await FeedManager.updateTrainFeed();
+    setInterval(async () => {
+        await FeedManager.updateTrainFeed();
+    }, 30 * 1000);
+  }
+
 }
 
-const changeToModified = (feed: transit_realtime.FeedMessage): transit_realtime.FeedMessage => {
-  console.log("Modifying feed...");
-  // feed.entity.forEach((entity) => {
-  //   if (entity.tripUpdate) {
-  //     if(entity.tripUpdate.trip.scheduleRelationship === TripDescriptor.ScheduleRelationship.SCHEDULED)
-  //       entity.tripUpdate.trip.scheduleRelationship = 5;
-  //   }
-  // });
-
-  //Filter out any stop time update that do not have a stop sequence number and a stop 
-  feed.entity.forEach((entity) => {
-    if (entity.tripUpdate) {
-      //Filter out any stop time update that do not have a stop sequence number and a stop id
-      entity.tripUpdate.stopTimeUpdate = entity.tripUpdate.stopTimeUpdate?.filter((stopTimeUpdate) => {
-        return !(stopTimeUpdate.stopSequence && stopTimeUpdate.stopId);
-      });
-    }
-  });
-
-  console.info(`Feed modified. ${feed.entity.length} entities found.`);
-
-  return feed;
-}
-
-const writeToFile = (feed: transit_realtime.FeedMessage) => {
-  const buffer = FeedMessage.encode(feed).finish();
-  console.info("Writing feed to file...")
-  writeFileSync('./TrainUpdates.pb', buffer);
-  console.info("Feed written to file.")
-}
-
-const writeToJSON = (feed: transit_realtime.FeedMessage) => {
-  console.info("Writing feed to file...")
-  writeFileSync('./TrainUpdates.json', JSON.stringify(feed));
-  console.info("Feed written to file.")
-}
-
-const main = async () => {
-  const feed = await fetchFromOVApi();
-  const modifiedFeed = changeToModified(feed);
-  writeToFile(modifiedFeed);
-  writeToJSON(modifiedFeed);
-}
-
-(async() => {
-  await main();
-  setInterval(async () => {
-    await main();
-  }, 1000 * 30);
-})();
+new Main();

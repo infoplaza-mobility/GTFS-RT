@@ -5,3 +5,8 @@ dist
 .ssl-data/
 .ssl-data/*
 coverage
+
+.pb
+*.pb
+TrainUpdates.*
+TripUpdates.*

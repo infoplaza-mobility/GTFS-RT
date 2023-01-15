@@ -5,6 +5,7 @@
  */
 
 import {Repository} from "./Repository";
+import {IDatabaseRitInfoUpdate} from "../Interfaces/DatabaseTripUpdate";
 
 export class InfoplusRepository extends Repository {
 
@@ -13,9 +14,9 @@ export class InfoplusRepository extends Repository {
      * @returns {} RitInfo messages with their associated stops.
      * @param operationDate
      */
-    public async getCurrentRealtimeTripUpdates(operationDate: string): Promise<any> {
+    public async getCurrentRealtimeTripUpdates(operationDate: string): Promise<IDatabaseRitInfoUpdate[]> {
         return this.database.raw(`
-            SELECT r."trainNumber", r."shortTrainNumber", r."trainType", r.agency, r."showsInTripPlanner",
+            SELECT r."trainNumber", r."shortTrainNumber", r."trainType", r.agency, r."showsInTripPlanner", r."timestamp",
                jsonb_agg(
                        jsonb_build_object(
                                'stationCode',
@@ -27,7 +28,7 @@ export class InfoplusRepository extends Repository {
                                'departureDelay',
                                si."actualDepartureTime" - si."plannedDepartureTime",
                                'arrivalDelay',
-                               si."actualDepartureTime" - si."plannedDepartureTime",
+                               si."actualArrivalTime" - si."plannedArrivalTime",
                                'changes',
                                si.changes,
                                 'stopId',
@@ -39,12 +40,14 @@ export class InfoplusRepository extends Repository {
                            )
                        ORDER BY si."stopOrder"
                    ) stops,
-                coalesce(t."tripId", (SELECT "tripId" FROM "StaticData-NL".trips WHERE "tripShortName"::int = r."shortTrainNumber" AND trips."serviceId" IN (SELECT "serviceId" FROM "StaticData-NL".calendar_dates WHERE date = ?) LIMIT 1)) AS "tripId"
+                coalesce(t."tripId", (SELECT "tripId" FROM "StaticData-NL".trips WHERE "tripShortName"::int = r."shortTrainNumber" AND trips."serviceId" IN (SELECT "serviceId" FROM "StaticData-NL".calendar_dates WHERE date = ?) LIMIT 1)) AS "tripId",
+                coalesce(t."routeId", (SELECT "routeId" FROM "StaticData-NL".trips WHERE "tripShortName"::int = r."shortTrainNumber" AND trips."serviceId" IN (SELECT "serviceId" FROM "StaticData-NL".calendar_dates WHERE date = ?) LIMIT 1)) AS "routeId",
+                coalesce(t."directionId", (SELECT "directionId" FROM "StaticData-NL".trips WHERE "tripShortName"::int = r."shortTrainNumber" AND trips."serviceId" IN (SELECT "serviceId" FROM "StaticData-NL".calendar_dates WHERE date = ?) LIMIT 1)) AS "directionId"
             FROM "InfoPlus".ritinfo r
                     LEFT JOIN "StaticData-NL".trips t ON t.agency = 'IFF' AND t."tripShortName"::int = r."trainNumber" AND t."serviceId" IN (SELECT "serviceId" FROM "StaticData-NL".calendar_dates WHERE date = ?)
                     JOIN "InfoPlus".journey_part_journey_links jpjl ON jpjl."trainNumber" = r."trainNumber" AND jpjl."operationDate" = r."operationDate"
                     JOIN "InfoPlus".stop_information si
-                          ON jpjl."logicalJourneyPartNumber" = si."logicalJourneyPartNumber" AND jpjl."operationDate" = si."operationDate"
+                          ON jpjl."logicalJourneyPartNumber" = si."logicalJourneyPartNumber" AND jpjl."operationDate" = si."operationDate" AND coalesce(si."plannedArrivalTime", "plannedDepartureTime") IS NOT NULL
                      LEFT JOIN "StaticData-NL".stops s ON (s."zoneId" = concat('IFF:', lower(si."stationCode")) AND s."platformCode" = coalesce(
                             si."departureTrackMessage" -> 'Uitingen' ->> 'Uiting',
                             si."arrivalTrackMessage" -> 'Uitingen' ->> 'Uiting'))
@@ -52,6 +55,11 @@ export class InfoplusRepository extends Repository {
             WHERE r."operationDate" = ?
             GROUP BY r."trainNumber", r."shortTrainNumber", r."trainType", r.agency, r."showsInTripPlanner", t."tripId", r.timestamp
             ORDER BY r.timestamp DESC;
-       `, [operationDate, operationDate, operationDate]);
+       `, [operationDate, operationDate, operationDate, operationDate, operationDate]).then(result => {
+           return result.rows;
+        }).catch(error => {
+            console.error(error);
+            throw error;
+        });
     }
 }

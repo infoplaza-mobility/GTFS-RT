@@ -4,18 +4,32 @@
  * Questions? Email: tristantriest@gmail.com
  */
 
+import {RitInfo} from "../Shared/src/Types/Infoplus/RitInfo";
+import JourneyChange = RitInfo.Internal.JourneyChange;
+import JourneyStationChange = RitInfo.Internal.JourneyStationChange;
+
 export interface IDatabaseRitInfoUpdate {
     trainNumber: number;
     shortTrainNumber: number;
     trainType: string;
     agency: string;
     showsInTripPlanner: boolean;
-    stops: IRitInfoUpdateStop[];
+    stops: IRitInfoStopUpdate[];
     tripId: number | null;
-    changes:
+    routeId: number | null;
+    directionId: number | null;
+    changes: JourneyChange[] | null;
+    timestamp: Date;
 }
 
-export interface IRitInfoUpdateStop {
+export interface IRitInfoStopUpdate {
     stopId: number | null;
-    changes: number | null;
+    changes: JourneyStationChange[] | null;
+    platform: string | null;
+    sequence: number;
+    arrivalTime: string | null;
+    departureTime: string | null;
+    stationCode: string;
+    arrivalDelay: string | null;
+    departureDelay: string | null;
 }
