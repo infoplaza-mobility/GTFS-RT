@@ -1,0 +1,20 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - 'main'
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ["self-hosted", "main"]
+    steps:
+      - name: Run compose script in Deployment repository.
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: Deploy Docker Images of R-OV
+          repo: R-OV-NL/Deploy
+          token: ${{ secrets.SHARED_PAT }}
+          ref: main
