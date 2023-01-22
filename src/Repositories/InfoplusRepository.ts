@@ -53,7 +53,7 @@ export class InfoplusRepository extends Repository {
                             si."departureTrackMessage" -> 'Uitingen' ->> 'Uiting',
                             si."arrivalTrackMessage" -> 'Uitingen' ->> 'Uiting'))
             
-            WHERE r."operationDate" = ?
+            WHERE r."operationDate" = ? OR r."operationDate" = ?::date - INTERVAL '1 DAY'
             GROUP BY r."trainNumber", r."shortTrainNumber", r."trainType", r.agency, r."showsInTripPlanner", t."tripId", r.timestamp
             ORDER BY r.timestamp DESC LIMIT 500;
        `, [operationDate, operationDate, operationDate, operationDate, operationDate]).then(result => {
