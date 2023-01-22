@@ -15,6 +15,7 @@ export class FeedManager {
     private static _infoplusRepository: InfoplusRepository = new InfoplusRepository();
 
     public static async updateTrainFeed(): Promise<void> {
+        console.time('updateTrainFeed');
         //Get the current operationDate in YYYY-MM-DD format
         const currentOperationDate = new Date().toISOString().split('T')[0];
 
@@ -38,5 +39,7 @@ export class FeedManager {
         } catch (e) {
             console.error(e);
         }
+
+        console.timeEnd('updateTrainFeed');
     }
 }
