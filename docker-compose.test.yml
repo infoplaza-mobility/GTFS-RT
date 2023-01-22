@@ -1,0 +1,29 @@
+version: '3'
+services:
+  database:
+    image: postgis/postgis
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: TestPassword123@@
+      POSTGRES_DB: r-ov-test
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      target: test
+    environment:
+      DB_NAME: r-ov-test
+      DB_HOST: database
+      DB_USER: postgres
+      DB_PASSWORD: TestPassword123@@
+    depends_on:
+      database:
+        condition: service_healthy
+    links:
+      - database

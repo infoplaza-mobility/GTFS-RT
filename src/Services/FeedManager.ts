@@ -26,12 +26,12 @@ export class FeedManager {
         try {
             FeedMessage.verify(feed);
 
-            const file: File = new File('./', 'trainUpdates.pb', Buffer.from(FeedMessage.encode(feed).finish()));
+            const file: File = new File('./publish/', 'trainUpdates.pb', Buffer.from(FeedMessage.encode(feed).finish()));
             file.saveSync();
 
             console.log('Saved updates to trainUpdates.pb');
 
-            const jsonFile: File = new File('./', 'trainUpdates.json', Buffer.from(JSON.stringify(feed)));
+            const jsonFile: File = new File('./publish/', 'trainUpdates.json', Buffer.from(JSON.stringify(feed)));
             jsonFile.saveSync();
             console.log('Saved updates to trainUpdates.json');
 
