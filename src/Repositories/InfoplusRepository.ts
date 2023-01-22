@@ -11,8 +11,9 @@ export class InfoplusRepository extends Repository {
 
     /**
      * Fetches all RitInfo messages plus their stops (including GTFS trip and stop ids) from the InfoPlus database.
-     * @returns {} RitInfo messages with their associated stops.
-     * @param operationDate
+     * Limited to 500 results (about 30 minutes of updates). If a train isn't updated in the last 30 minutes, it's probably not driving anymore.
+     * @returns {Promise<IDatabaseRitInfoUpdate[]>} RitInfo messages with their associated stops.
+     * @param operationDate The operation date in YYYY-MM-DD format.
      */
     public async getCurrentRealtimeTripUpdates(operationDate: string): Promise<IDatabaseRitInfoUpdate[]> {
         return this.database.raw(`
@@ -52,9 +53,9 @@ export class InfoplusRepository extends Repository {
                             si."departureTrackMessage" -> 'Uitingen' ->> 'Uiting',
                             si."arrivalTrackMessage" -> 'Uitingen' ->> 'Uiting'))
             
-            WHERE r."operationDate" = ?
+            WHERE r."operationDate" = ? OR r."operationDate" = ?::date - INTERVAL '1 DAY'
             GROUP BY r."trainNumber", r."shortTrainNumber", r."trainType", r.agency, r."showsInTripPlanner", t."tripId", r.timestamp
-            ORDER BY r.timestamp DESC;
+            ORDER BY r.timestamp DESC LIMIT 500;
        `, [operationDate, operationDate, operationDate, operationDate, operationDate]).then(result => {
            return result.rows;
         }).catch(error => {
