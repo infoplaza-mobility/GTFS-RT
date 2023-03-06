@@ -117,7 +117,7 @@ export class RitInfoUpdate {
             return false;
 
         return this._changes.some(change =>
-            change.changeType === JourneyChangeType.CancelledTrain
+            change.changeType == JourneyChangeType.CancelledTrain
         )
     }
 

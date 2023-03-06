@@ -17,7 +17,7 @@ export class InfoplusRepository extends Repository {
      */
     public async getCurrentRealtimeTripUpdates(operationDate: string): Promise<IDatabaseRitInfoUpdate[]> {
         return this.database.raw(`
-            SELECT r."trainNumber", r."shortTrainNumber", r."trainType", r.agency, r."showsInTripPlanner", r."timestamp",
+            SELECT r."trainNumber", r."shortTrainNumber", r."trainType", r.agency, r."showsInTripPlanner", r."timestamp", jpjl."logicalJourneyChanges" AS "changes",
                jsonb_agg(
                        jsonb_build_object(
                                'stationCode',
@@ -54,7 +54,7 @@ export class InfoplusRepository extends Repository {
                             si."arrivalTrackMessage" -> 'Uitingen' ->> 'Uiting'))
 
             WHERE r."operationDate" = ? OR r."operationDate" = ?::date - INTERVAL '1 DAY'
-            GROUP BY r."trainNumber", r."shortTrainNumber", r."trainType", r.agency, r."showsInTripPlanner", t."tripId", r.timestamp
+            GROUP BY r."trainNumber", r."shortTrainNumber", r."trainType", r.agency, r."showsInTripPlanner", t."tripId", r.timestamp, jpjl."logicalJourneyChanges"
             HAVING max(coalesce(si."actualDepartureTime", si."plannedDepartureTime")) >= now() - INTERVAL '1 hours'
        `, [operationDate, operationDate, operationDate, operationDate, operationDate, operationDate]).then(result => {
            return result.rows;
