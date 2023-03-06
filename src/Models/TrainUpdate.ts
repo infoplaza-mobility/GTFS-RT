@@ -41,7 +41,7 @@ export class TrainUpdate implements ITripUpdate {
                 directionId,
                 scheduleRelationship
             },
-            stopTimeUpdate: stopTimeUpdates,
+            stopTimeUpdate: !isCancelled ? stopTimeUpdates : undefined,
             timestamp: timestamp
         })
     }
