@@ -16,6 +16,7 @@ export class FeedManager {
 
     public static async updateTrainFeed(): Promise<void> {
         console.time('updateTrainFeed');
+        console.log('Updating train feed...')
         //Get the current operationDate in YYYY-MM-DD format
         const currentOperationDate = new Date().toISOString().split('T')[0];
 
