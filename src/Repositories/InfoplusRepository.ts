@@ -63,7 +63,7 @@ export class InfoplusRepository extends Repository {
                                ) ORDER BY si."stopOrder") stops
             FROM "InfoPlus".ritinfo r
                      JOIN "InfoPlus".journey_part_journey_links jpjl USING ("trainNumber", "operationDate")
-                     JOIN "InfoPlus".stop_information si USING ("logicalJourneyPartNumber", "operationDate")
+                     JOIN "InfoPlus".stop_information si ON jpjl."logicalJourneyPartNumber" = si."logicalJourneyPartNumber" AND jpjl."operationDate" = si."operationDate" AND "plannedWillStop" = true
                      LEFT JOIN "StaticData-NL".stops s
                                ON (s."zoneId" = concat('IFF:', lower(si."stationCode")) AND s."platformCode" = coalesce(
                                        si."departureTrackMessage" -> 'Uitingen' ->> 'Uiting',
