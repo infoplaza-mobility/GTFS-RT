@@ -18,7 +18,7 @@ export class InfoplusRepository extends Repository {
      */
     public async getCurrentRealtimeTripUpdates(operationDate: string): Promise<IDatabaseRitInfoUpdate[]> {
         return this.database.raw(`
-            WITH trips AS (SELECT "tripId", "routeId", "directionId", "tripShortName"
+            WITH trips AS (SELECT "tripId", "routeId", "directionId", "tripShortName", "shapeId"
                            FROM "StaticData-NL".trips
                            WHERE agency = 'IFF'
                              AND "serviceId" IN (SELECT "serviceId"
@@ -37,6 +37,7 @@ export class InfoplusRepository extends Repository {
                    coalesce(trips."tripId", t_short."tripId")           AS "tripId",
                    coalesce(trips."routeId", t_short."routeId")         AS "routeId",
                    coalesce(trips."directionId", t_short."directionId") AS "directionId",
+                   coalesce(trips."shapeId", t_short."shapeId")         AS "shapeId",
                    jsonb_agg(
                            jsonb_build_object(
                                    'stationCode',
@@ -65,7 +66,7 @@ export class InfoplusRepository extends Repository {
                      JOIN "InfoPlus".journey_part_journey_links jpjl ON jpjl."trainNumber" = r."trainNumber" AND
                                                                         jpjl."operationDate" = r."operationDate"
                      JOIN "InfoPlus".stop_information si ON jpjl."logicalJourneyPartNumber" = si."logicalJourneyPartNumber" AND
-                                                            jpjl."operationDate" = si."operationDate" AND "plannedWillStop" = true
+                                                            jpjl."operationDate" = si."operationDate" AND "plannedWillStop" = true AND (coalesce("plannedDepartureTime", "actualArrivalTime") IS NOT NULL OR coalesce("plannedArrivalTime", "actualArrivalTime") IS NOT NULL)
 --                                                                 AND ("plannedDepartureTime" != "actualDepartureTime" OR "plannedArrivalTime" != "actualArrivalTime")
                      LEFT JOIN "StaticData-NL".stops s
                                ON (s."zoneId" = concat('IFF:', lower(si."stationCode")) AND s."platformCode" = coalesce(
@@ -78,7 +79,7 @@ export class InfoplusRepository extends Repository {
                OR (CURRENT_DATE = ?::date + INTERVAL '1 day' AND
                 r."operationDate" = ?::date - INTERVAL '2 hours')
             GROUP BY r."trainNumber", r."shortTrainNumber", r."trainType", r.agency, r."showsInTripPlanner", r.timestamp,
-                jpjl."logicalJourneyChanges", coalesce(trips."tripId", t_short."tripId"), coalesce(trips."routeId", t_short."routeId"), coalesce(trips."directionId", t_short."directionId")
+                jpjl."logicalJourneyChanges", coalesce(trips."tripId", t_short."tripId"), coalesce(trips."routeId", t_short."routeId"), coalesce(trips."directionId", t_short."directionId"), coalesce(trips."shapeId", t_short."shapeId")
             HAVING max(coalesce(si."actualDepartureTime", si."plannedDepartureTime")) >= now() - INTERVAL '1 hours';
         `, [operationDate, operationDate, operationDate, operationDate]).then(result => {
            return result.rows;

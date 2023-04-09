@@ -46,4 +46,8 @@ export class Collection<T> {
     public get(index: number): T {
         return this._items[index];
     }
+
+    public some(callbackfn: (value: T, index: number, array: T[]) => unknown, thisArg?: any): boolean {
+        return this._items.some(callbackfn, thisArg);
+    }
 }

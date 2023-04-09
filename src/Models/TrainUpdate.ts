@@ -14,27 +14,36 @@ import ScheduleRelationship = transit_realtime.TripDescriptor.ScheduleRelationsh
 import FeedEntity = transit_realtime.FeedEntity;
 
 export class TrainUpdate implements ITripUpdate {
-    trip: ITripDescriptor;
+    trip: ITripDescriptor & { shapeId?: string };
     stopTimeUpdate: IStopTimeUpdate[];
 
-    constructor(tripUpdate: ITripUpdate) {
+    constructor(tripUpdate: ITripUpdate & { trip: ITripDescriptor & { shapeId?: string }}) {
         Object.assign(this, tripUpdate);
     }
 
     public static fromRitInfoUpdate(infoPlusTripUpdate: IDatabaseRitInfoUpdate): TrainUpdate {
         const createdTrip = new RitInfoUpdate(infoPlusTripUpdate);
 
-        const { routeId, startTime, startDate, directionId, isCancelled, isAdded, stopTimeUpdates, timestamp } = createdTrip;
+        const { routeId, startTime, startDate, directionId, isCancelled, isAdded, stopTimeUpdates, timestamp, shapeId } = createdTrip;
         let { tripId } = createdTrip;
-        let scheduleRelationship = ScheduleRelationship.SCHEDULED;
-        if (isCancelled)
-            scheduleRelationship = ScheduleRelationship.CANCELED;
 
-        if (isAdded) {
+        let customTripId = false;
+
+        if(!tripId) {
+            tripId = `${infoPlusTripUpdate.trainNumber}_${infoPlusTripUpdate.trainType}_${infoPlusTripUpdate.agency}`;
+            customTripId = true;
+        }
+
+        let scheduleRelationship = ScheduleRelationship.SCHEDULED;
+
+        if (isAdded || customTripId) {
             // Add a suffix to the tripId to make it unique for the added trip.
             tripId = tripId + '_added';
             scheduleRelationship = ScheduleRelationship.ADDED;
         }
+
+        if (isCancelled)
+            scheduleRelationship = ScheduleRelationship.CANCELED;
 
         return new TrainUpdate({
             trip: {
@@ -43,7 +52,8 @@ export class TrainUpdate implements ITripUpdate {
                 startTime,
                 startDate,
                 directionId,
-                scheduleRelationship
+                scheduleRelationship,
+                shapeId: shapeId || undefined
             },
             stopTimeUpdate: !isCancelled ? stopTimeUpdates : undefined,
             timestamp: timestamp

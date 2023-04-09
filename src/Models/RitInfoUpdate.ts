@@ -25,6 +25,7 @@ export class RitInfoUpdate {
     private readonly _trainType: string;
     private readonly _tripId: number | null;
     private readonly _routeId: number | null;
+    private readonly _shapeId: number | null;
     private readonly _directionId: number | null;
     private readonly _timestamp: Date;
 
@@ -34,6 +35,7 @@ export class RitInfoUpdate {
         this._shortTrainNumber = update.shortTrainNumber;
         this._showsInTripPlanner = update.showsInTripPlanner;
         this._stopCollection = new StopUpdateCollection(update.stops.map(stop => new RitInfoStopUpdate(stop)));
+        this._shapeId = update.shapeId;
         this._trainNumber = update.trainNumber;
         this._trainType = update.trainType;
         this._tripId = update.tripId;
@@ -47,6 +49,13 @@ export class RitInfoUpdate {
             return null;
 
         return this._routeId.toString();
+    }
+
+    public get shapeId(): string | null {
+        if(!this._shapeId)
+            return null;
+
+        return this._shapeId.toString();
     }
 
     public get directionId(): number | null {

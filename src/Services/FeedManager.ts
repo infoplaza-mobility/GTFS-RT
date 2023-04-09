@@ -23,10 +23,13 @@ export class FeedManager {
         const updates = await this._infoplusRepository.getCurrentRealtimeTripUpdates(currentOperationDate);
 
         const collection = TrainUpdateCollection.fromDatabaseResult(updates);
+
         const feed: FeedMessage = collection.toFeedMessage();
 
         try {
             FeedMessage.verify(feed);
+
+            console.dir(feed, {depth: null, colors: true})
 
             const file: File = new File('./publish/', 'trainUpdates.pb', Buffer.from(FeedMessage.encode(feed).finish()));
             file.saveSync();

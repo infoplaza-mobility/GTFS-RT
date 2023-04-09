@@ -49,8 +49,8 @@ export class StopTimeUpdate implements IStopTimeUpdate {
         return new StopTimeUpdate({
             stopId,
             stopSequence: sequence,
-            departure: !isLastStop ? departure : undefined,
-            arrival: !isFirstStop ? arrival : undefined,
+            departure: !isLastStop && !update.isCancelled() && !update.isLastStopBeforeOnlyCancelledStops  ? departure : undefined,
+            arrival: !isFirstStop && !update.isCancelled() ? arrival : undefined,
             scheduleRelationship
         });
     }
