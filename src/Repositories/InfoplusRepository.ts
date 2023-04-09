@@ -33,10 +33,10 @@ export class InfoplusRepository extends Repository {
                    r.agency,
                    r."showsInTripPlanner",
                    r."timestamp",
-                   jpjl."logicalJourneyChanges" AS        "changes",
-                   trips."tripId",
-                   trips."routeId",
-                   trips."directionId",
+                   jpjl."logicalJourneyChanges"                         AS "changes",
+                   coalesce(trips."tripId", t_short."tripId")           AS "tripId",
+                   coalesce(trips."routeId", t_short."routeId")         AS "routeId",
+                   coalesce(trips."directionId", t_short."directionId") AS "directionId",
                    jsonb_agg(
                            jsonb_build_object(
                                    'stationCode',
@@ -60,21 +60,25 @@ export class InfoplusRepository extends Repository {
                                    s."platformCode",
                                    'sequence',
                                    si."stopOrder"
-                               ) ORDER BY si."stopOrder") stops
+                               ) ORDER BY si."stopOrder")                  stops
             FROM "InfoPlus".ritinfo r
-                     JOIN "InfoPlus".journey_part_journey_links jpjl USING ("trainNumber", "operationDate")
-                     JOIN "InfoPlus".stop_information si ON jpjl."logicalJourneyPartNumber" = si."logicalJourneyPartNumber" AND jpjl."operationDate" = si."operationDate" AND "plannedWillStop" = true 
-                                                                --AND ("plannedDepartureTime" != "actualDepartureTime" OR "plannedArrivalTime" != "actualArrivalTime")
+                     JOIN "InfoPlus".journey_part_journey_links jpjl ON jpjl."trainNumber" = r."trainNumber" AND
+                                                                        jpjl."operationDate" = r."operationDate"
+                     JOIN "InfoPlus".stop_information si ON jpjl."logicalJourneyPartNumber" = si."logicalJourneyPartNumber" AND
+                                                            jpjl."operationDate" = si."operationDate" AND "plannedWillStop" = true
+--                                                                 AND ("plannedDepartureTime" != "actualDepartureTime" OR "plannedArrivalTime" != "actualArrivalTime")
                      LEFT JOIN "StaticData-NL".stops s
                                ON (s."zoneId" = concat('IFF:', lower(si."stationCode")) AND s."platformCode" = coalesce(
                                        si."departureTrackMessage" -> 'Uitingen' ->> 'Uiting',
                                    si."arrivalTrackMessage" -> 'Uitingen' ->> 'Uiting'))
-                     JOIN trips ON trips."tripShortName"::int = r."shortTrainNumber"
+                -- Get trip ids both with the long and short train number
+                     LEFT JOIN trips ON trips."tripShortName"::int = r."trainNumber"
+         LEFT JOIN trips t_short ON t_short."tripShortName"::int = r."shortTrainNumber"
             WHERE r."operationDate" = ?
                OR (CURRENT_DATE = ?::date + INTERVAL '1 day' AND
                 r."operationDate" = ?::date - INTERVAL '2 hours')
             GROUP BY r."trainNumber", r."shortTrainNumber", r."trainType", r.agency, r."showsInTripPlanner", r.timestamp,
-                jpjl."logicalJourneyChanges", trips."tripId", trips."routeId", trips."directionId"
+                jpjl."logicalJourneyChanges", coalesce(trips."tripId", t_short."tripId"), coalesce(trips."routeId", t_short."routeId"), coalesce(trips."directionId", t_short."directionId")
             HAVING max(coalesce(si."actualDepartureTime", si."plannedDepartureTime")) >= now() - INTERVAL '1 hours';
         `, [operationDate, operationDate, operationDate, operationDate]).then(result => {
            return result.rows;

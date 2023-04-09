@@ -24,13 +24,17 @@ export class TrainUpdate implements ITripUpdate {
     public static fromRitInfoUpdate(infoPlusTripUpdate: IDatabaseRitInfoUpdate): TrainUpdate {
         const createdTrip = new RitInfoUpdate(infoPlusTripUpdate);
 
-        const { tripId, routeId, startTime, startDate, directionId, isCancelled, isAdded, stopTimeUpdates, timestamp } = createdTrip;
-
+        const { routeId, startTime, startDate, directionId, isCancelled, isAdded, stopTimeUpdates, timestamp } = createdTrip;
+        let { tripId } = createdTrip;
         let scheduleRelationship = ScheduleRelationship.SCHEDULED;
         if (isCancelled)
             scheduleRelationship = ScheduleRelationship.CANCELED;
-        if (isAdded)
+
+        if (isAdded) {
+            // Add a suffix to the tripId to make it unique for the added trip.
+            tripId = tripId + '_added';
             scheduleRelationship = ScheduleRelationship.ADDED;
+        }
 
         return new TrainUpdate({
             trip: {
