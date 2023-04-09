@@ -17,6 +17,7 @@ export class RitInfoStopUpdate {
     private readonly _sequence: number;
     private _isFirstStop: boolean = false;
     private _isLastStop: boolean = false;
+    private _isLastStopBeforeOnlyCancelledStops: boolean = false;
     private readonly _stopId: number | null;
     changes: RitInfo.Internal.JourneyStationChange[] | null;
     platform: string | null;
@@ -43,7 +44,7 @@ export class RitInfoStopUpdate {
 
         return this.changes.some(change =>
             change.changeType == JourneyStationChangeType.CancelledArrival ||
-            change.changeType == JourneyStationChangeType.CancelledDeparture ||
+            this._sequence == 1 && change.changeType == JourneyStationChangeType.CancelledDeparture ||
             change.changeType == JourneyStationChangeType.CancelledPassing
         );
     }
@@ -60,8 +61,19 @@ export class RitInfoStopUpdate {
         this._isLastStop = isLastStop;
     }
 
+    public set isLastStopBeforeOnlyCancelledStops(isLastStopBeforeOnlyCancelledStops) {
+        this._isLastStopBeforeOnlyCancelledStops = isLastStopBeforeOnlyCancelledStops;
+    }
+
     public get isLastStop(): boolean {
         return this._isLastStop;
+    }
+
+    /**
+     * Is this stop the last stop before only cancelled stops after this stop?
+     */
+    public get isLastStopBeforeOnlyCancelledStops(): boolean {
+        return this._isLastStopBeforeOnlyCancelledStops;
     }
 
     /**

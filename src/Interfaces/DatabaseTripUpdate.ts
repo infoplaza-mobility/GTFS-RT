@@ -18,6 +18,7 @@ export interface IDatabaseRitInfoUpdate {
     tripId: number | null;
     routeId: number | null;
     directionId: number | null;
+    shapeId: number | null;
     changes: JourneyChange[] | null;
     timestamp: Date;
 }
