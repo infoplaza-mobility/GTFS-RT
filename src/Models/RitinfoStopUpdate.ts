@@ -43,7 +43,6 @@ export class RitInfoStopUpdate {
 
         return this.changes.some(change =>
             change.changeType == JourneyStationChangeType.CancelledArrival ||
-            change.changeType == JourneyStationChangeType.CancelledDeparture ||
             change.changeType == JourneyStationChangeType.CancelledPassing
         );
     }
