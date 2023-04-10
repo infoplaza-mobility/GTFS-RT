@@ -56,7 +56,7 @@ export class InfoplusRepository extends Repository {
                                    coalesce(s."stopId", (SELECT "stopId"
                                                          FROM stops
                                                          WHERE stops."zoneId" = concat('IFF:', lower(si."stationCode"))
-                                            LIMIT 1)),
+                                            LIMIT 1), si."stationCode"),
                                    'platform',
                                    s."platformCode",
                                    'sequence',

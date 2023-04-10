@@ -29,8 +29,6 @@ export class FeedManager {
         try {
             FeedMessage.verify(feed);
 
-            console.dir(feed, {depth: null, colors: true})
-
             const file: File = new File('./publish/', 'trainUpdates.pb', Buffer.from(FeedMessage.encode(feed).finish()));
             file.saveSync();
 
