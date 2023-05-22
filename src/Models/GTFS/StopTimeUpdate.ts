@@ -41,16 +41,20 @@ export class StopTimeUpdate implements IStopTimeUpdate {
         });
 
 
-
+        //The stop is skipped entirely if the passing is cancelled.
         const scheduleRelationship = update.isCancelled() ?
             transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SKIPPED :
             transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SCHEDULED;
 
+
+        const shouldHaveDeparture = !isLastStop && !update.isCancelledDeparture() && !update.isLastStopBeforeOnlyCancelledStops;
+        const shouldHaveArrival = !isFirstStop && !update.isCancelledArrival();
+
         return new StopTimeUpdate({
             stopId,
             stopSequence: sequence,
-            departure: !isLastStop && !update.isCancelled() && !update.isLastStopBeforeOnlyCancelledStops  ? departure : undefined,
-            arrival: !isFirstStop && !update.isCancelled() ? arrival : undefined,
+            arrival: shouldHaveArrival ? arrival : undefined,
+            departure: shouldHaveDeparture ? departure : undefined,
             scheduleRelationship
         });
     }
