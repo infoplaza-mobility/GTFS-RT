@@ -31,6 +31,10 @@ export class Collection<T> {
         return this._items.map(callbackfn, thisArg);
     }
 
+    public filter(callbackfn: (value: T, index: number, array: T[]) => unknown, thisArg?: any): T[] {
+        return this._items.filter(callbackfn, thisArg);
+    }
+
     public toArray(): T[] {
         return this._items;
     }

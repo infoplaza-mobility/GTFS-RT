@@ -21,7 +21,7 @@ export class TrainUpdate implements ITripUpdate {
         Object.assign(this, tripUpdate);
     }
 
-    public static fromRitInfoUpdate(infoPlusTripUpdate: IDatabaseRitInfoUpdate): TrainUpdate {
+    public static fromRitInfoUpdate(infoPlusTripUpdate: IDatabaseRitInfoUpdate): TrainUpdate | null {
         const createdTrip = new RitInfoUpdate(infoPlusTripUpdate);
 
         const { routeId, startTime, startDate, directionId, isCancelled, isAdded, stopTimeUpdates, timestamp, shapeId } = createdTrip;
@@ -44,6 +44,10 @@ export class TrainUpdate implements ITripUpdate {
 
         if (isCancelled)
             scheduleRelationship = ScheduleRelationship.CANCELED;
+
+        // If this is a added and cancelled trip, we don't want to send it.
+        if (isCancelled && isAdded)
+            return null;
 
         return new TrainUpdate({
             trip: {
