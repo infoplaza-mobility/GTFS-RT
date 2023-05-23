@@ -1,6 +1,6 @@
 {
   "name": "r-ov_protobuf_service",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "The Protobuf converter for the R-OV OTP instance.",
   "main": "main.ts",
   "scripts": {

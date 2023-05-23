@@ -159,6 +159,9 @@ export class RitInfoStopUpdate {
         if (!this._departureTime)
             return Long.fromNumber(0);
 
+        if (this.isFirstStop)
+            return Long.fromNumber(this._departureTime.getTime() / 1000 + 1);
+
         return Long.fromNumber(this._departureTime.getTime() / 1000);
     }
 
