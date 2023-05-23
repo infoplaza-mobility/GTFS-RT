@@ -138,7 +138,7 @@ export class RitInfoUpdate {
         if (this._changes)
             return this._changes.some(change =>
                 change.changeType == JourneyChangeType.ExtraTrain
-            )
+            ) || this._shortTrainNumber !== this._trainNumber || this._trainNumber > 200_000;
 
         // If the short train number does not match the train number, it is an extra train. (E.g. 301234 vs 1234, 701234 vs 1234 or 201234 vs 1234)
         return this._shortTrainNumber !== this._trainNumber || this._trainNumber > 200_000;
