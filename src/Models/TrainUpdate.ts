@@ -24,8 +24,8 @@ export class TrainUpdate implements ITripUpdate {
     public static fromRitInfoUpdate(infoPlusTripUpdate: IDatabaseRitInfoUpdate): TrainUpdate | null {
         const createdTrip = new RitInfoUpdate(infoPlusTripUpdate);
 
-        const { routeId, startTime, startDate, directionId, isCancelled, isAdded, stopTimeUpdates, timestamp, shapeId } = createdTrip;
-        let { tripId } = createdTrip;
+        const { routeId, startTime, startDate, directionId, isCancelled, isAdded, timestamp, shapeId } = createdTrip;
+        let { tripId, stopTimeUpdates } = createdTrip;
 
         let customTripId = false;
 
@@ -40,6 +40,15 @@ export class TrainUpdate implements ITripUpdate {
             // Add a suffix to the tripId to make it unique for the added trip.
             tripId = tripId + '_added';
             scheduleRelationship = ScheduleRelationship.ADDED;
+
+            //For added trips, SKIPPED stops do not exist, as this is a "new" trip.
+            const updatesWithoutSkipped: IStopTimeUpdate[] = [];
+
+            for (const stopTimeUpdate of stopTimeUpdates) 
+                if (stopTimeUpdate.scheduleRelationship !== transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SKIPPED)
+                    updatesWithoutSkipped.push(stopTimeUpdate);
+
+            stopTimeUpdates = updatesWithoutSkipped;
         }
 
         if (isCancelled)

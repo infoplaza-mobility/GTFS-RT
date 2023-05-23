@@ -17,6 +17,8 @@ import express from 'express';
 export class Main {
 
   constructor() {
+    console.log(`[Main] Starting GTFS-RT generator version ${process.env.npm_package_version}`)
+
     this.startWebServer();
 
     (async() => {
