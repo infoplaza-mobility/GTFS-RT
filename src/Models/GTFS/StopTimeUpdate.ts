@@ -4,7 +4,7 @@
  * Questions? Email: tristantriest@gmail.com
  */
 
-import {transit_realtime} from "gtfs-rb";
+import {transit_realtime} from "gtfs-realtime-bindings";
 import IStopTimeUpdate = transit_realtime.TripUpdate.IStopTimeUpdate;
 import IStopTimeEvent = transit_realtime.TripUpdate.IStopTimeEvent;
 import StopTimeEvent = transit_realtime.TripUpdate.StopTimeEvent;
@@ -34,7 +34,7 @@ export class StopTimeUpdate implements IStopTimeUpdate {
 
         // If the departure is before the arrival, this must be an error, so we add 1 minute to the arrival time and make it the new departure time.
         if(departureBeforeArrival) {
-            console.log(`[StopTimeUpdate] Departure before arrival (NEGATIVE_DWELL_TIME). Adding 1 minute to the arrival time and setting it as the departure time. StopId: ${stopId}, departureTime: ${departureTime}, arrivalTime: ${arrivalTime}`)
+            console.log(`[StopTimeUpdate] Departure before arrival (NEGATIVE_DWELL_TIME). Adding 1 minute to the arrival time and setting it as the departure time.`)
             departureTime = arrivalTime.add(60)
         }
             

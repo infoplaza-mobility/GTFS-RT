@@ -98,7 +98,34 @@ export class RitInfoStopUpdate {
         || (this.isLastStop && this.isCancelledArrival());
     }
 
+    /**
+     * Did this stop have a track change?
+     * @returns {boolean} True if the stop had a track change, false otherwise.
+     */
+    public didTrackChange(): boolean {
+        if (!this.changes) return false;
 
+        return this.changes.some(change =>
+            change.changeType == JourneyStationChangeType.ArrivalTrackChange ||
+            change.changeType == JourneyStationChangeType.DepartureTrackChange ||
+            change.changeType == JourneyStationChangeType.FixArrivalTrack ||
+            change.changeType == JourneyStationChangeType.FixDepartureTrack
+        );
+    }
+
+    /**
+     * Is this an extra stop compared to the planned journey?
+     * @returns {boolean} True if this is an extra stop, false otherwise.
+     */
+    public isExtraPassing(): boolean {
+        if (!this.changes) return false;
+
+        return this.changes.some(change =>
+            change.changeType == JourneyStationChangeType.ExtraPassing ||
+            change.changeType == JourneyStationChangeType.ExtraArrival ||
+            change.changeType == JourneyStationChangeType.ExtraDeparture
+        );
+    }
 
     public set isFirstStop(isFirstStop) {
         this._isFirstStop = isFirstStop;

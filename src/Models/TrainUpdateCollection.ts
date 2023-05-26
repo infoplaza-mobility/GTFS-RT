@@ -7,7 +7,7 @@
 import { Collection } from "./General/Collection";
 import { TrainUpdate } from "./TrainUpdate";
 import { IDatabaseRitInfoUpdate } from "../Interfaces/DatabaseTripUpdate";
-import { transit_realtime } from "gtfs-rb";
+import { transit_realtime } from "gtfs-realtime-bindings";
 import Long from "long";
 import FeedEntity = transit_realtime.FeedEntity;
 import FeedMessage = transit_realtime.FeedMessage;
