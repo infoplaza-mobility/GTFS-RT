@@ -6,7 +6,7 @@
 
 import {InfoplusRepository} from "../Repositories/InfoplusRepository";
 import {TrainUpdateCollection} from "../Models/TrainUpdateCollection";
-import {transit_realtime} from "gtfs-rb";
+import {transit_realtime} from "gtfs-realtime-bindings";
 import FeedMessage = transit_realtime.FeedMessage;
 import { File } from "../Models/General/File";
 

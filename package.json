@@ -1,6 +1,6 @@
 {
   "name": "r-ov_protobuf_service",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "The Protobuf converter for the R-OV OTP instance.",
   "main": "main.ts",
   "scripts": {
@@ -8,7 +8,8 @@
     "start": "node ./dist/main.js",
     "dev": "nodemon --watch",
     "build": "tsc -p .",
-    "debug": "nodemon --inspect"
+    "debug": "nodemon --inspect",
+    "patch": "npm version patch"
   },
   "repository": {
     "type": "git",
@@ -26,7 +27,7 @@
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "gtfs-rb": "^1.2.8",
-    "gtfs-realtime-bindings": "^0.0.6",
+    "gtfs-realtime-bindings": "^1.1.1",
     "knex": "^2.4.0",
     "moment-timezone": "^0.5.40",
     "node-fetch": "^3.3.0",

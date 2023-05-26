@@ -4,7 +4,7 @@
  * Questions? Email: tristantriest@gmail.com
  */
 
-import { transit_realtime } from 'gtfs-rb';
+import { transit_realtime } from 'gtfs-realtime-bindings';
 import ITripUpdate = transit_realtime.ITripUpdate;
 import ITripDescriptor = transit_realtime.ITripDescriptor;
 import IStopTimeUpdate = transit_realtime.TripUpdate.IStopTimeUpdate;
@@ -24,7 +24,7 @@ export class TrainUpdate implements ITripUpdate {
     public static fromRitInfoUpdate(infoPlusTripUpdate: IDatabaseRitInfoUpdate): TrainUpdate | null {
         const createdTrip = new RitInfoUpdate(infoPlusTripUpdate);
 
-        const { routeId, startTime, startDate, directionId, isCancelled, isAdded, timestamp, shapeId } = createdTrip;
+        const { routeId, startTime, startDate, directionId, isCancelled, isAdded, timestamp, shapeId, hadChangedStops, hadPlatformChange, hasChangedTrip } = createdTrip;
         let { tripId, stopTimeUpdates } = createdTrip;
 
         let customTripId = false;
@@ -35,6 +35,12 @@ export class TrainUpdate implements ITripUpdate {
         }
 
         let scheduleRelationship = ScheduleRelationship.SCHEDULED;
+
+        
+        if(hasChangedTrip) {
+            console.log(`[TrainUpdate] Trip ${tripId} had a changed trip. Change types: ` + createdTrip.changes!.map(change => change.changeType).join(', '));
+            scheduleRelationship = ScheduleRelationship.REPLACEMENT;
+        }
 
         if (isAdded || customTripId) {
             // Add a suffix to the tripId to make it unique for the added trip.

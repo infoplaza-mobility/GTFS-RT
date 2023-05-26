@@ -6,7 +6,7 @@
 
 import {IDatabaseRitInfoUpdate} from '../Interfaces/DatabaseTripUpdate'
 import {RitInfo} from "../Shared/src/Types/Infoplus/RitInfo";
-import {transit_realtime} from "gtfs-rb";
+import {transit_realtime} from "gtfs-realtime-bindings";
 import {StopTimeUpdate} from "./GTFS/StopTimeUpdate";
 import {Collection} from "./General/Collection";
 import IStopTimeUpdate = transit_realtime.TripUpdate.IStopTimeUpdate;
@@ -72,6 +72,55 @@ export class RitInfoUpdate {
      */
     public get stopTimeUpdates(): IStopTimeUpdate[] {
         return this.stops.map(stop => StopTimeUpdate.fromRitInfoStopUpdate(stop));
+    }
+
+    /**
+     * Did this trip have any platform changes?
+     * @returns {boolean} True if the trip had any platform changes, false otherwise.
+     */
+    public get hadPlatformChange(): boolean {
+        return this.stops.some(stop => stop.didTrackChange());
+    }
+
+    /**
+     * Does this trip have any changed stops?
+     * @returns {boolean} True if the trip had any changed stops, false otherwise.
+     */
+    public get hadChangedStops(): boolean {
+        return this.stops.some(stop => stop.isExtraPassing());
+    }
+
+    /**
+     * Did this trip change its route?
+     * True for the following:
+     * ChangeStopBehaviour = "30",
+        DivertedTrain = "33",
+        ShortenedDestination = "34",
+        ExtendedDestination = "35",
+        OriginShortening = "36",
+        OriginExtension = "37",
+        ChangedDestination = "41",
+        ChangedOrigin = "42",
+     * @returns {boolean} True if the trip changed its route, false otherwise.
+     */
+    public get hasChangedTrip(): boolean {
+        if(!this._changes)
+            return false;
+
+        return this._changes.some(change =>
+            change.changeType == JourneyChangeType.ChangeStopBehaviour ||
+            change.changeType == JourneyChangeType.DivertedTrain ||
+            change.changeType == JourneyChangeType.ShortenedDestination ||
+            change.changeType == JourneyChangeType.ExtendedDestination ||
+            change.changeType == JourneyChangeType.OriginShortening ||
+            change.changeType == JourneyChangeType.OriginExtension ||
+            change.changeType == JourneyChangeType.ChangedDestination ||
+            change.changeType == JourneyChangeType.ChangedOrigin
+        );
+    }
+
+    public get changes(): RitInfo.Internal.JourneyChange[] | null {
+        return this._changes;
     }
 
     /**
