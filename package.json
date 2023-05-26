@@ -8,7 +8,8 @@
     "start": "node ./dist/main.js",
     "dev": "nodemon --watch",
     "build": "tsc -p .",
-    "debug": "nodemon --inspect"
+    "debug": "nodemon --inspect",
+    "patch": "npm version patch"
   },
   "repository": {
     "type": "git",
