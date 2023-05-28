@@ -7,6 +7,7 @@
 import {RitInfo} from "../Shared/src/Types/Infoplus/RitInfo";
 import JourneyChange = RitInfo.Internal.JourneyChange;
 import JourneyStationChange = RitInfo.Internal.JourneyStationChange;
+import { IDatabaseStopUpdate } from "./DatabaseStopUpdate";
 
 export interface IDatabaseRitInfoUpdate {
     trainNumber: number;
@@ -23,14 +24,10 @@ export interface IDatabaseRitInfoUpdate {
     timestamp: Date;
 }
 
-export interface IRitInfoStopUpdate {
-    stopId: number | null;
+export interface IRitInfoStopUpdate extends IDatabaseStopUpdate {
     changes: JourneyStationChange[] | null;
     platform: string | null;
-    sequence: number;
-    arrivalTime: string | null;
-    departureTime: string | null;
+    plannedArrivalTime: string | null;
+    plannedDepartureTime: string | null;
     stationCode: string;
-    arrivalDelay: string | null;
-    departureDelay: string | null;
 }

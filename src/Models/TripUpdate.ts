@@ -8,13 +8,12 @@ import { transit_realtime } from 'gtfs-realtime-bindings';
 import ITripUpdate = transit_realtime.ITripUpdate;
 import ITripDescriptor = transit_realtime.ITripDescriptor;
 import IStopTimeUpdate = transit_realtime.TripUpdate.IStopTimeUpdate;
-import {IDatabaseRitInfoUpdate} from "../Interfaces/DatabaseRitInfoUpdate";
-import {RitInfoUpdate} from "./RitInfoUpdate";
+import {IDatabasePasstimesUpdate} from "../Interfaces/DatabasePasstimesUpdate";
 import ScheduleRelationship = transit_realtime.TripDescriptor.ScheduleRelationship;
 import FeedEntity = transit_realtime.FeedEntity;
-import Long from 'long';
+import { PasstimesUpdate } from './PasstimesUpdate';
 
-export class TrainUpdate implements ITripUpdate {
+export class TripUpdate implements ITripUpdate {
     trip: ITripDescriptor & { shapeId?: string };
     stopTimeUpdate: IStopTimeUpdate[];
 
@@ -22,54 +21,22 @@ export class TrainUpdate implements ITripUpdate {
         Object.assign(this, tripUpdate);
     }
 
-    public static fromRitInfoUpdate(infoPlusTripUpdate: IDatabaseRitInfoUpdate): TrainUpdate | null {
-        const createdTrip = new RitInfoUpdate(infoPlusTripUpdate);
+    public static fromPasstimesUpdate(tripUpdate: IDatabasePasstimesUpdate): TripUpdate | null {
+        const createdTrip = new PasstimesUpdate(tripUpdate);
 
-        const { routeId, startTime, startDate, directionId, isCancelled, isAdded, timestamp, shapeId, hadChangedStops, hadPlatformChange, hasChangedTrip, isSpecialTrain } = createdTrip;
+        const { routeId, startTime, startDate, isCancelled, isAdded, timestamp } = createdTrip;
         let { tripId, stopTimeUpdates } = createdTrip;
 
         let customTripId = false;
 
         if(!tripId) {
-            tripId = `${infoPlusTripUpdate.trainNumber}_${infoPlusTripUpdate.trainType}_${infoPlusTripUpdate.agency}`;
+            tripId = `${tripUpdate.startDate}_${tripUpdate.startTime}_TODO:FIX`;
             customTripId = true;
         }
 
         let scheduleRelationship = ScheduleRelationship.SCHEDULED;
 
         let shouldRemoveSkippedStops = false;
-
-        if(hasChangedTrip || hadPlatformChange || hadChangedStops) {
-
-            if(hasChangedTrip)
-                console.log(`[TrainUpdate] Trip ${tripId} had a changed trip. Change types: ` + createdTrip.changes!.map(change => change.changeType).join(', '));
-
-            if(hadPlatformChange)
-                console.log(`[TrainUpdate] Trip ${tripId} had a platform change.`);
-
-            if(hadChangedStops)
-                console.log(`[TrainUpdate] Trip ${tripId} had changed stops.`);
-
-            scheduleRelationship = ScheduleRelationship.REPLACEMENT;
-            /**
-             * Remove all skipped stops, as OTP expects no skipped stops.
-             * @deprecated OTP Does allow skipped stops, but they *need* an arrival and departure event.
-             */
-            shouldRemoveSkippedStops = false;
-        }
-
-        // If this is a special train, we want to mark it as a replacement, as the sequence numbers do not match with the static GTFS.
-        if(isSpecialTrain) {
-            scheduleRelationship = ScheduleRelationship.REPLACEMENT;
-
-            //For these special trains there can be duplicate stops, so we need to remove them. Only keep one stop with the same stopId.
-            stopTimeUpdates = stopTimeUpdates.filter((stopTimeUpdate, index, self) =>
-                index === self.findIndex((t) => (
-                    t.stopId === stopTimeUpdate.stopId
-                ))
-            )
-        }
-
 
         if (isAdded || customTripId) {
             // Add a suffix to the tripId to make it unique for the added trip.
@@ -94,15 +61,13 @@ export class TrainUpdate implements ITripUpdate {
             stopTimeUpdates = stopTimeUpdates.filter(stopTimeUpdate => stopTimeUpdate.scheduleRelationship !== transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SKIPPED);
 
 
-        return new TrainUpdate({
+        return new TripUpdate({
             trip: {
                 tripId,
                 routeId,
                 startTime,
                 startDate,
-                directionId,
-                scheduleRelationship,
-                shapeId: shapeId || undefined
+                scheduleRelationship
             },
             stopTimeUpdate: !isCancelled ? stopTimeUpdates : undefined,
             timestamp: timestamp

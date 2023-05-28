@@ -4,7 +4,7 @@
  * Questions? Email: tristantriest@gmail.com
  */
 
-import {IDatabaseRitInfoUpdate} from '../Interfaces/DatabaseTripUpdate'
+import {IDatabaseRitInfoUpdate} from '../Interfaces/DatabaseRitInfoUpdate'
 import {RitInfo} from "../Shared/src/Types/Infoplus/RitInfo";
 import {transit_realtime} from "gtfs-realtime-bindings";
 import {StopTimeUpdate} from "./GTFS/StopTimeUpdate";
@@ -12,8 +12,9 @@ import {Collection} from "./General/Collection";
 import IStopTimeUpdate = transit_realtime.TripUpdate.IStopTimeUpdate;
 import JourneyChangeType = RitInfo.JourneyChangeType;
 import Long from "long";
-import {RitInfoStopUpdate} from "./RitinfoStopUpdate";
+import {RitInfoStopUpdate} from "./StopUpdates/RitinfoStopUpdate";
 import {StopUpdateCollection} from "./StopUpdateCollection";
+import { InternationalAgencys, InternationalTrainSeries } from '../Utilities/InternationalAgencys';
 
 export class RitInfoUpdate {
     private readonly _agency: string;
@@ -29,12 +30,14 @@ export class RitInfoUpdate {
     private readonly _directionId: number | null;
     private readonly _timestamp: Date;
 
+    private readonly _isInternationalTrain: boolean = false;
+
     constructor(update: IDatabaseRitInfoUpdate) {
         this._agency = update.agency;
         this._changes = update.changes;
         this._shortTrainNumber = update.shortTrainNumber;
         this._showsInTripPlanner = update.showsInTripPlanner;
-        this._stopCollection = new StopUpdateCollection(update.stops.map(stop => new RitInfoStopUpdate(stop)));
+        this._stopCollection = new StopUpdateCollection(update.stops.map(stop => new RitInfoStopUpdate(stop)), update.tripId?.toString());
         this._shapeId = update.shapeId;
         this._trainNumber = update.trainNumber;
         this._trainType = update.trainType;
@@ -42,6 +45,36 @@ export class RitInfoUpdate {
         this._routeId = update.routeId;
         this._directionId = update.directionId;
         this._timestamp = update.timestamp;
+
+        this._isInternationalTrain = this.setInternationalTrain();
+    }
+
+    private setInternationalTrain(): boolean {
+        let isInternationalTrain = false;
+
+        if(InternationalAgencys.includes(this._agency))
+            isInternationalTrain = true;
+
+        if(this._trainNumber < 500)
+            isInternationalTrain = true;
+
+        for(const series of InternationalTrainSeries) {
+            if(this._trainNumber >= series.start && this._trainNumber <= series.end)
+                isInternationalTrain = true;
+        }
+
+        return isInternationalTrain;
+    }
+
+    /**
+     * Is this train a long-distance international train?
+     * Hits true when the train is from an international agency or when the train number is below 500.
+     * Also hits true for the Utrecht Maliebaan train.
+     * @see InternationalAgencys
+     * @returns {boolean} True if the train is a long-distance international train, false otherwise.
+     */
+    public get isSpecialTrain(): boolean {
+        return this._isInternationalTrain;
     }
 
     public get routeId(): string | null {
@@ -62,7 +95,7 @@ export class RitInfoUpdate {
         return this._directionId;
     }
 
-    public get stops(): Collection<RitInfoStopUpdate> {
+    public get stops(): StopUpdateCollection {
         return this._stopCollection;
     }
 
@@ -71,7 +104,7 @@ export class RitInfoUpdate {
      * @returns {IStopTimeUpdate[]} The GTFS-RT StopTimeUpdates.
      */
     public get stopTimeUpdates(): IStopTimeUpdate[] {
-        return this.stops.map(stop => StopTimeUpdate.fromRitInfoStopUpdate(stop));
+        return this.stops.map(stop => StopTimeUpdate.fromStopUpdate(stop));
     }
 
     /**
@@ -79,7 +112,7 @@ export class RitInfoUpdate {
      * @returns {boolean} True if the trip had any platform changes, false otherwise.
      */
     public get hadPlatformChange(): boolean {
-        return this.stops.some(stop => stop.didTrackChange());
+        return this.stops.some(stop => (stop as RitInfoStopUpdate).didTrackChange());
     }
 
     /**
@@ -87,7 +120,7 @@ export class RitInfoUpdate {
      * @returns {boolean} True if the trip had any changed stops, false otherwise.
      */
     public get hadChangedStops(): boolean {
-        return this.stops.some(stop => stop.isExtraPassing());
+        return this.stops.some(stop => (stop as RitInfoStopUpdate).isExtraPassing());
     }
 
     /**

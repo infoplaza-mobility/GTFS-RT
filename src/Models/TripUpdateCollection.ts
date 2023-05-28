@@ -5,28 +5,28 @@
  */
 
 import { Collection } from "./General/Collection";
-import { TrainUpdate } from "./TrainUpdate";
-import { IDatabaseRitInfoUpdate } from "../Interfaces/DatabaseRitInfoUpdate";
+import { TripUpdate } from "./TripUpdate";
 import { transit_realtime } from "gtfs-realtime-bindings";
 import Long from "long";
 import FeedEntity = transit_realtime.FeedEntity;
 import FeedMessage = transit_realtime.FeedMessage;
 import Incrementality = transit_realtime.FeedHeader.Incrementality;
+import { IDatabasePasstimesUpdate } from "../Interfaces/DatabasePasstimesUpdate";
 
-export class TrainUpdateCollection extends Collection<FeedEntity> {
+export class TripUpdateCollection extends Collection<FeedEntity> {
     constructor(items: FeedEntity[]) {
         super(items);
     }
 
     /**
-     * Converts a collection of database train updates to a collection of TrainUpdate objects.
-     * @param updates The database train updates.
-     * @returns {TrainUpdateCollection} The converted TrainUpdateCollection.
+     * Converts a collection of database trip updates to a collection of TripUpdate objects.
+     * @param updates The database trip updates.
+     * @returns {TripUpdateCollection} The converted TripUpdateCollection.
      */
-    public static fromDatabaseResult(updates: IDatabaseRitInfoUpdate[]): TrainUpdateCollection {
-        return new TrainUpdateCollection(
+    public static fromDatabaseResult(updates: IDatabasePasstimesUpdate[]): TripUpdateCollection {
+        return new TripUpdateCollection(
             updates.map(
-                update => TrainUpdate.fromRitInfoUpdate(update)?.toFeedEntity()
+                update => TripUpdate.fromPasstimesUpdate(update)?.toFeedEntity()
             ).filter(update => !!update) as FeedEntity[]
         );
     }
