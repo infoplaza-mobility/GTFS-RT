@@ -32,8 +32,10 @@ export class Main {
    */
   private async setUpTimer() {
     await FeedManager.updateTrainFeed();
+    // await FeedManager.updateTripUpdatesFeed();
     setInterval(async () => {
         await FeedManager.updateTrainFeed();
+        // await FeedManager.updateTripUpdatesFeed();
     }, 30 * 1000);
   }
 

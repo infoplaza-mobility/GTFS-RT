@@ -54,4 +54,8 @@ export class Collection<T> {
     public some(callbackfn: (value: T, index: number, array: T[]) => unknown, thisArg?: any): boolean {
         return this._items.some(callbackfn, thisArg);
     }
+
+    public every(callbackfn: (value: T, index: number, array: T[]) => unknown, thisArg?: any): boolean {
+        return this._items.every(callbackfn, thisArg);
+    }
 }

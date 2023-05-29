@@ -8,9 +8,9 @@ import {transit_realtime} from "gtfs-realtime-bindings";
 import IStopTimeUpdate = transit_realtime.TripUpdate.IStopTimeUpdate;
 import IStopTimeEvent = transit_realtime.TripUpdate.IStopTimeEvent;
 import StopTimeEvent = transit_realtime.TripUpdate.StopTimeEvent;
-import {RitInfoStopUpdate} from "../RitinfoStopUpdate";
+import { StopUpdate } from "../StopUpdates/StopUpdate";
 
-export class StopTimeUpdate implements IStopTimeUpdate {
+export class  StopTimeUpdate implements IStopTimeUpdate {
     departure: IStopTimeEvent;
     arrival: IStopTimeEvent;
     stopId: string;
@@ -26,27 +26,34 @@ export class StopTimeUpdate implements IStopTimeUpdate {
      * @param update The RitInfoStopUpdate to convert.
      * @returns {StopTimeUpdate} The converted StopTimeUpdate.
      */
-    public static fromRitInfoStopUpdate(update: RitInfoStopUpdate): StopTimeUpdate {
+    public static fromStopUpdate(update: StopUpdate): StopTimeUpdate {
 
         let { departureDelay, arrivalDelay, departureTime, arrivalTime, stopId, sequence, isLastStop, isFirstStop  } = update;
 
         const departureBeforeArrival = !departureTime.isZero() && !arrivalTime.isZero() && departureTime < arrivalTime;
-
+        const arrivalIsZero = arrivalTime.isZero();
+        const departureIsZero = departureTime.isZero();
         // If the departure is before the arrival, this must be an error, so we add 1 minute to the arrival time and make it the new departure time.
         if(departureBeforeArrival) {
             console.log(`[StopTimeUpdate] Departure before arrival (NEGATIVE_DWELL_TIME). Adding 1 minute to the arrival time and setting it as the departure time.`)
             departureTime = arrivalTime.add(60)
         }
             
-        const departure = new StopTimeEvent({
-            time: departureTime,
+        let departure = new StopTimeEvent({
+            time: !departureIsZero ? departureTime : arrivalTime,
             delay: departureDelay
         });
 
-        const arrival = new StopTimeEvent({
-            time: arrivalTime,
+        let arrival = new StopTimeEvent({
+            time: !arrivalIsZero ? arrivalTime : departureTime,
             delay: arrivalDelay
         });
+
+        if(isFirstStop)
+            arrival = departure;
+
+        if(isLastStop)
+            departure = arrival;
 
 
         //The stop is skipped entirely if the passing is cancelled.
@@ -54,17 +61,13 @@ export class StopTimeUpdate implements IStopTimeUpdate {
             transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SKIPPED :
             transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SCHEDULED;
 
-
-        const shouldHaveDeparture = !isLastStop && !update.isCancelledDeparture() && !update.isLastStopBeforeOnlyCancelledStops;
-        const shouldHaveArrival = !isFirstStop && !update.isCancelledArrival();
-
-        
+        const shouldHaveDepartureAndArrival = true; //!update.isCancelled();
 
         return new StopTimeUpdate({
             stopId,
             stopSequence: sequence,
-            arrival: shouldHaveArrival ? arrival : undefined,
-            departure: shouldHaveDeparture ? departure : undefined,
+            arrival: shouldHaveDepartureAndArrival ? arrival : undefined,
+            departure: shouldHaveDepartureAndArrival ? departure : undefined,
             scheduleRelationship
         });
     }
