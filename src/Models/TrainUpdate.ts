@@ -12,7 +12,6 @@ import {IDatabaseRitInfoUpdate} from "../Interfaces/DatabaseRitInfoUpdate";
 import {RitInfoUpdate} from "./RitInfoUpdate";
 import ScheduleRelationship = transit_realtime.TripDescriptor.ScheduleRelationship;
 import FeedEntity = transit_realtime.FeedEntity;
-import Long from 'long';
 
 export class TrainUpdate implements ITripUpdate {
     trip: ITripDescriptor & { shapeId?: string };
@@ -43,12 +42,6 @@ export class TrainUpdate implements ITripUpdate {
 
             if(hasChangedTrip)
                 console.log(`[TrainUpdate] Trip ${tripId} had a changed trip. Change types: ` + createdTrip.changes!.map(change => change.changeType).join(', '));
-
-            if(hadPlatformChange)
-                console.log(`[TrainUpdate] Trip ${tripId} had a platform change.`);
-
-            if(hadChangedStops)
-                console.log(`[TrainUpdate] Trip ${tripId} had changed stops.`);
 
             scheduleRelationship = ScheduleRelationship.REPLACEMENT;
             /**

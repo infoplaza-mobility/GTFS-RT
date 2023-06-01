@@ -26,8 +26,14 @@ export interface IDatabaseRitInfoUpdate {
 
 export interface IRitInfoStopUpdate extends IDatabaseStopUpdate {
     changes: JourneyStationChange[] | null;
+    /** PlatformCode in GTFS */
     platform: string | null;
+    /** Arrival or DepartureTrack Message in Infoplus */
+    track: string | null;
+
     plannedArrivalTime: string | null;
     plannedDepartureTime: string | null;
+    plannedTrack: string | null;
+    actualTrack: string | null;
     stationCode: string;
 }
