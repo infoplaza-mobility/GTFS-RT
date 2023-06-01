@@ -10,16 +10,30 @@ import JourneyStationChangeType = RitInfo.JourneyStationChangeType;
 import { StopUpdate } from './StopUpdate';
 export class RitInfoStopUpdate extends StopUpdate {
 
-    private changes: RitInfo.Internal.JourneyStationChange[] | null;
-    private platform: string | null;
-    private stationCode: string;
+    private readonly changes: RitInfo.Internal.JourneyStationChange[] | null;
+
+    private readonly plannedTrack: string | null;
+    private readonly actualTrack: string | null;
+
+    private readonly platform: string | null;
+    private readonly track: string | null;
+
+    private readonly stationCode: string;
 
     constructor(update: IRitInfoStopUpdate) {
         super(update);
 
         this.changes = update.changes;
-        this.platform = update.platform;
         this.stationCode = update.stationCode;
+
+        this.plannedTrack = update.plannedTrack;
+        this.actualTrack = update.actualTrack;
+
+        this.platform = update.platform;
+        this.track = update.track;
+
+        if(this.platform !== this.track)
+            console.log(`[RitInfoStopUpdate] Platform and Track are not the same for stop ${this.stationCode}! Platform: ${this.platform}, Track: ${this.track}`)
     }
 
 
@@ -90,14 +104,28 @@ export class RitInfoStopUpdate extends StopUpdate {
      * @returns {boolean} True if the stop had a track change, false otherwise.
      */
     public didTrackChange(): boolean {
-        if (!this.changes) return false;
 
-        return this.changes.some(change =>
-            change.changeType == JourneyStationChangeType.ArrivalTrackChange ||
-            change.changeType == JourneyStationChangeType.DepartureTrackChange ||
-            change.changeType == JourneyStationChangeType.FixArrivalTrack ||
-            change.changeType == JourneyStationChangeType.FixDepartureTrack
-        );
+        if(this.isCancelled())
+            return false;
+
+        let hasChange = false;
+
+        if(this.changes)
+            hasChange = this.changes.some(change =>
+                change.changeType == JourneyStationChangeType.ArrivalTrackChange ||
+                change.changeType == JourneyStationChangeType.DepartureTrackChange ||
+                change.changeType == JourneyStationChangeType.FixArrivalTrack ||
+                change.changeType == JourneyStationChangeType.FixDepartureTrack
+            );
+
+        if(hasChange)
+            return true;
+
+
+        //Check for changes with the planned arrival/departure track
+        return this.plannedTrack != this.actualTrack;
+
+
     }
 
     /**
