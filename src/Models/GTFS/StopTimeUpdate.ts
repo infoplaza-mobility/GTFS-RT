@@ -16,6 +16,7 @@ export class  StopTimeUpdate implements IStopTimeUpdate {
     stopId: string;
     scheduleRelationship: transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship;
     stopSequence: number;
+    stopTimeProperties?: transit_realtime.TripUpdate.StopTimeUpdate.IStopTimeProperties;
 
     constructor(stopTimeUpdate: IStopTimeUpdate) {
         Object.assign(this, stopTimeUpdate);
@@ -68,7 +69,10 @@ export class  StopTimeUpdate implements IStopTimeUpdate {
             stopSequence: sequence,
             arrival: shouldHaveDepartureAndArrival ? arrival : undefined,
             departure: shouldHaveDepartureAndArrival ? departure : undefined,
-            scheduleRelationship
+            scheduleRelationship,
+            stopTimeProperties: {
+                assignedStopId: stopId,
+            }
         });
     }
 }
