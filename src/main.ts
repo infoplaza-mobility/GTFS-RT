@@ -5,7 +5,6 @@
  */
 
 import path from "path";
-
 require('dotenv').config();
 
 import {FeedManager} from "./Services/FeedManager";

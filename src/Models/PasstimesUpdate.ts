@@ -6,7 +6,7 @@
 
 import {RitInfo} from "../Shared/src/Types/Infoplus/RitInfo";
 import {transit_realtime} from "gtfs-realtime-bindings";
-import {StopTimeUpdate} from "./GTFS/StopTimeUpdate";
+import {ExtendedStopTimeUpdate} from "./GTFS/StopTimeUpdate";
 import IStopTimeUpdate = transit_realtime.TripUpdate.IStopTimeUpdate;
 import Long from "long";
 import {StopUpdateCollection} from "./StopUpdateCollection";
@@ -42,7 +42,7 @@ export class PasstimesUpdate {
      * @returns {IStopTimeUpdate[]} The GTFS-RT StopTimeUpdates.
      */
     public get stopTimeUpdates(): IStopTimeUpdate[] {
-        return this.stops.map(stop => StopTimeUpdate.fromStopUpdate(stop));
+        return this.stops.map(stop => ExtendedStopTimeUpdate.fromStopUpdate(stop));
     }
 
     

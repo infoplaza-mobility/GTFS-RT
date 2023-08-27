@@ -6,12 +6,8 @@
 
 import {IDatabaseRitInfoUpdate} from '../Interfaces/DatabaseRitInfoUpdate'
 import {RitInfo} from "../Shared/src/Types/Infoplus/RitInfo";
-import {transit_realtime} from "gtfs-realtime-bindings";
-import {StopTimeUpdate} from "./GTFS/StopTimeUpdate";
-import {Collection} from "./General/Collection";
-import IStopTimeUpdate = transit_realtime.TripUpdate.IStopTimeUpdate;
+import {ExtendedStopTimeUpdate} from "./GTFS/StopTimeUpdate";
 import JourneyChangeType = RitInfo.JourneyChangeType;
-import Long from "long";
 import {RitInfoStopUpdate} from "./StopUpdates/RitinfoStopUpdate";
 import {StopUpdateCollection} from "./StopUpdateCollection";
 import { InternationalAgencys, InternationalTrainSeries } from '../Utilities/InternationalAgencys';
@@ -103,8 +99,8 @@ export class RitInfoUpdate {
      * Converts this RitInfoUpdate's stops to GTFS-RT StopTimeUpdates and returns them.
      * @returns {IStopTimeUpdate[]} The GTFS-RT StopTimeUpdates.
      */
-    public get stopTimeUpdates(): IStopTimeUpdate[] {
-        return this.stops.map(stop => StopTimeUpdate.fromStopUpdate(stop));
+    public get stopTimeUpdates(): ExtendedStopTimeUpdate[] {
+        return this.stops.map(stop => ExtendedStopTimeUpdate.fromStopUpdate(stop));
     }
 
     /**
@@ -230,8 +226,8 @@ export class RitInfoUpdate {
      * Gets the timestamp of the update in seconds since epoch.
      * @returns {Long} The timestamp of the update in seconds since epoch.
      */
-    public get timestamp(): Long {
-        return Long.fromNumber(this._timestamp.getTime() / 1000);
+    public get timestamp(): number {
+        return Math.round(this._timestamp.getTime() / 1000);
     }
 
 

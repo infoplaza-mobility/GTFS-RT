@@ -7,8 +7,7 @@
 import { Collection } from "./General/Collection";
 import { TrainUpdate } from "./TrainUpdate";
 import { IDatabaseRitInfoUpdate } from "../Interfaces/DatabaseRitInfoUpdate";
-import { transit_realtime } from "gtfs-realtime-bindings";
-import Long from "long";
+import { transit_realtime } from "../Compiled/gtfs-realtime";
 import FeedEntity = transit_realtime.FeedEntity;
 import FeedMessage = transit_realtime.FeedMessage;
 import Incrementality = transit_realtime.FeedHeader.Incrementality;
@@ -36,10 +35,10 @@ export class TrainUpdateCollection extends Collection<FeedEntity> {
      * @returns {FeedMessage} The converted FeedMessage.
      */
     public toFeedMessage(): FeedMessage {
-        return new FeedMessage({
+        return FeedMessage.fromObject({
             header: {
-                gtfsRealtimeVersion: "2.0",
-                timestamp: Long.fromNumber(Date.now() / 1000),
+                gtfs_realtime_version: "2.0",
+                timestamp: Math.round(Date.now() / 1000),
                 incrementality: Incrementality.DIFFERENTIAL
             },
             entity: this.toArray()
