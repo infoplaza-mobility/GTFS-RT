@@ -58,4 +58,12 @@ export class Collection<T> {
     public every(callbackfn: (value: T, index: number, array: T[]) => unknown, thisArg?: any): boolean {
         return this._items.every(callbackfn, thisArg);
     }
+
+    /**
+     * Appends new elements to the end of an array, and returns the new length of the array.
+     * @param items New elements to add to the array.
+     */
+    public push(...items: T[]): number {
+        return this._items.push(...items);
+    }
 }

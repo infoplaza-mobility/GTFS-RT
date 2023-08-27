@@ -17,7 +17,9 @@ export class TrainUpdate implements ITripUpdate {
     trip: ITripDescriptor & { shapeId?: string };
     stopTimeUpdate: IStopTimeUpdate[];
 
-    constructor(tripUpdate: ITripUpdate & { trip: ITripDescriptor & { shapeId?: string }}) {
+    hasCustomTripId: boolean = false;
+
+    constructor(tripUpdate: ITripUpdate & { hasCustomTripId: boolean, trip: ITripDescriptor & { shapeId?: string }}) {
         Object.assign(this, tripUpdate);
     }
 
@@ -40,8 +42,8 @@ export class TrainUpdate implements ITripUpdate {
 
         if(hasChangedTrip || hadPlatformChange || hadChangedStops) {
 
-            if(hasChangedTrip)
-                console.log(`[TrainUpdate] Trip ${tripId} had a changed trip. Change types: ` + createdTrip.changes!.map(change => change.changeType).join(', '));
+            // if(hasChangedTrip)
+            //     console.log(`[TrainUpdate] Trip ${tripId} had a changed trip. Change types: ` + createdTrip.changes!.map(change => change.changeType).join(', '));
 
             scheduleRelationship = ScheduleRelationship.REPLACEMENT;
             /**
@@ -95,11 +97,22 @@ export class TrainUpdate implements ITripUpdate {
                 startDate,
                 directionId,
                 scheduleRelationship,
-                shapeId: shapeId || undefined
+                shapeId: shapeId ?? undefined
             },
             stopTimeUpdate: !isCancelled ? stopTimeUpdates : undefined,
-            timestamp: timestamp
+            timestamp: timestamp,
+            hasCustomTripId: customTripId
         })
+    }
+
+    /**
+     * Marks this TrainUpdate as deleted, by setting the schedule relationship to DELETED (or CANCELED).
+     *
+     * @modifies this.trip.scheduleRelationShip
+     */
+    public markAsDeleted() {
+        this.trip.scheduleRelationship = ScheduleRelationship.CANCELED;
+        this.stopTimeUpdate = [];
     }
 
     /**
@@ -109,7 +122,7 @@ export class TrainUpdate implements ITripUpdate {
     public toFeedEntity(): FeedEntity {
         return new FeedEntity({
             tripUpdate: this,
-            id: this.trip.tripId || Date.now().toString()
+            id: this.trip.tripId ?? Date.now().toString()
         })
     }
 }

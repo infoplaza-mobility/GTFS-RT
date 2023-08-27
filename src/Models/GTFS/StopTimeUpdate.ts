@@ -36,7 +36,7 @@ export class  StopTimeUpdate implements IStopTimeUpdate {
         const departureIsZero = departureTime.isZero();
         // If the departure is before the arrival, this must be an error, so we add 1 minute to the arrival time and make it the new departure time.
         if(departureBeforeArrival) {
-            console.log(`[StopTimeUpdate] Departure before arrival (NEGATIVE_DWELL_TIME). Adding 1 minute to the arrival time and setting it as the departure time.`)
+            // console.log(`[StopTimeUpdate] Departure before arrival (NEGATIVE_DWELL_TIME). Adding 1 minute to the arrival time and setting it as the departure time.`)
             departureTime = arrivalTime.add(60)
         }
             
@@ -62,7 +62,7 @@ export class  StopTimeUpdate implements IStopTimeUpdate {
             transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SKIPPED :
             transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SCHEDULED;
 
-        const shouldHaveDepartureAndArrival = true; //!update.isCancelled();
+        const shouldHaveDepartureAndArrival = true;
 
         return new StopTimeUpdate({
             stopId,
