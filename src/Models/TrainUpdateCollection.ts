@@ -14,9 +14,8 @@ import FeedMessage = transit_realtime.FeedMessage;
 import Incrementality = transit_realtime.FeedHeader.Incrementality;
 
 export class TrainUpdateCollection extends Collection<FeedEntity> {
-    constructor(items: FeedEntity[]) {
-        super(items);
-    }
+
+    private static TrainUpdatesWithCustomTripId: TrainUpdate[] = [];
 
     /**
      * Converts a collection of database train updates to a collection of TrainUpdate objects.
@@ -24,11 +23,75 @@ export class TrainUpdateCollection extends Collection<FeedEntity> {
      * @returns {TrainUpdateCollection} The converted TrainUpdateCollection.
      */
     public static fromDatabaseResult(updates: IDatabaseRitInfoUpdate[]): TrainUpdateCollection {
-        return new TrainUpdateCollection(
-            updates.map(
-                update => TrainUpdate.fromRitInfoUpdate(update)?.toFeedEntity()
-            ).filter(update => !!update) as FeedEntity[]
+        const trainUpdates = updates.map(
+            update => {
+                const trainUpdate = TrainUpdate.fromRitInfoUpdate(update);
+
+                if(trainUpdate) {
+                    //If the train update has a custom trip ID, add it to the TrainUpdatesWithCustomTripId array.
+                    //We do this so we can check if this update is there the next iteration as well, if not, we add a new stop time update
+                    //that cancels the trip.
+                    if(trainUpdate.hasCustomTripId && !this.TrainUpdatesWithCustomTripId.find(u => u.trip.tripId == trainUpdate.trip.tripId)) {
+                        this.TrainUpdatesWithCustomTripId.push(trainUpdate);
+                    }
+
+                    return trainUpdate;
+                }
+            }
+        ).filter(update => !!update) as TrainUpdate[];
+
+        const collection = new TrainUpdateCollection(
+            trainUpdates.map(
+                update => update.toFeedEntity()
+            )
         );
+
+        const trainUpdatesNotFound = TrainUpdateCollection.checkForRemovedUpdatesWithCustomTripId(trainUpdates)
+
+        console.info(`[TrainUpdateCollection] Found ${trainUpdatesNotFound.length} updates that were not found in the current collection of size ${this.TrainUpdatesWithCustomTripId.length}. Adding them as cancelled trips.`);
+        console.info(`[TrainUpdateCollection] ${trainUpdatesNotFound.map(update => update.trip.tripId).join(', ')}`)
+
+        collection.addDeletedUpdates(trainUpdatesNotFound);
+
+        return collection;
+    }
+
+    /**
+     * Adds the updates to the collection and marks them as deleted.
+     * Removes the updates that were marked for deletion from the TrainUpdatesWithCustomTripId array.
+     * @param trainUpdates The updates to add.
+     * @private
+     */
+    private addDeletedUpdates(trainUpdates: TrainUpdate[]) {
+        for(const deletedUpdate of trainUpdates) {
+            deletedUpdate.markAsDeleted();
+        }
+
+        this.push(...trainUpdates.map(trainUpdate => trainUpdate.toFeedEntity()));
+        console.info(`[TrainUpdateCollection | AddDeletedUpdates] Pushed ${trainUpdates.length} deleted updates to collection and marked them for removal.`);
+
+        const lengthBefore = TrainUpdateCollection.TrainUpdatesWithCustomTripId.length;
+
+        //Remove the updates from the TrainUpdatesWithCustomTripId array
+        TrainUpdateCollection.TrainUpdatesWithCustomTripId = TrainUpdateCollection.TrainUpdatesWithCustomTripId.filter(update => !trainUpdates.find(u => u.trip.tripId == update.trip.tripId));
+
+        const lengthAfter = TrainUpdateCollection.TrainUpdatesWithCustomTripId.length;
+        console.info(`[TrainUpdateCollection | AddDeletedUpdates] Removed ${lengthBefore - lengthAfter} updates from the TrainUpdatesWithCustomTripId array.`);
+    }
+
+    /**
+     * Checks if there are any updates with a custom trip ID that have been removed.
+     * (So if there is an update with a custom trip ID in the TrainUpdatesWithCustomTripId array, but not in the current collection)
+     * @return {TrainUpdate[]} The removed updates.
+     */
+    private static checkForRemovedUpdatesWithCustomTripId(collectionToCheckAgainst: TrainUpdate[]): TrainUpdate[] {
+        const removedUpdates: TrainUpdate[] = [];
+
+        this.TrainUpdatesWithCustomTripId.forEach(update => {
+            if(!collectionToCheckAgainst.find(u => u.trip.tripId == update.trip.tripId))
+                removedUpdates.push(update);
+        })
+        return removedUpdates;
     }
 
     /**
