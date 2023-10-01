@@ -4,35 +4,41 @@
  * Questions? Email: tristantriest@gmail.com
  */
 
-import { transit_realtime } from 'gtfs-realtime-bindings';
-import ITripUpdate = transit_realtime.ITripUpdate;
-import ITripDescriptor = transit_realtime.ITripDescriptor;
-import IStopTimeUpdate = transit_realtime.TripUpdate.IStopTimeUpdate;
+import { transit_realtime } from '../Compiled/gtfs-realtime';
+import TripDescriptor = transit_realtime.TripDescriptor;
 import {IDatabaseRitInfoUpdate} from "../Interfaces/DatabaseRitInfoUpdate";
 import {RitInfoUpdate} from "./RitInfoUpdate";
 import ScheduleRelationship = transit_realtime.TripDescriptor.ScheduleRelationship;
 import FeedEntity = transit_realtime.FeedEntity;
+import TripUpdate = transit_realtime.TripUpdate;
+import {transit_realtime as transit_realtime_extended } from "../Compiled/mfdz-realtime-extensions";
+import TripDescriptorExtension = transit_realtime_extended.TripDescriptorExtension;
+import {debug} from "util";
 
-export class TrainUpdate implements ITripUpdate {
-    trip: ITripDescriptor & { shapeId?: string };
-    stopTimeUpdate: IStopTimeUpdate[];
-
-    hasCustomTripId: boolean = false;
-
-    constructor(tripUpdate: ITripUpdate & { hasCustomTripId: boolean, trip: ITripDescriptor & { shapeId?: string }}) {
-        Object.assign(this, tripUpdate);
+export class TrainUpdate extends TripUpdate {
+    constructor(tripUpdate: TripUpdate, private readonly shape_id: string | undefined) {
+        super(tripUpdate);
     }
 
     public static fromRitInfoUpdate(infoPlusTripUpdate: IDatabaseRitInfoUpdate): TrainUpdate | null {
+        if(infoPlusTripUpdate.tripId == 165686422) {
+            debugger;
+        }
+
         const createdTrip = new RitInfoUpdate(infoPlusTripUpdate);
 
         const { routeId, startTime, startDate, directionId, isCancelled, isAdded, timestamp, shapeId, hadChangedStops, hadPlatformChange, hasChangedTrip, isSpecialTrain } = createdTrip;
         let { tripId, stopTimeUpdates } = createdTrip;
 
+
+
         let customTripId = false;
 
         if(!tripId) {
             tripId = `${infoPlusTripUpdate.trainNumber}_${infoPlusTripUpdate.trainType}_${infoPlusTripUpdate.agency}`;
+
+            console.info(`[TrainUpdate] Trip ${tripId} had no tripId. Using custom tripId: ${tripId}`)
+
             customTripId = true;
         }
 
@@ -60,7 +66,7 @@ export class TrainUpdate implements ITripUpdate {
             //For these special trains there can be duplicate stops, so we need to remove them. Only keep one stop with the same stopId.
             stopTimeUpdates = stopTimeUpdates.filter((stopTimeUpdate, index, self) =>
                 index === self.findIndex((t) => (
-                    t.stopId === stopTimeUpdate.stopId
+                    t.stop_id === stopTimeUpdate.stop_id
                 ))
             )
         }
@@ -86,23 +92,25 @@ export class TrainUpdate implements ITripUpdate {
             return null;
 
         if (shouldRemoveSkippedStops)
-            stopTimeUpdates = stopTimeUpdates.filter(stopTimeUpdate => stopTimeUpdate.scheduleRelationship !== transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SKIPPED);
+            stopTimeUpdates = stopTimeUpdates.filter(stopTimeUpdate => stopTimeUpdate.schedule_relationship !== transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SKIPPED);
+
+        const tripDescriptor: TripDescriptor = TripDescriptor.fromObject({
+            trip_id: tripId,
+            route_id: routeId,
+            start_time: startTime,
+            start_date: startDate,
+            direction_id: directionId,
+            schedule_relationship: scheduleRelationship,
+        });
 
 
-        return new TrainUpdate({
-            trip: {
-                tripId,
-                routeId,
-                startTime,
-                startDate,
-                directionId,
-                scheduleRelationship,
-                shapeId: shapeId ?? undefined
-            },
-            stopTimeUpdate: !isCancelled ? stopTimeUpdates : undefined,
-            timestamp: timestamp,
-            hasCustomTripId: customTripId
+        const tripUpdate = TripUpdate.fromObject({
+            trip: tripDescriptor,
+            stop_time_update: !isCancelled ? stopTimeUpdates : [],
+            timestamp: timestamp
         })
+
+        return new TrainUpdate(tripUpdate, shapeId)
     }
 
     /**
@@ -120,10 +128,15 @@ export class TrainUpdate implements ITripUpdate {
      * @returns {FeedEntity} The converted FeedEntity.
      */
     public toFeedEntity(): FeedEntity {
-        return new FeedEntity({
-            tripUpdate: this,
-            id: this.trip.tripId ?? Date.now().toString()
-        })
+        return FeedEntity.fromObject(
+            {
+                id: this.trip.trip_id + '_' + this.trip.start_date,
+                trip_update: this,
+                shape: {
+                    shape_id: this.shape_id
+                }
+            }
+        )
     }
 }
 

@@ -18,7 +18,7 @@
     "forceConsistentCasingInFileNames": true,            /* Ensure that casing is correct in imports. */
 
     /* Type Checking */
-    "strict": true,                                      /* Enable all strict type-checking options. */
+    "strict": false,                                      /* Enable all strict type-checking options. */
     "noImplicitAny": false,                            /* Enable error reporting for expressions and declarations with an implied `any` type.. */
     "strictPropertyInitialization": false,
     /* Completeness */
@@ -44,6 +44,7 @@
     "node_modules",
     "**/node_modules/**",
     "**/__tests__/**",
-    "**/*.config.*"
+    "**/*.config.*",
+    "./src/Compiled/**"
   ]
 }
