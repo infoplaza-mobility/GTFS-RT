@@ -9,6 +9,9 @@ import {TrainUpdateCollection} from "../Models/TrainUpdateCollection";
 import {transit_realtime as extended_transit_realtime} from "../Compiled/mfdz-realtime-extensions";
 import { File } from "../Models/General/File";
 import { PassTimesRepository } from "../Repositories/PasstimesRepository";
+import { TripUpdateCollection } from "../Models/TripUpdateCollection";
+import {TripIdWithDate} from "../Interfaces/TVVManager";
+
 import {transit_realtime} from "../Compiled/gtfs-realtime";
 import FeedMessage = transit_realtime.FeedMessage;
 import FeedEntity = transit_realtime.FeedEntity;
@@ -18,7 +21,7 @@ export class FeedManager {
     private static _infoplusRepository: InfoplusRepository = new InfoplusRepository();
     private static _passtimesRepository: PassTimesRepository = new PassTimesRepository();
 
-    public static async updateTrainFeed(): Promise<void> {
+    public static async updateTrainFeed(tripIdsToRemove: TripIdWithDate[]): Promise<void> {
         console.time('updateTrainFeed');
         console.log('Updating train feed...')
         //Get the current operationDate in YYYY-MM-DD format
@@ -27,6 +30,8 @@ export class FeedManager {
         const trainUpdates = await this._infoplusRepository.getCurrentRealtimeTripUpdates(currentOperationDate);
 
         const trainUpdateCollection = TrainUpdateCollection.fromDatabaseResult(trainUpdates);
+
+        trainUpdateCollection.applyRemovals(tripIdsToRemove);
 
         const trainUpdateFeed: FeedMessage = trainUpdateCollection.toFeedMessage();
 

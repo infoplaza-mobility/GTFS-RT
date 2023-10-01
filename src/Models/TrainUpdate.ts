@@ -10,6 +10,8 @@ import {IDatabaseRitInfoUpdate} from "../Interfaces/DatabaseRitInfoUpdate";
 import {RitInfoUpdate} from "./RitInfoUpdate";
 import ScheduleRelationship = transit_realtime.TripDescriptor.ScheduleRelationship;
 import FeedEntity = transit_realtime.FeedEntity;
+import {TripIdWithDate} from "../Interfaces/TVVManager";
+
 import TripUpdate = transit_realtime.TripUpdate;
 import {transit_realtime as transit_realtime_extended } from "../Compiled/mfdz-realtime-extensions";
 import TripDescriptorExtension = transit_realtime_extended.TripDescriptorExtension;
@@ -21,16 +23,10 @@ export class TrainUpdate extends TripUpdate {
     }
 
     public static fromRitInfoUpdate(infoPlusTripUpdate: IDatabaseRitInfoUpdate): TrainUpdate | null {
-        if(infoPlusTripUpdate.tripId == 165686422) {
-            debugger;
-        }
-
         const createdTrip = new RitInfoUpdate(infoPlusTripUpdate);
 
         const { routeId, startTime, startDate, directionId, isCancelled, isAdded, timestamp, shapeId, hadChangedStops, hadPlatformChange, hasChangedTrip, isSpecialTrain } = createdTrip;
         let { tripId, stopTimeUpdates } = createdTrip;
-
-
 
         let customTripId = false;
 
@@ -114,13 +110,29 @@ export class TrainUpdate extends TripUpdate {
     }
 
     /**
+     * Will create a TrainUpdate with a DELETE schedule relationship for the given tripId.
+     * @param tripId The tripId to create the TrainUpdate for.
+     */
+    public static fromTripId(tripId: TripIdWithDate): TrainUpdate {
+        return new TrainUpdate({
+            trip: {
+                trip_id: tripId.tripId.toString(),
+                schedule_relationship: ScheduleRelationship.CANCELED,
+                start_time: tripId.operationDate.replaceAll('-', ''),
+            },
+            hasCustomTripId: false,
+            stopTimeUpdate: []
+        }, undefined)
+    }
+
+    /**
      * Marks this TrainUpdate as deleted, by setting the schedule relationship to DELETED (or CANCELED).
      *
      * @modifies this.trip.scheduleRelationShip
      */
     public markAsDeleted() {
-        this.trip.scheduleRelationship = ScheduleRelationship.CANCELED;
-        this.stopTimeUpdate = [];
+        this.trip.schedule_relationship = ScheduleRelationship.CANCELED;
+        this.stop_time_update = [];
     }
 
     /**
