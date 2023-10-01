@@ -84,8 +84,6 @@ export class TrainUpdateCollection extends Collection<FeedEntity> {
         for(const tripId of tripIdsToRemove) {
             const update = TrainUpdate.fromTripId(tripId);
 
-            const entity = update.toFeedEntity();
-
             this.push(update.toFeedEntity());
         }
     }
