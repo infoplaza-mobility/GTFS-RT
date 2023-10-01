@@ -12,6 +12,7 @@ import Long from "long";
 import FeedEntity = transit_realtime.FeedEntity;
 import FeedMessage = transit_realtime.FeedMessage;
 import Incrementality = transit_realtime.FeedHeader.Incrementality;
+import {TripIdWithDate} from "../Interfaces/TVVManager";
 
 export class TrainUpdateCollection extends Collection<FeedEntity> {
 
@@ -77,6 +78,17 @@ export class TrainUpdateCollection extends Collection<FeedEntity> {
 
         const lengthAfter = TrainUpdateCollection.TrainUpdatesWithCustomTripId.length;
         console.info(`[TrainUpdateCollection | AddDeletedUpdates] Removed ${lengthBefore - lengthAfter} updates from the TrainUpdatesWithCustomTripId array.`);
+    }
+
+    public applyRemovals(tripIdsToRemove: TripIdWithDate[]) {
+        console.log(`[TrainUpdateCollection | applyRemovals] Applying ${tripIdsToRemove.length} removals.`)
+        for(const tripId of tripIdsToRemove) {
+            const update = TrainUpdate.fromTripId(tripId);
+
+            const entity = update.toFeedEntity();
+
+            this.push(update.toFeedEntity());
+        }
     }
 
     /**

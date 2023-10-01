@@ -12,6 +12,7 @@ import {IDatabaseRitInfoUpdate} from "../Interfaces/DatabaseRitInfoUpdate";
 import {RitInfoUpdate} from "./RitInfoUpdate";
 import ScheduleRelationship = transit_realtime.TripDescriptor.ScheduleRelationship;
 import FeedEntity = transit_realtime.FeedEntity;
+import {TripIdWithDate} from "../Interfaces/TVVManager";
 
 export class TrainUpdate implements ITripUpdate {
     trip: ITripDescriptor & { shapeId?: string };
@@ -102,6 +103,22 @@ export class TrainUpdate implements ITripUpdate {
             stopTimeUpdate: !isCancelled ? stopTimeUpdates : undefined,
             timestamp: timestamp,
             hasCustomTripId: customTripId
+        })
+    }
+
+    /**
+     * Will create a TrainUpdate with a DELETE schedule relationship for the given tripId.
+     * @param tripId The tripId to create the TrainUpdate for.
+     */
+    public static fromTripId(tripId: TripIdWithDate): TrainUpdate {
+        return new TrainUpdate({
+            trip: {
+                tripId: tripId.tripId.toString(),
+                scheduleRelationship: ScheduleRelationship.CANCELED,
+                startTime: tripId.operationDate.replaceAll('-', ''),
+            },
+            hasCustomTripId: false,
+            stopTimeUpdate: []
         })
     }
 
