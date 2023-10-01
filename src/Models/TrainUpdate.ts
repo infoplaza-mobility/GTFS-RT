@@ -16,8 +16,6 @@ import TripDescriptorExtension = transit_realtime_extended.TripDescriptorExtensi
 import {debug} from "util";
 
 export class TrainUpdate extends TripUpdate {
-
-
     constructor(tripUpdate: TripUpdate, private readonly shape_id: string | undefined) {
         super(tripUpdate);
     }
@@ -50,8 +48,8 @@ export class TrainUpdate extends TripUpdate {
 
         if(hasChangedTrip || hadPlatformChange || hadChangedStops) {
 
-            if(hasChangedTrip)
-                console.log(`[TrainUpdate] Trip ${tripId} had a changed trip. Change types: ` + createdTrip.changes!.map(change => change.changeType).join(', '));
+            // if(hasChangedTrip)
+            //     console.log(`[TrainUpdate] Trip ${tripId} had a changed trip. Change types: ` + createdTrip.changes!.map(change => change.changeType).join(', '));
 
             scheduleRelationship = ScheduleRelationship.REPLACEMENT;
             /**
@@ -113,6 +111,16 @@ export class TrainUpdate extends TripUpdate {
         })
 
         return new TrainUpdate(tripUpdate, shapeId)
+    }
+
+    /**
+     * Marks this TrainUpdate as deleted, by setting the schedule relationship to DELETED (or CANCELED).
+     *
+     * @modifies this.trip.scheduleRelationShip
+     */
+    public markAsDeleted() {
+        this.trip.scheduleRelationship = ScheduleRelationship.CANCELED;
+        this.stopTimeUpdate = [];
     }
 
     /**

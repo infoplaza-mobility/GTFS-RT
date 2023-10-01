@@ -55,7 +55,7 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
             transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SKIPPED :
             transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SCHEDULED;
 
-        const shouldHaveDepartureAndArrival = true; //!update.isCancelled();
+        const shouldHaveDepartureAndArrival = true;
 
         return StopTimeUpdate.fromObject({
             stop_id: stopId,
