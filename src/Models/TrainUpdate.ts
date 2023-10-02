@@ -4,7 +4,7 @@
  * Questions? Email: tristantriest@gmail.com
  */
 
-import { transit_realtime } from '../Compiled/gtfs-realtime';
+import {transit_realtime} from '../Compiled/gtfs-realtime';
 import TripDescriptor = transit_realtime.TripDescriptor;
 import {IDatabaseRitInfoUpdate} from "../Interfaces/DatabaseRitInfoUpdate";
 import {RitInfoUpdate} from "./RitInfoUpdate";
@@ -13,28 +13,35 @@ import FeedEntity = transit_realtime.FeedEntity;
 import {TripIdWithDate} from "../Interfaces/TVVManager";
 
 import TripUpdate = transit_realtime.TripUpdate;
-import {transit_realtime as transit_realtime_extended } from "../Compiled/mfdz-realtime-extensions";
-import TripDescriptorExtension = transit_realtime_extended.TripDescriptorExtension;
-import {debug} from "util";
 
 export class TrainUpdate extends TripUpdate {
-    constructor(tripUpdate: TripUpdate, private readonly shape_id: string | undefined) {
+    constructor(tripUpdate: TripUpdate,  private readonly shape_id: string | undefined, public readonly hasCustomTripId: boolean = false) {
         super(tripUpdate);
     }
 
     public static fromRitInfoUpdate(infoPlusTripUpdate: IDatabaseRitInfoUpdate): TrainUpdate | null {
         const createdTrip = new RitInfoUpdate(infoPlusTripUpdate);
 
-        const { routeId, startTime, startDate, directionId, isCancelled, isAdded, timestamp, shapeId, hadChangedStops, hadPlatformChange, hasChangedTrip, isSpecialTrain } = createdTrip;
-        let { tripId, stopTimeUpdates } = createdTrip;
+        const {
+            routeId,
+            startTime,
+            startDate,
+            directionId,
+            isCancelled,
+            isAdded,
+            timestamp,
+            shapeId,
+            hadChangedStops,
+            hadPlatformChange,
+            hasChangedTrip,
+            isSpecialTrain
+        } = createdTrip;
+        let {tripId, stopTimeUpdates} = createdTrip;
 
         let customTripId = false;
 
-        if(!tripId) {
+        if (!tripId) {
             tripId = `${infoPlusTripUpdate.trainNumber}_${infoPlusTripUpdate.trainType}_${infoPlusTripUpdate.agency}`;
-
-            console.info(`[TrainUpdate] Trip ${tripId} had no tripId. Using custom tripId: ${tripId}`)
-
             customTripId = true;
         }
 
@@ -42,7 +49,7 @@ export class TrainUpdate extends TripUpdate {
 
         let shouldRemoveSkippedStops = false;
 
-        if(hasChangedTrip || hadPlatformChange || hadChangedStops) {
+        if (hasChangedTrip || hadPlatformChange || hadChangedStops) {
 
             // if(hasChangedTrip)
             //     console.log(`[TrainUpdate] Trip ${tripId} had a changed trip. Change types: ` + createdTrip.changes!.map(change => change.changeType).join(', '));
@@ -56,14 +63,14 @@ export class TrainUpdate extends TripUpdate {
         }
 
         // If this is a special train, we want to mark it as a replacement, as the sequence numbers do not match with the static GTFS.
-        if(isSpecialTrain) {
+        if (isSpecialTrain) {
             scheduleRelationship = ScheduleRelationship.REPLACEMENT;
 
             //For these special trains there can be duplicate stops, so we need to remove them. Only keep one stop with the same stopId.
             stopTimeUpdates = stopTimeUpdates.filter((stopTimeUpdate, index, self) =>
-                index === self.findIndex((t) => (
-                    t.stop_id === stopTimeUpdate.stop_id
-                ))
+                    index === self.findIndex((t) => (
+                        t.stop_id === stopTimeUpdate.stop_id
+                    ))
             )
         }
 
@@ -106,7 +113,7 @@ export class TrainUpdate extends TripUpdate {
             timestamp: timestamp
         })
 
-        return new TrainUpdate(tripUpdate, shapeId)
+        return new TrainUpdate(tripUpdate, shapeId, customTripId)
     }
 
     /**
@@ -114,31 +121,15 @@ export class TrainUpdate extends TripUpdate {
      * @param tripId The tripId to create the TrainUpdate for.
      */
     public static fromTripId(tripId: TripIdWithDate): TrainUpdate {
-        return new TrainUpdate({
-            trip: {
-                trip_id: tripId.tripId.toString(),
-                schedule_relationship: ScheduleRelationship.CANCELED,
-                start_time: tripId.operationDate.replaceAll('-', ''),
-            },
-            hasCustomTripId: false,
-            stopTimeUpdate: []
-        }, undefined)
-    }
-
-    /**
-     * Will create a TrainUpdate with a DELETE schedule relationship for the given tripId.
-     * @param tripId The tripId to create the TrainUpdate for.
-     */
-    public static fromTripId(tripId: TripIdWithDate): TrainUpdate {
-        return new TrainUpdate({
-            trip: {
-                tripId: tripId.tripId.toString(),
-                scheduleRelationship: ScheduleRelationship.CANCELED,
-                startTime: tripId.operationDate.replaceAll('-', ''),
-            },
-            hasCustomTripId: false,
-            stopTimeUpdate: []
-        })
+        return new TrainUpdate(
+            TripUpdate.fromObject({
+                trip: TripDescriptor.fromObject({
+                    trip_id: tripId.tripId.toString(),
+                    schedule_relationship: ScheduleRelationship.CANCELED,
+                    start_date: tripId.operationDate.replaceAll('-', '')
+                }),
+                stop_time_update: []
+            }), undefined)
     }
 
     /**
@@ -147,7 +138,7 @@ export class TrainUpdate extends TripUpdate {
      * @modifies this.trip.scheduleRelationShip
      */
     public markAsDeleted() {
-        this.trip.schedule_relationship = ScheduleRelationship.CANCELED;
+        this.trip.schedule_relationship = ScheduleRelationship.DELETED;
         this.stop_time_update = [];
     }
 
@@ -161,7 +152,8 @@ export class TrainUpdate extends TripUpdate {
                 id: this.trip.trip_id + '_' + this.trip.start_date,
                 trip_update: this,
                 shape: {
-                    shape_id: this.shape_id
+                    shape_id: this.shape_id,
+                    encoded_polyline: undefined
                 }
             }
         )
