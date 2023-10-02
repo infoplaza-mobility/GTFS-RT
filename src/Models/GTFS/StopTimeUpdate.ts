@@ -29,18 +29,19 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
         const departureIsZero = departureTime === 0;
         // If the departure is before the arrival, this must be an error, so we add 1 minute to the arrival time and make it the new departure time.
         if(departureBeforeArrival) {
-            console.log(`[StopTimeUpdate] Departure before arrival (NEGATIVE_DWELL_TIME). Adding 1 minute to the arrival time and setting it as the departure time.`)
             departureTime = arrivalTime + 60;
         }
             
         let departure = StopTimeEvent.fromObject({
             time: !departureIsZero ? departureTime : arrivalTime,
-            delay: departureDelay
+            delay: departureDelay,
+            uncertainty: null
         });
 
-        let arrival = new StopTimeEvent({
+        let arrival = StopTimeEvent.fromObject({
             time: !arrivalIsZero ? arrivalTime : departureTime,
-            delay: arrivalDelay
+            delay: arrivalDelay,
+            uncertainty: null
         });
 
         if(isFirstStop)

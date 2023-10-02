@@ -25,7 +25,7 @@ export namespace transit_realtime {
             pb_1.Message.setWrapperField(this, 1, value);
         }
         get has_header() {
-            return pb_1.Message.getField(this, 1) != null;
+            return pb_1.Message.getField(this, 1);
         }
         get entity() {
             return pb_1.Message.getRepeatedWrapperField(this, FeedEntity, 2) as FeedEntity[];
@@ -48,10 +48,10 @@ export namespace transit_realtime {
                 header?: ReturnType<typeof FeedHeader.prototype.toObject>;
                 entity?: ReturnType<typeof FeedEntity.prototype.toObject>[];
             } = {};
-            if (this.header != null) {
+            if (this.header) {
                 data.header = this.header.toObject();
             }
-            if (this.entity != null) {
+            if (this.entity) {
                 data.entity = this.entity.map((item: FeedEntity) => item.toObject());
             }
             return data;
@@ -102,10 +102,10 @@ export namespace transit_realtime {
             pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], this.#one_of_decls);
             if (!Array.isArray(data) && typeof data == "object") {
                 this.gtfs_realtime_version = data.gtfs_realtime_version;
-                if ("incrementality" in data && data.incrementality != undefined) {
+                if ("incrementality" in data && data.incrementality) {
                     this.incrementality = data.incrementality;
                 }
-                if ("timestamp" in data && data.timestamp != undefined) {
+                if ("timestamp" in data && data.timestamp) {
                     this.timestamp = data.timestamp;
                 }
             }
@@ -117,7 +117,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 1, value);
         }
         get has_gtfs_realtime_version() {
-            return pb_1.Message.getField(this, 1) != null;
+            return pb_1.Message.getField(this, 1);
         }
         get incrementality() {
             return pb_1.Message.getFieldWithDefault(this, 2, FeedHeader.Incrementality.FULL_DATASET) as FeedHeader.Incrementality;
@@ -126,7 +126,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 2, value);
         }
         get has_incrementality() {
-            return pb_1.Message.getField(this, 2) != null;
+            return pb_1.Message.getField(this, 2);
         }
         get timestamp() {
             return pb_1.Message.getFieldWithDefault(this, 3, 0) as number;
@@ -135,7 +135,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 3, value);
         }
         get has_timestamp() {
-            return pb_1.Message.getField(this, 3) != null;
+            return pb_1.Message.getField(this, 3);
         }
         static fromObject(data: {
             gtfs_realtime_version?: string;
@@ -145,10 +145,10 @@ export namespace transit_realtime {
             const message = new FeedHeader({
                 gtfs_realtime_version: data.gtfs_realtime_version
             });
-            if (data.incrementality != null) {
+            if (data.incrementality) {
                 message.incrementality = data.incrementality;
             }
-            if (data.timestamp != null) {
+            if (data.timestamp) {
                 message.timestamp = data.timestamp;
             }
             return message;
@@ -159,13 +159,13 @@ export namespace transit_realtime {
                 incrementality?: FeedHeader.Incrementality;
                 timestamp?: number;
             } = {};
-            if (this.gtfs_realtime_version != null) {
+            if (this.gtfs_realtime_version) {
                 data.gtfs_realtime_version = this.gtfs_realtime_version;
             }
-            if (this.incrementality != null) {
+            if (this.incrementality) {
                 data.incrementality = this.incrementality;
             }
-            if (this.timestamp != null) {
+            if (this.timestamp) {
                 data.timestamp = this.timestamp;
             }
             return data;
@@ -230,19 +230,19 @@ export namespace transit_realtime {
             pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], this.#one_of_decls);
             if (!Array.isArray(data) && typeof data == "object") {
                 this.id = data.id;
-                if ("is_deleted" in data && data.is_deleted != undefined) {
+                if ("is_deleted" in data && data.is_deleted) {
                     this.is_deleted = data.is_deleted;
                 }
-                if ("trip_update" in data && data.trip_update != undefined) {
+                if ("trip_update" in data && data.trip_update) {
                     this.trip_update = data.trip_update;
                 }
-                if ("vehicle" in data && data.vehicle != undefined) {
+                if ("vehicle" in data && data.vehicle) {
                     this.vehicle = data.vehicle;
                 }
-                if ("alert" in data && data.alert != undefined) {
+                if ("alert" in data && data.alert) {
                     this.alert = data.alert;
                 }
-                if ("shape" in data && data.shape != undefined) {
+                if ("shape" in data && data.shape) {
                     this.shape = data.shape;
                 }
             }
@@ -254,7 +254,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 1, value);
         }
         get has_id() {
-            return pb_1.Message.getField(this, 1) != null;
+            return pb_1.Message.getField(this, 1);
         }
         get is_deleted() {
             return pb_1.Message.getFieldWithDefault(this, 2, false) as boolean;
@@ -263,7 +263,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 2, value);
         }
         get has_is_deleted() {
-            return pb_1.Message.getField(this, 2) != null;
+            return pb_1.Message.getField(this, 2);
         }
         get trip_update() {
             return pb_1.Message.getWrapperField(this, TripUpdate, 3) as TripUpdate;
@@ -272,7 +272,7 @@ export namespace transit_realtime {
             pb_1.Message.setWrapperField(this, 3, value);
         }
         get has_trip_update() {
-            return pb_1.Message.getField(this, 3) != null;
+            return pb_1.Message.getField(this, 3);
         }
         get vehicle() {
             return pb_1.Message.getWrapperField(this, VehiclePosition, 4) as VehiclePosition;
@@ -281,7 +281,7 @@ export namespace transit_realtime {
             pb_1.Message.setWrapperField(this, 4, value);
         }
         get has_vehicle() {
-            return pb_1.Message.getField(this, 4) != null;
+            return pb_1.Message.getField(this, 4);
         }
         get alert() {
             return pb_1.Message.getWrapperField(this, Alert, 5) as Alert;
@@ -290,7 +290,7 @@ export namespace transit_realtime {
             pb_1.Message.setWrapperField(this, 5, value);
         }
         get has_alert() {
-            return pb_1.Message.getField(this, 5) != null;
+            return pb_1.Message.getField(this, 5);
         }
         get shape() {
             return pb_1.Message.getWrapperField(this, Shape, 6) as Shape;
@@ -299,7 +299,7 @@ export namespace transit_realtime {
             pb_1.Message.setWrapperField(this, 6, value);
         }
         get has_shape() {
-            return pb_1.Message.getField(this, 6) != null;
+            return pb_1.Message.getField(this, 6);
         }
         static fromObject(data: {
             id?: string;
@@ -312,19 +312,19 @@ export namespace transit_realtime {
             const message = new FeedEntity({
                 id: data.id
             });
-            if (data.is_deleted != null) {
+            if (data.is_deleted) {
                 message.is_deleted = data.is_deleted;
             }
-            if (data.trip_update != null) {
+            if (data.trip_update) {
                 message.trip_update = TripUpdate.fromObject(data.trip_update);
             }
-            if (data.vehicle != null) {
+            if (data.vehicle) {
                 message.vehicle = VehiclePosition.fromObject(data.vehicle);
             }
-            if (data.alert != null) {
+            if (data.alert) {
                 message.alert = Alert.fromObject(data.alert);
             }
-            if (data.shape != null) {
+            if (data.shape) {
                 message.shape = Shape.fromObject(data.shape);
             }
             return message;
@@ -338,22 +338,22 @@ export namespace transit_realtime {
                 alert?: ReturnType<typeof Alert.prototype.toObject>;
                 shape?: ReturnType<typeof Shape.prototype.toObject>;
             } = {};
-            if (this.id != null) {
+            if (this.id) {
                 data.id = this.id;
             }
-            if (this.is_deleted != null) {
+            if (this.is_deleted) {
                 data.is_deleted = this.is_deleted;
             }
-            if (this.trip_update != null) {
+            if (this.trip_update) {
                 data.trip_update = this.trip_update.toObject();
             }
-            if (this.vehicle != null) {
+            if (this.vehicle) {
                 data.vehicle = this.vehicle.toObject();
             }
-            if (this.alert != null) {
+            if (this.alert) {
                 data.alert = this.alert.toObject();
             }
-            if (this.shape != null) {
+            if (this.shape) {
                 data.shape = this.shape.toObject();
             }
             return data;
@@ -427,17 +427,17 @@ export namespace transit_realtime {
             pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [2], this.#one_of_decls);
             if (!Array.isArray(data) && typeof data == "object") {
                 this.trip = data.trip;
-                if ("vehicle" in data && data.vehicle != undefined) {
+                if ("vehicle" in data && data.vehicle) {
                     this.vehicle = data.vehicle;
                 }
                 this.stop_time_update = data.stop_time_update;
-                if ("timestamp" in data && data.timestamp != undefined) {
+                if ("timestamp" in data && data.timestamp) {
                     this.timestamp = data.timestamp;
                 }
-                if ("delay" in data && data.delay != undefined) {
+                if ("delay" in data && (data.delay || data.delay === 0)) {
                     this.delay = data.delay;
                 }
-                if ("trip_properties" in data && data.trip_properties != undefined) {
+                if ("trip_properties" in data && data.trip_properties) {
                     this.trip_properties = data.trip_properties;
                 }
             }
@@ -449,7 +449,7 @@ export namespace transit_realtime {
             pb_1.Message.setWrapperField(this, 1, value);
         }
         get has_trip() {
-            return pb_1.Message.getField(this, 1) != null;
+            return pb_1.Message.getField(this, 1);
         }
         get vehicle() {
             return pb_1.Message.getWrapperField(this, VehicleDescriptor, 3) as VehicleDescriptor;
@@ -458,7 +458,7 @@ export namespace transit_realtime {
             pb_1.Message.setWrapperField(this, 3, value);
         }
         get has_vehicle() {
-            return pb_1.Message.getField(this, 3) != null;
+            return pb_1.Message.getField(this, 3);
         }
         get stop_time_update() {
             return pb_1.Message.getRepeatedWrapperField(this, TripUpdate.StopTimeUpdate, 2) as TripUpdate.StopTimeUpdate[];
@@ -473,7 +473,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 4, value);
         }
         get has_timestamp() {
-            return pb_1.Message.getField(this, 4) != null;
+            return pb_1.Message.getField(this, 4);
         }
         get delay() {
             return pb_1.Message.getFieldWithDefault(this, 5, 0) as number;
@@ -482,7 +482,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 5, value);
         }
         get has_delay() {
-            return pb_1.Message.getField(this, 5) != null;
+            return pb_1.Message.getField(this, 5);
         }
         get trip_properties() {
             return pb_1.Message.getWrapperField(this, TripUpdate.TripProperties, 6) as TripUpdate.TripProperties;
@@ -491,7 +491,7 @@ export namespace transit_realtime {
             pb_1.Message.setWrapperField(this, 6, value);
         }
         get has_trip_properties() {
-            return pb_1.Message.getField(this, 6) != null;
+            return pb_1.Message.getField(this, 6);
         }
         static fromObject(data: {
             trip?: ReturnType<typeof TripDescriptor.prototype.toObject>;
@@ -505,16 +505,16 @@ export namespace transit_realtime {
                 trip: TripDescriptor.fromObject(data.trip),
                 stop_time_update: data.stop_time_update.map(item => TripUpdate.StopTimeUpdate.fromObject(item))
             });
-            if (data.vehicle != null) {
+            if (data.vehicle) {
                 message.vehicle = VehicleDescriptor.fromObject(data.vehicle);
             }
-            if (data.timestamp != null) {
+            if (data.timestamp) {
                 message.timestamp = data.timestamp;
             }
-            if (data.delay != null) {
+            if (data.delay) {
                 message.delay = data.delay;
             }
-            if (data.trip_properties != null) {
+            if (data.trip_properties) {
                 message.trip_properties = TripUpdate.TripProperties.fromObject(data.trip_properties);
             }
             return message;
@@ -528,22 +528,22 @@ export namespace transit_realtime {
                 delay?: number;
                 trip_properties?: ReturnType<typeof TripUpdate.TripProperties.prototype.toObject>;
             } = {};
-            if (this.trip != null) {
+            if (this.trip) {
                 data.trip = this.trip.toObject();
             }
-            if (this.vehicle != null) {
+            if (this.vehicle) {
                 data.vehicle = this.vehicle.toObject();
             }
-            if (this.stop_time_update != null) {
+            if (this.stop_time_update) {
                 data.stop_time_update = this.stop_time_update.map((item: TripUpdate.StopTimeUpdate) => item.toObject());
             }
-            if (this.timestamp != null) {
+            if (this.timestamp) {
                 data.timestamp = this.timestamp;
             }
-            if (this.delay != null) {
+            if ((this.delay || this.delay === 0)) {
                 data.delay = this.delay;
             }
-            if (this.trip_properties != null) {
+            if (this.trip_properties) {
                 data.trip_properties = this.trip_properties.toObject();
             }
             return data;
@@ -614,13 +614,13 @@ export namespace transit_realtime {
                 super();
                 pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], this.#one_of_decls);
                 if (!Array.isArray(data) && typeof data == "object") {
-                    if ("delay" in data && data.delay != undefined) {
+                    if ("delay" in data && (data.delay || data.delay === 0)) {
                         this.delay = data.delay;
                     }
-                    if ("time" in data && data.time != undefined) {
+                    if ("time" in data && data.time) {
                         this.time = data.time;
                     }
-                    if ("uncertainty" in data && data.uncertainty != undefined) {
+                    if ("uncertainty" in data && data.uncertainty) {
                         this.uncertainty = data.uncertainty;
                     }
                 }
@@ -632,7 +632,7 @@ export namespace transit_realtime {
                 pb_1.Message.setField(this, 1, value);
             }
             get has_delay() {
-                return pb_1.Message.getField(this, 1) != null;
+                return pb_1.Message.getField(this, 1);
             }
             get time() {
                 return pb_1.Message.getFieldWithDefault(this, 2, 0) as number;
@@ -641,7 +641,7 @@ export namespace transit_realtime {
                 pb_1.Message.setField(this, 2, value);
             }
             get has_time() {
-                return pb_1.Message.getField(this, 2) != null;
+                return pb_1.Message.getField(this, 2);
             }
             get uncertainty() {
                 return pb_1.Message.getFieldWithDefault(this, 3, 0) as number;
@@ -650,7 +650,7 @@ export namespace transit_realtime {
                 pb_1.Message.setField(this, 3, value);
             }
             get has_uncertainty() {
-                return pb_1.Message.getField(this, 3) != null;
+                return pb_1.Message.getField(this, 3);
             }
             static fromObject(data: {
                 delay?: number;
@@ -658,13 +658,13 @@ export namespace transit_realtime {
                 uncertainty?: number;
             }): StopTimeEvent {
                 const message = new StopTimeEvent({});
-                if (data.delay != null) {
+                if ((data.delay || data.delay === 0)) {
                     message.delay = data.delay;
                 }
-                if (data.time != null) {
+                if (data.time) {
                     message.time = data.time;
                 }
-                if (data.uncertainty != null) {
+                if (data.uncertainty) {
                     message.uncertainty = data.uncertainty;
                 }
                 return message;
@@ -675,13 +675,13 @@ export namespace transit_realtime {
                     time?: number;
                     uncertainty?: number;
                 } = {};
-                if (this.delay != null) {
+                if ((this.delay || this.delay === 0)) {
                     data.delay = this.delay;
                 }
-                if (this.time != null) {
+                if (this.time) {
                     data.time = this.time;
                 }
-                if (this.uncertainty != null) {
+                if (this.uncertainty) {
                     data.uncertainty = this.uncertainty;
                 }
                 return data;
@@ -740,25 +740,25 @@ export namespace transit_realtime {
                 super();
                 pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], this.#one_of_decls);
                 if (!Array.isArray(data) && typeof data == "object") {
-                    if ("stop_sequence" in data && data.stop_sequence != undefined) {
+                    if ("stop_sequence" in data && data.stop_sequence) {
                         this.stop_sequence = data.stop_sequence;
                     }
-                    if ("stop_id" in data && data.stop_id != undefined) {
+                    if ("stop_id" in data && data.stop_id) {
                         this.stop_id = data.stop_id;
                     }
-                    if ("arrival" in data && data.arrival != undefined) {
+                    if ("arrival" in data && data.arrival) {
                         this.arrival = data.arrival;
                     }
-                    if ("departure" in data && data.departure != undefined) {
+                    if ("departure" in data && data.departure) {
                         this.departure = data.departure;
                     }
-                    if ("departure_occupancy_status" in data && data.departure_occupancy_status != undefined) {
+                    if ("departure_occupancy_status" in data && data.departure_occupancy_status) {
                         this.departure_occupancy_status = data.departure_occupancy_status;
                     }
-                    if ("schedule_relationship" in data && data.schedule_relationship != undefined) {
+                    if ("schedule_relationship" in data && (data.schedule_relationship || data.schedule_relationship == 0)) {
                         this.schedule_relationship = data.schedule_relationship;
                     }
-                    if ("stop_time_properties" in data && data.stop_time_properties != undefined) {
+                    if ("stop_time_properties" in data && data.stop_time_properties) {
                         this.stop_time_properties = data.stop_time_properties;
                     }
                 }
@@ -770,7 +770,7 @@ export namespace transit_realtime {
                 pb_1.Message.setField(this, 1, value);
             }
             get has_stop_sequence() {
-                return pb_1.Message.getField(this, 1) != null;
+                return pb_1.Message.getField(this, 1);
             }
             get stop_id() {
                 return pb_1.Message.getFieldWithDefault(this, 4, "") as string;
@@ -779,7 +779,7 @@ export namespace transit_realtime {
                 pb_1.Message.setField(this, 4, value);
             }
             get has_stop_id() {
-                return pb_1.Message.getField(this, 4) != null;
+                return pb_1.Message.getField(this, 4);
             }
             get arrival() {
                 return pb_1.Message.getWrapperField(this, TripUpdate.StopTimeEvent, 2) as TripUpdate.StopTimeEvent;
@@ -788,7 +788,7 @@ export namespace transit_realtime {
                 pb_1.Message.setWrapperField(this, 2, value);
             }
             get has_arrival() {
-                return pb_1.Message.getField(this, 2) != null;
+                return pb_1.Message.getField(this, 2);
             }
             get departure() {
                 return pb_1.Message.getWrapperField(this, TripUpdate.StopTimeEvent, 3) as TripUpdate.StopTimeEvent;
@@ -797,7 +797,7 @@ export namespace transit_realtime {
                 pb_1.Message.setWrapperField(this, 3, value);
             }
             get has_departure() {
-                return pb_1.Message.getField(this, 3) != null;
+                return pb_1.Message.getField(this, 3);
             }
             get departure_occupancy_status() {
                 return pb_1.Message.getFieldWithDefault(this, 7, VehiclePosition.OccupancyStatus.EMPTY) as VehiclePosition.OccupancyStatus;
@@ -806,7 +806,7 @@ export namespace transit_realtime {
                 pb_1.Message.setField(this, 7, value);
             }
             get has_departure_occupancy_status() {
-                return pb_1.Message.getField(this, 7) != null;
+                return pb_1.Message.getField(this, 7);
             }
             get schedule_relationship() {
                 return pb_1.Message.getFieldWithDefault(this, 5, TripUpdate.StopTimeUpdate.ScheduleRelationship.SCHEDULED) as TripUpdate.StopTimeUpdate.ScheduleRelationship;
@@ -815,7 +815,7 @@ export namespace transit_realtime {
                 pb_1.Message.setField(this, 5, value);
             }
             get has_schedule_relationship() {
-                return pb_1.Message.getField(this, 5) != null;
+                return pb_1.Message.getField(this, 5);
             }
             get stop_time_properties() {
                 return pb_1.Message.getWrapperField(this, TripUpdate.StopTimeUpdate.StopTimeProperties, 6) as TripUpdate.StopTimeUpdate.StopTimeProperties;
@@ -824,7 +824,7 @@ export namespace transit_realtime {
                 pb_1.Message.setWrapperField(this, 6, value);
             }
             get has_stop_time_properties() {
-                return pb_1.Message.getField(this, 6) != null;
+                return pb_1.Message.getField(this, 6);
             }
             static fromObject(data: {
                 stop_sequence?: number;
@@ -836,25 +836,25 @@ export namespace transit_realtime {
                 stop_time_properties?: ReturnType<typeof TripUpdate.StopTimeUpdate.StopTimeProperties.prototype.toObject>;
             }): StopTimeUpdate {
                 const message = new StopTimeUpdate({});
-                if (data.stop_sequence != null) {
+                if (data.stop_sequence) {
                     message.stop_sequence = data.stop_sequence;
                 }
-                if (data.stop_id != null) {
+                if (data.stop_id) {
                     message.stop_id = data.stop_id;
                 }
-                if (data.arrival != null) {
+                if (data.arrival) {
                     message.arrival = TripUpdate.StopTimeEvent.fromObject(data.arrival);
                 }
-                if (data.departure != null) {
+                if (data.departure) {
                     message.departure = TripUpdate.StopTimeEvent.fromObject(data.departure);
                 }
-                if (data.departure_occupancy_status != null) {
+                if (data.departure_occupancy_status) {
                     message.departure_occupancy_status = data.departure_occupancy_status;
                 }
-                if (data.schedule_relationship != null) {
+                if ((data.schedule_relationship || data.schedule_relationship == 0)) {
                     message.schedule_relationship = data.schedule_relationship;
                 }
-                if (data.stop_time_properties != null) {
+                if (data.stop_time_properties) {
                     message.stop_time_properties = TripUpdate.StopTimeUpdate.StopTimeProperties.fromObject(data.stop_time_properties);
                 }
                 return message;
@@ -869,25 +869,25 @@ export namespace transit_realtime {
                     schedule_relationship?: TripUpdate.StopTimeUpdate.ScheduleRelationship;
                     stop_time_properties?: ReturnType<typeof TripUpdate.StopTimeUpdate.StopTimeProperties.prototype.toObject>;
                 } = {};
-                if (this.stop_sequence != null) {
+                if (this.stop_sequence) {
                     data.stop_sequence = this.stop_sequence;
                 }
-                if (this.stop_id != null) {
+                if (this.stop_id) {
                     data.stop_id = this.stop_id;
                 }
-                if (this.arrival != null) {
+                if (this.arrival) {
                     data.arrival = this.arrival.toObject();
                 }
-                if (this.departure != null) {
+                if (this.departure) {
                     data.departure = this.departure.toObject();
                 }
-                if (this.departure_occupancy_status != null) {
+                if (this.departure_occupancy_status) {
                     data.departure_occupancy_status = this.departure_occupancy_status;
                 }
-                if (this.schedule_relationship != null) {
+                if ((this.schedule_relationship || this.schedule_relationship == 0)) {
                     data.schedule_relationship = this.schedule_relationship;
                 }
-                if (this.stop_time_properties != null) {
+                if (this.stop_time_properties) {
                     data.stop_time_properties = this.stop_time_properties.toObject();
                 }
                 return data;
@@ -967,7 +967,7 @@ export namespace transit_realtime {
                     super();
                     pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], this.#one_of_decls);
                     if (!Array.isArray(data) && typeof data == "object") {
-                        if ("assigned_stop_id" in data && data.assigned_stop_id != undefined) {
+                        if ("assigned_stop_id" in data && data.assigned_stop_id) {
                             this.assigned_stop_id = data.assigned_stop_id;
                         }
                     }
@@ -979,13 +979,13 @@ export namespace transit_realtime {
                     pb_1.Message.setField(this, 1, value);
                 }
                 get has_assigned_stop_id() {
-                    return pb_1.Message.getField(this, 1) != null;
+                    return pb_1.Message.getField(this, 1);
                 }
                 static fromObject(data: {
                     assigned_stop_id?: string;
                 }): StopTimeProperties {
                     const message = new StopTimeProperties({});
-                    if (data.assigned_stop_id != null) {
+                    if (data.assigned_stop_id) {
                         message.assigned_stop_id = data.assigned_stop_id;
                     }
                     return message;
@@ -994,7 +994,7 @@ export namespace transit_realtime {
                     const data: {
                         assigned_stop_id?: string;
                     } = {};
-                    if (this.assigned_stop_id != null) {
+                    if (this.assigned_stop_id) {
                         data.assigned_stop_id = this.assigned_stop_id;
                     }
                     return data;
@@ -1041,16 +1041,16 @@ export namespace transit_realtime {
                 super();
                 pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], this.#one_of_decls);
                 if (!Array.isArray(data) && typeof data == "object") {
-                    if ("trip_id" in data && data.trip_id != undefined) {
+                    if ("trip_id" in data && data.trip_id) {
                         this.trip_id = data.trip_id;
                     }
-                    if ("start_date" in data && data.start_date != undefined) {
+                    if ("start_date" in data && data.start_date) {
                         this.start_date = data.start_date;
                     }
-                    if ("start_time" in data && data.start_time != undefined) {
+                    if ("start_time" in data && data.start_time) {
                         this.start_time = data.start_time;
                     }
-                    if ("shape_id" in data && data.shape_id != undefined) {
+                    if ("shape_id" in data && data.shape_id) {
                         this.shape_id = data.shape_id;
                     }
                 }
@@ -1062,7 +1062,7 @@ export namespace transit_realtime {
                 pb_1.Message.setField(this, 1, value);
             }
             get has_trip_id() {
-                return pb_1.Message.getField(this, 1) != null;
+                return pb_1.Message.getField(this, 1);
             }
             get start_date() {
                 return pb_1.Message.getFieldWithDefault(this, 2, "") as string;
@@ -1071,7 +1071,7 @@ export namespace transit_realtime {
                 pb_1.Message.setField(this, 2, value);
             }
             get has_start_date() {
-                return pb_1.Message.getField(this, 2) != null;
+                return pb_1.Message.getField(this, 2);
             }
             get start_time() {
                 return pb_1.Message.getFieldWithDefault(this, 3, "") as string;
@@ -1080,7 +1080,7 @@ export namespace transit_realtime {
                 pb_1.Message.setField(this, 3, value);
             }
             get has_start_time() {
-                return pb_1.Message.getField(this, 3) != null;
+                return pb_1.Message.getField(this, 3);
             }
             get shape_id() {
                 return pb_1.Message.getFieldWithDefault(this, 4, "") as string;
@@ -1089,7 +1089,7 @@ export namespace transit_realtime {
                 pb_1.Message.setField(this, 4, value);
             }
             get has_shape_id() {
-                return pb_1.Message.getField(this, 4) != null;
+                return pb_1.Message.getField(this, 4);
             }
             static fromObject(data: {
                 trip_id?: string;
@@ -1098,16 +1098,16 @@ export namespace transit_realtime {
                 shape_id?: string;
             }): TripProperties {
                 const message = new TripProperties({});
-                if (data.trip_id != null) {
+                if (data.trip_id) {
                     message.trip_id = data.trip_id;
                 }
-                if (data.start_date != null) {
+                if (data.start_date) {
                     message.start_date = data.start_date;
                 }
-                if (data.start_time != null) {
+                if (data.start_time) {
                     message.start_time = data.start_time;
                 }
-                if (data.shape_id != null) {
+                if (data.shape_id) {
                     message.shape_id = data.shape_id;
                 }
                 return message;
@@ -1119,16 +1119,16 @@ export namespace transit_realtime {
                     start_time?: string;
                     shape_id?: string;
                 } = {};
-                if (this.trip_id != null) {
+                if (this.trip_id) {
                     data.trip_id = this.trip_id;
                 }
-                if (this.start_date != null) {
+                if (this.start_date) {
                     data.start_date = this.start_date;
                 }
-                if (this.start_time != null) {
+                if (this.start_time) {
                     data.start_time = this.start_time;
                 }
-                if (this.shape_id != null) {
+                if (this.shape_id) {
                     data.shape_id = this.shape_id;
                 }
                 return data;
@@ -1197,34 +1197,34 @@ export namespace transit_realtime {
             super();
             pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [11], this.#one_of_decls);
             if (!Array.isArray(data) && typeof data == "object") {
-                if ("trip" in data && data.trip != undefined) {
+                if ("trip" in data && data.trip) {
                     this.trip = data.trip;
                 }
-                if ("vehicle" in data && data.vehicle != undefined) {
+                if ("vehicle" in data && data.vehicle) {
                     this.vehicle = data.vehicle;
                 }
-                if ("position" in data && data.position != undefined) {
+                if ("position" in data && data.position) {
                     this.position = data.position;
                 }
-                if ("current_stop_sequence" in data && data.current_stop_sequence != undefined) {
+                if ("current_stop_sequence" in data && data.current_stop_sequence) {
                     this.current_stop_sequence = data.current_stop_sequence;
                 }
-                if ("stop_id" in data && data.stop_id != undefined) {
+                if ("stop_id" in data && data.stop_id) {
                     this.stop_id = data.stop_id;
                 }
-                if ("current_status" in data && data.current_status != undefined) {
+                if ("current_status" in data && data.current_status) {
                     this.current_status = data.current_status;
                 }
-                if ("timestamp" in data && data.timestamp != undefined) {
+                if ("timestamp" in data && data.timestamp) {
                     this.timestamp = data.timestamp;
                 }
-                if ("congestion_level" in data && data.congestion_level != undefined) {
+                if ("congestion_level" in data && data.congestion_level) {
                     this.congestion_level = data.congestion_level;
                 }
-                if ("occupancy_status" in data && data.occupancy_status != undefined) {
+                if ("occupancy_status" in data && data.occupancy_status) {
                     this.occupancy_status = data.occupancy_status;
                 }
-                if ("occupancy_percentage" in data && data.occupancy_percentage != undefined) {
+                if ("occupancy_percentage" in data && data.occupancy_percentage) {
                     this.occupancy_percentage = data.occupancy_percentage;
                 }
                 this.multi_carriage_details = data.multi_carriage_details;
@@ -1237,7 +1237,7 @@ export namespace transit_realtime {
             pb_1.Message.setWrapperField(this, 1, value);
         }
         get has_trip() {
-            return pb_1.Message.getField(this, 1) != null;
+            return pb_1.Message.getField(this, 1);
         }
         get vehicle() {
             return pb_1.Message.getWrapperField(this, VehicleDescriptor, 8) as VehicleDescriptor;
@@ -1246,7 +1246,7 @@ export namespace transit_realtime {
             pb_1.Message.setWrapperField(this, 8, value);
         }
         get has_vehicle() {
-            return pb_1.Message.getField(this, 8) != null;
+            return pb_1.Message.getField(this, 8);
         }
         get position() {
             return pb_1.Message.getWrapperField(this, Position, 2) as Position;
@@ -1255,7 +1255,7 @@ export namespace transit_realtime {
             pb_1.Message.setWrapperField(this, 2, value);
         }
         get has_position() {
-            return pb_1.Message.getField(this, 2) != null;
+            return pb_1.Message.getField(this, 2);
         }
         get current_stop_sequence() {
             return pb_1.Message.getFieldWithDefault(this, 3, 0) as number;
@@ -1264,7 +1264,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 3, value);
         }
         get has_current_stop_sequence() {
-            return pb_1.Message.getField(this, 3) != null;
+            return pb_1.Message.getField(this, 3);
         }
         get stop_id() {
             return pb_1.Message.getFieldWithDefault(this, 7, "") as string;
@@ -1273,7 +1273,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 7, value);
         }
         get has_stop_id() {
-            return pb_1.Message.getField(this, 7) != null;
+            return pb_1.Message.getField(this, 7);
         }
         get current_status() {
             return pb_1.Message.getFieldWithDefault(this, 4, VehiclePosition.VehicleStopStatus.IN_TRANSIT_TO) as VehiclePosition.VehicleStopStatus;
@@ -1282,7 +1282,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 4, value);
         }
         get has_current_status() {
-            return pb_1.Message.getField(this, 4) != null;
+            return pb_1.Message.getField(this, 4);
         }
         get timestamp() {
             return pb_1.Message.getFieldWithDefault(this, 5, 0) as number;
@@ -1291,7 +1291,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 5, value);
         }
         get has_timestamp() {
-            return pb_1.Message.getField(this, 5) != null;
+            return pb_1.Message.getField(this, 5);
         }
         get congestion_level() {
             return pb_1.Message.getFieldWithDefault(this, 6, VehiclePosition.CongestionLevel.UNKNOWN_CONGESTION_LEVEL) as VehiclePosition.CongestionLevel;
@@ -1300,7 +1300,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 6, value);
         }
         get has_congestion_level() {
-            return pb_1.Message.getField(this, 6) != null;
+            return pb_1.Message.getField(this, 6);
         }
         get occupancy_status() {
             return pb_1.Message.getFieldWithDefault(this, 9, VehiclePosition.OccupancyStatus.EMPTY) as VehiclePosition.OccupancyStatus;
@@ -1309,7 +1309,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 9, value);
         }
         get has_occupancy_status() {
-            return pb_1.Message.getField(this, 9) != null;
+            return pb_1.Message.getField(this, 9);
         }
         get occupancy_percentage() {
             return pb_1.Message.getFieldWithDefault(this, 10, 0) as number;
@@ -1318,7 +1318,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 10, value);
         }
         get has_occupancy_percentage() {
-            return pb_1.Message.getField(this, 10) != null;
+            return pb_1.Message.getField(this, 10);
         }
         get multi_carriage_details() {
             return pb_1.Message.getRepeatedWrapperField(this, VehiclePosition.CarriageDetails, 11) as VehiclePosition.CarriageDetails[];
@@ -1342,34 +1342,34 @@ export namespace transit_realtime {
             const message = new VehiclePosition({
                 multi_carriage_details: data.multi_carriage_details.map(item => VehiclePosition.CarriageDetails.fromObject(item))
             });
-            if (data.trip != null) {
+            if (data.trip) {
                 message.trip = TripDescriptor.fromObject(data.trip);
             }
-            if (data.vehicle != null) {
+            if (data.vehicle) {
                 message.vehicle = VehicleDescriptor.fromObject(data.vehicle);
             }
-            if (data.position != null) {
+            if (data.position) {
                 message.position = Position.fromObject(data.position);
             }
-            if (data.current_stop_sequence != null) {
+            if (data.current_stop_sequence) {
                 message.current_stop_sequence = data.current_stop_sequence;
             }
-            if (data.stop_id != null) {
+            if (data.stop_id) {
                 message.stop_id = data.stop_id;
             }
-            if (data.current_status != null) {
+            if (data.current_status) {
                 message.current_status = data.current_status;
             }
-            if (data.timestamp != null) {
+            if (data.timestamp) {
                 message.timestamp = data.timestamp;
             }
-            if (data.congestion_level != null) {
+            if (data.congestion_level) {
                 message.congestion_level = data.congestion_level;
             }
-            if (data.occupancy_status != null) {
+            if (data.occupancy_status) {
                 message.occupancy_status = data.occupancy_status;
             }
-            if (data.occupancy_percentage != null) {
+            if (data.occupancy_percentage) {
                 message.occupancy_percentage = data.occupancy_percentage;
             }
             return message;
@@ -1388,37 +1388,37 @@ export namespace transit_realtime {
                 occupancy_percentage?: number;
                 multi_carriage_details?: ReturnType<typeof VehiclePosition.CarriageDetails.prototype.toObject>[];
             } = {};
-            if (this.trip != null) {
+            if (this.trip) {
                 data.trip = this.trip.toObject();
             }
-            if (this.vehicle != null) {
+            if (this.vehicle) {
                 data.vehicle = this.vehicle.toObject();
             }
-            if (this.position != null) {
+            if (this.position) {
                 data.position = this.position.toObject();
             }
-            if (this.current_stop_sequence != null) {
+            if (this.current_stop_sequence) {
                 data.current_stop_sequence = this.current_stop_sequence;
             }
-            if (this.stop_id != null) {
+            if (this.stop_id) {
                 data.stop_id = this.stop_id;
             }
-            if (this.current_status != null) {
+            if (this.current_status) {
                 data.current_status = this.current_status;
             }
-            if (this.timestamp != null) {
+            if (this.timestamp) {
                 data.timestamp = this.timestamp;
             }
-            if (this.congestion_level != null) {
+            if (this.congestion_level) {
                 data.congestion_level = this.congestion_level;
             }
-            if (this.occupancy_status != null) {
+            if (this.occupancy_status) {
                 data.occupancy_status = this.occupancy_status;
             }
-            if (this.occupancy_percentage != null) {
+            if (this.occupancy_percentage) {
                 data.occupancy_percentage = this.occupancy_percentage;
             }
-            if (this.multi_carriage_details != null) {
+            if (this.multi_carriage_details) {
                 data.multi_carriage_details = this.multi_carriage_details.map((item: VehiclePosition.CarriageDetails) => item.toObject());
             }
             return data;
@@ -1539,19 +1539,19 @@ export namespace transit_realtime {
                 super();
                 pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], this.#one_of_decls);
                 if (!Array.isArray(data) && typeof data == "object") {
-                    if ("id" in data && data.id != undefined) {
+                    if ("id" in data && data.id) {
                         this.id = data.id;
                     }
-                    if ("label" in data && data.label != undefined) {
+                    if ("label" in data && data.label) {
                         this.label = data.label;
                     }
-                    if ("occupancy_status" in data && data.occupancy_status != undefined) {
+                    if ("occupancy_status" in data && data.occupancy_status) {
                         this.occupancy_status = data.occupancy_status;
                     }
-                    if ("occupancy_percentage" in data && data.occupancy_percentage != undefined) {
+                    if ("occupancy_percentage" in data && data.occupancy_percentage) {
                         this.occupancy_percentage = data.occupancy_percentage;
                     }
-                    if ("carriage_sequence" in data && data.carriage_sequence != undefined) {
+                    if ("carriage_sequence" in data && data.carriage_sequence) {
                         this.carriage_sequence = data.carriage_sequence;
                     }
                 }
@@ -1563,7 +1563,7 @@ export namespace transit_realtime {
                 pb_1.Message.setField(this, 1, value);
             }
             get has_id() {
-                return pb_1.Message.getField(this, 1) != null;
+                return pb_1.Message.getField(this, 1);
             }
             get label() {
                 return pb_1.Message.getFieldWithDefault(this, 2, "") as string;
@@ -1572,7 +1572,7 @@ export namespace transit_realtime {
                 pb_1.Message.setField(this, 2, value);
             }
             get has_label() {
-                return pb_1.Message.getField(this, 2) != null;
+                return pb_1.Message.getField(this, 2);
             }
             get occupancy_status() {
                 return pb_1.Message.getFieldWithDefault(this, 3, VehiclePosition.OccupancyStatus.NO_DATA_AVAILABLE) as VehiclePosition.OccupancyStatus;
@@ -1581,7 +1581,7 @@ export namespace transit_realtime {
                 pb_1.Message.setField(this, 3, value);
             }
             get has_occupancy_status() {
-                return pb_1.Message.getField(this, 3) != null;
+                return pb_1.Message.getField(this, 3);
             }
             get occupancy_percentage() {
                 return pb_1.Message.getFieldWithDefault(this, 4, -1) as number;
@@ -1590,7 +1590,7 @@ export namespace transit_realtime {
                 pb_1.Message.setField(this, 4, value);
             }
             get has_occupancy_percentage() {
-                return pb_1.Message.getField(this, 4) != null;
+                return pb_1.Message.getField(this, 4);
             }
             get carriage_sequence() {
                 return pb_1.Message.getFieldWithDefault(this, 5, 0) as number;
@@ -1599,7 +1599,7 @@ export namespace transit_realtime {
                 pb_1.Message.setField(this, 5, value);
             }
             get has_carriage_sequence() {
-                return pb_1.Message.getField(this, 5) != null;
+                return pb_1.Message.getField(this, 5);
             }
             static fromObject(data: {
                 id?: string;
@@ -1609,19 +1609,19 @@ export namespace transit_realtime {
                 carriage_sequence?: number;
             }): CarriageDetails {
                 const message = new CarriageDetails({});
-                if (data.id != null) {
+                if (data.id) {
                     message.id = data.id;
                 }
-                if (data.label != null) {
+                if (data.label) {
                     message.label = data.label;
                 }
-                if (data.occupancy_status != null) {
+                if (data.occupancy_status) {
                     message.occupancy_status = data.occupancy_status;
                 }
-                if (data.occupancy_percentage != null) {
+                if (data.occupancy_percentage) {
                     message.occupancy_percentage = data.occupancy_percentage;
                 }
-                if (data.carriage_sequence != null) {
+                if (data.carriage_sequence) {
                     message.carriage_sequence = data.carriage_sequence;
                 }
                 return message;
@@ -1634,19 +1634,19 @@ export namespace transit_realtime {
                     occupancy_percentage?: number;
                     carriage_sequence?: number;
                 } = {};
-                if (this.id != null) {
+                if (this.id) {
                     data.id = this.id;
                 }
-                if (this.label != null) {
+                if (this.label) {
                     data.label = this.label;
                 }
-                if (this.occupancy_status != null) {
+                if (this.occupancy_status) {
                     data.occupancy_status = this.occupancy_status;
                 }
-                if (this.occupancy_percentage != null) {
+                if (this.occupancy_percentage) {
                     data.occupancy_percentage = this.occupancy_percentage;
                 }
-                if (this.carriage_sequence != null) {
+                if (this.carriage_sequence) {
                     data.carriage_sequence = this.carriage_sequence;
                 }
                 return data;
@@ -1725,40 +1725,40 @@ export namespace transit_realtime {
             if (!Array.isArray(data) && typeof data == "object") {
                 this.active_period = data.active_period;
                 this.informed_entity = data.informed_entity;
-                if ("cause" in data && data.cause != undefined) {
+                if ("cause" in data && data.cause) {
                     this.cause = data.cause;
                 }
-                if ("effect" in data && data.effect != undefined) {
+                if ("effect" in data && data.effect) {
                     this.effect = data.effect;
                 }
-                if ("url" in data && data.url != undefined) {
+                if ("url" in data && data.url) {
                     this.url = data.url;
                 }
-                if ("header_text" in data && data.header_text != undefined) {
+                if ("header_text" in data && data.header_text) {
                     this.header_text = data.header_text;
                 }
-                if ("description_text" in data && data.description_text != undefined) {
+                if ("description_text" in data && data.description_text) {
                     this.description_text = data.description_text;
                 }
-                if ("tts_header_text" in data && data.tts_header_text != undefined) {
+                if ("tts_header_text" in data && data.tts_header_text) {
                     this.tts_header_text = data.tts_header_text;
                 }
-                if ("tts_description_text" in data && data.tts_description_text != undefined) {
+                if ("tts_description_text" in data && data.tts_description_text) {
                     this.tts_description_text = data.tts_description_text;
                 }
-                if ("severity_level" in data && data.severity_level != undefined) {
+                if ("severity_level" in data && data.severity_level) {
                     this.severity_level = data.severity_level;
                 }
-                if ("image" in data && data.image != undefined) {
+                if ("image" in data && data.image) {
                     this.image = data.image;
                 }
-                if ("image_alternative_text" in data && data.image_alternative_text != undefined) {
+                if ("image_alternative_text" in data && data.image_alternative_text) {
                     this.image_alternative_text = data.image_alternative_text;
                 }
-                if ("cause_detail" in data && data.cause_detail != undefined) {
+                if ("cause_detail" in data && data.cause_detail) {
                     this.cause_detail = data.cause_detail;
                 }
-                if ("effect_detail" in data && data.effect_detail != undefined) {
+                if ("effect_detail" in data && data.effect_detail) {
                     this.effect_detail = data.effect_detail;
                 }
             }
@@ -1782,7 +1782,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 6, value);
         }
         get has_cause() {
-            return pb_1.Message.getField(this, 6) != null;
+            return pb_1.Message.getField(this, 6);
         }
         get effect() {
             return pb_1.Message.getFieldWithDefault(this, 7, Alert.Effect.UNKNOWN_EFFECT) as Alert.Effect;
@@ -1791,7 +1791,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 7, value);
         }
         get has_effect() {
-            return pb_1.Message.getField(this, 7) != null;
+            return pb_1.Message.getField(this, 7);
         }
         get url() {
             return pb_1.Message.getWrapperField(this, TranslatedString, 8) as TranslatedString;
@@ -1800,7 +1800,7 @@ export namespace transit_realtime {
             pb_1.Message.setWrapperField(this, 8, value);
         }
         get has_url() {
-            return pb_1.Message.getField(this, 8) != null;
+            return pb_1.Message.getField(this, 8);
         }
         get header_text() {
             return pb_1.Message.getWrapperField(this, TranslatedString, 10) as TranslatedString;
@@ -1809,7 +1809,7 @@ export namespace transit_realtime {
             pb_1.Message.setWrapperField(this, 10, value);
         }
         get has_header_text() {
-            return pb_1.Message.getField(this, 10) != null;
+            return pb_1.Message.getField(this, 10);
         }
         get description_text() {
             return pb_1.Message.getWrapperField(this, TranslatedString, 11) as TranslatedString;
@@ -1818,7 +1818,7 @@ export namespace transit_realtime {
             pb_1.Message.setWrapperField(this, 11, value);
         }
         get has_description_text() {
-            return pb_1.Message.getField(this, 11) != null;
+            return pb_1.Message.getField(this, 11);
         }
         get tts_header_text() {
             return pb_1.Message.getWrapperField(this, TranslatedString, 12) as TranslatedString;
@@ -1827,7 +1827,7 @@ export namespace transit_realtime {
             pb_1.Message.setWrapperField(this, 12, value);
         }
         get has_tts_header_text() {
-            return pb_1.Message.getField(this, 12) != null;
+            return pb_1.Message.getField(this, 12);
         }
         get tts_description_text() {
             return pb_1.Message.getWrapperField(this, TranslatedString, 13) as TranslatedString;
@@ -1836,7 +1836,7 @@ export namespace transit_realtime {
             pb_1.Message.setWrapperField(this, 13, value);
         }
         get has_tts_description_text() {
-            return pb_1.Message.getField(this, 13) != null;
+            return pb_1.Message.getField(this, 13);
         }
         get severity_level() {
             return pb_1.Message.getFieldWithDefault(this, 14, Alert.SeverityLevel.UNKNOWN_SEVERITY) as Alert.SeverityLevel;
@@ -1845,7 +1845,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 14, value);
         }
         get has_severity_level() {
-            return pb_1.Message.getField(this, 14) != null;
+            return pb_1.Message.getField(this, 14);
         }
         get image() {
             return pb_1.Message.getWrapperField(this, TranslatedImage, 15) as TranslatedImage;
@@ -1854,7 +1854,7 @@ export namespace transit_realtime {
             pb_1.Message.setWrapperField(this, 15, value);
         }
         get has_image() {
-            return pb_1.Message.getField(this, 15) != null;
+            return pb_1.Message.getField(this, 15);
         }
         get image_alternative_text() {
             return pb_1.Message.getWrapperField(this, TranslatedString, 16) as TranslatedString;
@@ -1863,7 +1863,7 @@ export namespace transit_realtime {
             pb_1.Message.setWrapperField(this, 16, value);
         }
         get has_image_alternative_text() {
-            return pb_1.Message.getField(this, 16) != null;
+            return pb_1.Message.getField(this, 16);
         }
         get cause_detail() {
             return pb_1.Message.getWrapperField(this, TranslatedString, 17) as TranslatedString;
@@ -1872,7 +1872,7 @@ export namespace transit_realtime {
             pb_1.Message.setWrapperField(this, 17, value);
         }
         get has_cause_detail() {
-            return pb_1.Message.getField(this, 17) != null;
+            return pb_1.Message.getField(this, 17);
         }
         get effect_detail() {
             return pb_1.Message.getWrapperField(this, TranslatedString, 18) as TranslatedString;
@@ -1881,7 +1881,7 @@ export namespace transit_realtime {
             pb_1.Message.setWrapperField(this, 18, value);
         }
         get has_effect_detail() {
-            return pb_1.Message.getField(this, 18) != null;
+            return pb_1.Message.getField(this, 18);
         }
         static fromObject(data: {
             active_period?: ReturnType<typeof TimeRange.prototype.toObject>[];
@@ -1903,40 +1903,40 @@ export namespace transit_realtime {
                 active_period: data.active_period.map(item => TimeRange.fromObject(item)),
                 informed_entity: data.informed_entity.map(item => EntitySelector.fromObject(item))
             });
-            if (data.cause != null) {
+            if (data.cause) {
                 message.cause = data.cause;
             }
-            if (data.effect != null) {
+            if (data.effect) {
                 message.effect = data.effect;
             }
-            if (data.url != null) {
+            if (data.url) {
                 message.url = TranslatedString.fromObject(data.url);
             }
-            if (data.header_text != null) {
+            if (data.header_text) {
                 message.header_text = TranslatedString.fromObject(data.header_text);
             }
-            if (data.description_text != null) {
+            if (data.description_text) {
                 message.description_text = TranslatedString.fromObject(data.description_text);
             }
-            if (data.tts_header_text != null) {
+            if (data.tts_header_text) {
                 message.tts_header_text = TranslatedString.fromObject(data.tts_header_text);
             }
-            if (data.tts_description_text != null) {
+            if (data.tts_description_text) {
                 message.tts_description_text = TranslatedString.fromObject(data.tts_description_text);
             }
-            if (data.severity_level != null) {
+            if (data.severity_level) {
                 message.severity_level = data.severity_level;
             }
-            if (data.image != null) {
+            if (data.image) {
                 message.image = TranslatedImage.fromObject(data.image);
             }
-            if (data.image_alternative_text != null) {
+            if (data.image_alternative_text) {
                 message.image_alternative_text = TranslatedString.fromObject(data.image_alternative_text);
             }
-            if (data.cause_detail != null) {
+            if (data.cause_detail) {
                 message.cause_detail = TranslatedString.fromObject(data.cause_detail);
             }
-            if (data.effect_detail != null) {
+            if (data.effect_detail) {
                 message.effect_detail = TranslatedString.fromObject(data.effect_detail);
             }
             return message;
@@ -1958,46 +1958,46 @@ export namespace transit_realtime {
                 cause_detail?: ReturnType<typeof TranslatedString.prototype.toObject>;
                 effect_detail?: ReturnType<typeof TranslatedString.prototype.toObject>;
             } = {};
-            if (this.active_period != null) {
+            if (this.active_period) {
                 data.active_period = this.active_period.map((item: TimeRange) => item.toObject());
             }
-            if (this.informed_entity != null) {
+            if (this.informed_entity) {
                 data.informed_entity = this.informed_entity.map((item: EntitySelector) => item.toObject());
             }
-            if (this.cause != null) {
+            if (this.cause) {
                 data.cause = this.cause;
             }
-            if (this.effect != null) {
+            if (this.effect) {
                 data.effect = this.effect;
             }
-            if (this.url != null) {
+            if (this.url) {
                 data.url = this.url.toObject();
             }
-            if (this.header_text != null) {
+            if (this.header_text) {
                 data.header_text = this.header_text.toObject();
             }
-            if (this.description_text != null) {
+            if (this.description_text) {
                 data.description_text = this.description_text.toObject();
             }
-            if (this.tts_header_text != null) {
+            if (this.tts_header_text) {
                 data.tts_header_text = this.tts_header_text.toObject();
             }
-            if (this.tts_description_text != null) {
+            if (this.tts_description_text) {
                 data.tts_description_text = this.tts_description_text.toObject();
             }
-            if (this.severity_level != null) {
+            if (this.severity_level) {
                 data.severity_level = this.severity_level;
             }
-            if (this.image != null) {
+            if (this.image) {
                 data.image = this.image.toObject();
             }
-            if (this.image_alternative_text != null) {
+            if (this.image_alternative_text) {
                 data.image_alternative_text = this.image_alternative_text.toObject();
             }
-            if (this.cause_detail != null) {
+            if (this.cause_detail) {
                 data.cause_detail = this.cause_detail.toObject();
             }
-            if (this.effect_detail != null) {
+            if (this.effect_detail) {
                 data.effect_detail = this.effect_detail.toObject();
             }
             return data;
@@ -2141,10 +2141,10 @@ export namespace transit_realtime {
             super();
             pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], this.#one_of_decls);
             if (!Array.isArray(data) && typeof data == "object") {
-                if ("start" in data && data.start != undefined) {
+                if ("start" in data && data.start) {
                     this.start = data.start;
                 }
-                if ("end" in data && data.end != undefined) {
+                if ("end" in data && data.end) {
                     this.end = data.end;
                 }
             }
@@ -2156,7 +2156,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 1, value);
         }
         get has_start() {
-            return pb_1.Message.getField(this, 1) != null;
+            return pb_1.Message.getField(this, 1);
         }
         get end() {
             return pb_1.Message.getFieldWithDefault(this, 2, 0) as number;
@@ -2165,17 +2165,17 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 2, value);
         }
         get has_end() {
-            return pb_1.Message.getField(this, 2) != null;
+            return pb_1.Message.getField(this, 2);
         }
         static fromObject(data: {
             start?: number;
             end?: number;
         }): TimeRange {
             const message = new TimeRange({});
-            if (data.start != null) {
+            if (data.start) {
                 message.start = data.start;
             }
-            if (data.end != null) {
+            if (data.end) {
                 message.end = data.end;
             }
             return message;
@@ -2185,10 +2185,10 @@ export namespace transit_realtime {
                 start?: number;
                 end?: number;
             } = {};
-            if (this.start != null) {
+            if (this.start) {
                 data.start = this.start;
             }
-            if (this.end != null) {
+            if (this.end) {
                 data.end = this.end;
             }
             return data;
@@ -2242,13 +2242,13 @@ export namespace transit_realtime {
             if (!Array.isArray(data) && typeof data == "object") {
                 this.latitude = data.latitude;
                 this.longitude = data.longitude;
-                if ("bearing" in data && data.bearing != undefined) {
+                if ("bearing" in data && data.bearing) {
                     this.bearing = data.bearing;
                 }
-                if ("odometer" in data && data.odometer != undefined) {
+                if ("odometer" in data && data.odometer) {
                     this.odometer = data.odometer;
                 }
-                if ("speed" in data && data.speed != undefined) {
+                if ("speed" in data && data.speed) {
                     this.speed = data.speed;
                 }
             }
@@ -2260,7 +2260,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 1, value);
         }
         get has_latitude() {
-            return pb_1.Message.getField(this, 1) != null;
+            return pb_1.Message.getField(this, 1);
         }
         get longitude() {
             return pb_1.Message.getField(this, 2) as number;
@@ -2269,7 +2269,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 2, value);
         }
         get has_longitude() {
-            return pb_1.Message.getField(this, 2) != null;
+            return pb_1.Message.getField(this, 2);
         }
         get bearing() {
             return pb_1.Message.getFieldWithDefault(this, 3, 0) as number;
@@ -2278,7 +2278,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 3, value);
         }
         get has_bearing() {
-            return pb_1.Message.getField(this, 3) != null;
+            return pb_1.Message.getField(this, 3);
         }
         get odometer() {
             return pb_1.Message.getFieldWithDefault(this, 4, 0) as number;
@@ -2287,7 +2287,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 4, value);
         }
         get has_odometer() {
-            return pb_1.Message.getField(this, 4) != null;
+            return pb_1.Message.getField(this, 4);
         }
         get speed() {
             return pb_1.Message.getFieldWithDefault(this, 5, 0) as number;
@@ -2296,7 +2296,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 5, value);
         }
         get has_speed() {
-            return pb_1.Message.getField(this, 5) != null;
+            return pb_1.Message.getField(this, 5);
         }
         static fromObject(data: {
             latitude?: number;
@@ -2309,13 +2309,13 @@ export namespace transit_realtime {
                 latitude: data.latitude,
                 longitude: data.longitude
             });
-            if (data.bearing != null) {
+            if (data.bearing) {
                 message.bearing = data.bearing;
             }
-            if (data.odometer != null) {
+            if (data.odometer) {
                 message.odometer = data.odometer;
             }
-            if (data.speed != null) {
+            if (data.speed) {
                 message.speed = data.speed;
             }
             return message;
@@ -2328,19 +2328,19 @@ export namespace transit_realtime {
                 odometer?: number;
                 speed?: number;
             } = {};
-            if (this.latitude != null) {
+            if (this.latitude) {
                 data.latitude = this.latitude;
             }
-            if (this.longitude != null) {
+            if (this.longitude) {
                 data.longitude = this.longitude;
             }
-            if (this.bearing != null) {
+            if (this.bearing) {
                 data.bearing = this.bearing;
             }
-            if (this.odometer != null) {
+            if (this.odometer) {
                 data.odometer = this.odometer;
             }
-            if (this.speed != null) {
+            if (this.speed) {
                 data.speed = this.speed;
             }
             return data;
@@ -2408,22 +2408,22 @@ export namespace transit_realtime {
             super();
             pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], this.#one_of_decls);
             if (!Array.isArray(data) && typeof data == "object") {
-                if ("trip_id" in data && data.trip_id != undefined) {
+                if ("trip_id" in data && data.trip_id) {
                     this.trip_id = data.trip_id;
                 }
-                if ("route_id" in data && data.route_id != undefined) {
+                if ("route_id" in data && data.route_id) {
                     this.route_id = data.route_id;
                 }
-                if ("direction_id" in data && data.direction_id != undefined) {
+                if ("direction_id" in data && (data.direction_id || data.direction_id == 0)) {
                     this.direction_id = data.direction_id;
                 }
-                if ("start_time" in data && data.start_time != undefined) {
+                if ("start_time" in data && data.start_time) {
                     this.start_time = data.start_time;
                 }
-                if ("start_date" in data && data.start_date != undefined) {
+                if ("start_date" in data && data.start_date) {
                     this.start_date = data.start_date;
                 }
-                if ("schedule_relationship" in data && data.schedule_relationship != undefined) {
+                if ("schedule_relationship" in data && (data.schedule_relationship || data.schedule_relationship == 0)) {
                     this.schedule_relationship = data.schedule_relationship;
                 }
             }
@@ -2435,7 +2435,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 1, value);
         }
         get has_trip_id() {
-            return pb_1.Message.getField(this, 1) != null;
+            return pb_1.Message.getField(this, 1);
         }
         get route_id() {
             return pb_1.Message.getFieldWithDefault(this, 5, "") as string;
@@ -2444,7 +2444,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 5, value);
         }
         get has_route_id() {
-            return pb_1.Message.getField(this, 5) != null;
+            return pb_1.Message.getField(this, 5);
         }
         get direction_id() {
             return pb_1.Message.getFieldWithDefault(this, 6, 0) as number;
@@ -2453,7 +2453,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 6, value);
         }
         get has_direction_id() {
-            return pb_1.Message.getField(this, 6) != null;
+            return pb_1.Message.getField(this, 6);
         }
         get start_time() {
             return pb_1.Message.getFieldWithDefault(this, 2, "") as string;
@@ -2462,7 +2462,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 2, value);
         }
         get has_start_time() {
-            return pb_1.Message.getField(this, 2) != null;
+            return pb_1.Message.getField(this, 2);
         }
         get start_date() {
             return pb_1.Message.getFieldWithDefault(this, 3, "") as string;
@@ -2471,7 +2471,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 3, value);
         }
         get has_start_date() {
-            return pb_1.Message.getField(this, 3) != null;
+            return pb_1.Message.getField(this, 3);
         }
         get schedule_relationship() {
             return pb_1.Message.getFieldWithDefault(this, 4, TripDescriptor.ScheduleRelationship.SCHEDULED) as TripDescriptor.ScheduleRelationship;
@@ -2480,7 +2480,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 4, value);
         }
         get has_schedule_relationship() {
-            return pb_1.Message.getField(this, 4) != null;
+            return pb_1.Message.getField(this, 4);
         }
         static fromObject(data: {
             trip_id?: string;
@@ -2491,22 +2491,22 @@ export namespace transit_realtime {
             schedule_relationship?: TripDescriptor.ScheduleRelationship;
         }): TripDescriptor {
             const message = new TripDescriptor({});
-            if (data.trip_id != null) {
+            if (data.trip_id) {
                 message.trip_id = data.trip_id;
             }
-            if (data.route_id != null) {
+            if (data.route_id) {
                 message.route_id = data.route_id;
             }
-            if (data.direction_id != null) {
+            if ((data.direction_id || data.direction_id == 0)) {
                 message.direction_id = data.direction_id;
             }
-            if (data.start_time != null) {
+            if (data.start_time) {
                 message.start_time = data.start_time;
             }
-            if (data.start_date != null) {
+            if (data.start_date) {
                 message.start_date = data.start_date;
             }
-            if (data.schedule_relationship != null) {
+            if ((data.schedule_relationship || data.schedule_relationship == 0)) {
                 message.schedule_relationship = data.schedule_relationship;
             }
             return message;
@@ -2520,22 +2520,22 @@ export namespace transit_realtime {
                 start_date?: string;
                 schedule_relationship?: TripDescriptor.ScheduleRelationship;
             } = {};
-            if (this.trip_id != null) {
+            if (this.trip_id) {
                 data.trip_id = this.trip_id;
             }
-            if (this.route_id != null) {
+            if (this.route_id) {
                 data.route_id = this.route_id;
             }
-            if (this.direction_id != null) {
+            if ((this.direction_id || this.direction_id == 0)) {
                 data.direction_id = this.direction_id;
             }
-            if (this.start_time != null) {
+            if (this.start_time) {
                 data.start_time = this.start_time;
             }
-            if (this.start_date != null) {
+            if (this.start_date) {
                 data.start_date = this.start_date;
             }
-            if (this.schedule_relationship != null) {
+            if ((this.schedule_relationship || this.schedule_relationship == 0)) {
                 data.schedule_relationship = this.schedule_relationship;
             }
             return data;
@@ -2618,16 +2618,16 @@ export namespace transit_realtime {
             super();
             pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], this.#one_of_decls);
             if (!Array.isArray(data) && typeof data == "object") {
-                if ("id" in data && data.id != undefined) {
+                if ("id" in data && data.id) {
                     this.id = data.id;
                 }
-                if ("label" in data && data.label != undefined) {
+                if ("label" in data && data.label) {
                     this.label = data.label;
                 }
-                if ("license_plate" in data && data.license_plate != undefined) {
+                if ("license_plate" in data && data.license_plate) {
                     this.license_plate = data.license_plate;
                 }
-                if ("wheelchair_accessible" in data && data.wheelchair_accessible != undefined) {
+                if ("wheelchair_accessible" in data && data.wheelchair_accessible) {
                     this.wheelchair_accessible = data.wheelchair_accessible;
                 }
             }
@@ -2639,7 +2639,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 1, value);
         }
         get has_id() {
-            return pb_1.Message.getField(this, 1) != null;
+            return pb_1.Message.getField(this, 1);
         }
         get label() {
             return pb_1.Message.getFieldWithDefault(this, 2, "") as string;
@@ -2648,7 +2648,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 2, value);
         }
         get has_label() {
-            return pb_1.Message.getField(this, 2) != null;
+            return pb_1.Message.getField(this, 2);
         }
         get license_plate() {
             return pb_1.Message.getFieldWithDefault(this, 3, "") as string;
@@ -2657,7 +2657,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 3, value);
         }
         get has_license_plate() {
-            return pb_1.Message.getField(this, 3) != null;
+            return pb_1.Message.getField(this, 3);
         }
         get wheelchair_accessible() {
             return pb_1.Message.getFieldWithDefault(this, 4, VehicleDescriptor.WheelchairAccessible.NO_VALUE) as VehicleDescriptor.WheelchairAccessible;
@@ -2666,7 +2666,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 4, value);
         }
         get has_wheelchair_accessible() {
-            return pb_1.Message.getField(this, 4) != null;
+            return pb_1.Message.getField(this, 4);
         }
         static fromObject(data: {
             id?: string;
@@ -2675,16 +2675,16 @@ export namespace transit_realtime {
             wheelchair_accessible?: VehicleDescriptor.WheelchairAccessible;
         }): VehicleDescriptor {
             const message = new VehicleDescriptor({});
-            if (data.id != null) {
+            if (data.id) {
                 message.id = data.id;
             }
-            if (data.label != null) {
+            if (data.label) {
                 message.label = data.label;
             }
-            if (data.license_plate != null) {
+            if (data.license_plate) {
                 message.license_plate = data.license_plate;
             }
-            if (data.wheelchair_accessible != null) {
+            if (data.wheelchair_accessible) {
                 message.wheelchair_accessible = data.wheelchair_accessible;
             }
             return message;
@@ -2696,16 +2696,16 @@ export namespace transit_realtime {
                 license_plate?: string;
                 wheelchair_accessible?: VehicleDescriptor.WheelchairAccessible;
             } = {};
-            if (this.id != null) {
+            if (this.id) {
                 data.id = this.id;
             }
-            if (this.label != null) {
+            if (this.label) {
                 data.label = this.label;
             }
-            if (this.license_plate != null) {
+            if (this.license_plate) {
                 data.license_plate = this.license_plate;
             }
-            if (this.wheelchair_accessible != null) {
+            if (this.wheelchair_accessible) {
                 data.wheelchair_accessible = this.wheelchair_accessible;
             }
             return data;
@@ -2776,22 +2776,22 @@ export namespace transit_realtime {
             super();
             pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], this.#one_of_decls);
             if (!Array.isArray(data) && typeof data == "object") {
-                if ("agency_id" in data && data.agency_id != undefined) {
+                if ("agency_id" in data && data.agency_id) {
                     this.agency_id = data.agency_id;
                 }
-                if ("route_id" in data && data.route_id != undefined) {
+                if ("route_id" in data && data.route_id) {
                     this.route_id = data.route_id;
                 }
-                if ("route_type" in data && data.route_type != undefined) {
+                if ("route_type" in data && data.route_type) {
                     this.route_type = data.route_type;
                 }
-                if ("trip" in data && data.trip != undefined) {
+                if ("trip" in data && data.trip) {
                     this.trip = data.trip;
                 }
-                if ("stop_id" in data && data.stop_id != undefined) {
+                if ("stop_id" in data && data.stop_id) {
                     this.stop_id = data.stop_id;
                 }
-                if ("direction_id" in data && data.direction_id != undefined) {
+                if ("direction_id" in data && (data.direction_id || data.direction_id == 0)) {
                     this.direction_id = data.direction_id;
                 }
             }
@@ -2803,7 +2803,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 1, value);
         }
         get has_agency_id() {
-            return pb_1.Message.getField(this, 1) != null;
+            return pb_1.Message.getField(this, 1);
         }
         get route_id() {
             return pb_1.Message.getFieldWithDefault(this, 2, "") as string;
@@ -2812,7 +2812,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 2, value);
         }
         get has_route_id() {
-            return pb_1.Message.getField(this, 2) != null;
+            return pb_1.Message.getField(this, 2);
         }
         get route_type() {
             return pb_1.Message.getFieldWithDefault(this, 3, 0) as number;
@@ -2821,7 +2821,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 3, value);
         }
         get has_route_type() {
-            return pb_1.Message.getField(this, 3) != null;
+            return pb_1.Message.getField(this, 3);
         }
         get trip() {
             return pb_1.Message.getWrapperField(this, TripDescriptor, 4) as TripDescriptor;
@@ -2830,7 +2830,7 @@ export namespace transit_realtime {
             pb_1.Message.setWrapperField(this, 4, value);
         }
         get has_trip() {
-            return pb_1.Message.getField(this, 4) != null;
+            return pb_1.Message.getField(this, 4);
         }
         get stop_id() {
             return pb_1.Message.getFieldWithDefault(this, 5, "") as string;
@@ -2839,7 +2839,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 5, value);
         }
         get has_stop_id() {
-            return pb_1.Message.getField(this, 5) != null;
+            return pb_1.Message.getField(this, 5);
         }
         get direction_id() {
             return pb_1.Message.getFieldWithDefault(this, 6, 0) as number;
@@ -2848,7 +2848,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 6, value);
         }
         get has_direction_id() {
-            return pb_1.Message.getField(this, 6) != null;
+            return pb_1.Message.getField(this, 6);
         }
         static fromObject(data: {
             agency_id?: string;
@@ -2859,22 +2859,22 @@ export namespace transit_realtime {
             direction_id?: number;
         }): EntitySelector {
             const message = new EntitySelector({});
-            if (data.agency_id != null) {
+            if (data.agency_id) {
                 message.agency_id = data.agency_id;
             }
-            if (data.route_id != null) {
+            if (data.route_id) {
                 message.route_id = data.route_id;
             }
-            if (data.route_type != null) {
+            if (data.route_type) {
                 message.route_type = data.route_type;
             }
-            if (data.trip != null) {
+            if (data.trip) {
                 message.trip = TripDescriptor.fromObject(data.trip);
             }
-            if (data.stop_id != null) {
+            if (data.stop_id) {
                 message.stop_id = data.stop_id;
             }
-            if (data.direction_id != null) {
+            if ((data.direction_id || data.direction_id == 0)) {
                 message.direction_id = data.direction_id;
             }
             return message;
@@ -2888,22 +2888,22 @@ export namespace transit_realtime {
                 stop_id?: string;
                 direction_id?: number;
             } = {};
-            if (this.agency_id != null) {
+            if (this.agency_id) {
                 data.agency_id = this.agency_id;
             }
-            if (this.route_id != null) {
+            if (this.route_id) {
                 data.route_id = this.route_id;
             }
-            if (this.route_type != null) {
+            if (this.route_type) {
                 data.route_type = this.route_type;
             }
-            if (this.trip != null) {
+            if (this.trip) {
                 data.trip = this.trip.toObject();
             }
-            if (this.stop_id != null) {
+            if (this.stop_id) {
                 data.stop_id = this.stop_id;
             }
-            if (this.direction_id != null) {
+            if ((this.direction_id || this.direction_id == 0)) {
                 data.direction_id = this.direction_id;
             }
             return data;
@@ -2992,7 +2992,7 @@ export namespace transit_realtime {
             const data: {
                 translation?: ReturnType<typeof TranslatedString.Translation.prototype.toObject>[];
             } = {};
-            if (this.translation != null) {
+            if (this.translation) {
                 data.translation = this.translation.map((item: TranslatedString.Translation) => item.toObject());
             }
             return data;
@@ -3038,7 +3038,7 @@ export namespace transit_realtime {
                 pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], this.#one_of_decls);
                 if (!Array.isArray(data) && typeof data == "object") {
                     this.text = data.text;
-                    if ("language" in data && data.language != undefined) {
+                    if ("language" in data && data.language) {
                         this.language = data.language;
                     }
                 }
@@ -3050,7 +3050,7 @@ export namespace transit_realtime {
                 pb_1.Message.setField(this, 1, value);
             }
             get has_text() {
-                return pb_1.Message.getField(this, 1) != null;
+                return pb_1.Message.getField(this, 1);
             }
             get language() {
                 return pb_1.Message.getFieldWithDefault(this, 2, "") as string;
@@ -3059,7 +3059,7 @@ export namespace transit_realtime {
                 pb_1.Message.setField(this, 2, value);
             }
             get has_language() {
-                return pb_1.Message.getField(this, 2) != null;
+                return pb_1.Message.getField(this, 2);
             }
             static fromObject(data: {
                 text?: string;
@@ -3068,7 +3068,7 @@ export namespace transit_realtime {
                 const message = new Translation({
                     text: data.text
                 });
-                if (data.language != null) {
+                if (data.language) {
                     message.language = data.language;
                 }
                 return message;
@@ -3078,10 +3078,10 @@ export namespace transit_realtime {
                     text?: string;
                     language?: string;
                 } = {};
-                if (this.text != null) {
+                if (this.text) {
                     data.text = this.text;
                 }
-                if (this.language != null) {
+                if (this.language) {
                     data.language = this.language;
                 }
                 return data;
@@ -3151,7 +3151,7 @@ export namespace transit_realtime {
             const data: {
                 localized_image?: ReturnType<typeof TranslatedImage.LocalizedImage.prototype.toObject>[];
             } = {};
-            if (this.localized_image != null) {
+            if (this.localized_image) {
                 data.localized_image = this.localized_image.map((item: TranslatedImage.LocalizedImage) => item.toObject());
             }
             return data;
@@ -3199,7 +3199,7 @@ export namespace transit_realtime {
                 if (!Array.isArray(data) && typeof data == "object") {
                     this.url = data.url;
                     this.media_type = data.media_type;
-                    if ("language" in data && data.language != undefined) {
+                    if ("language" in data && data.language) {
                         this.language = data.language;
                     }
                 }
@@ -3211,7 +3211,7 @@ export namespace transit_realtime {
                 pb_1.Message.setField(this, 1, value);
             }
             get has_url() {
-                return pb_1.Message.getField(this, 1) != null;
+                return pb_1.Message.getField(this, 1);
             }
             get media_type() {
                 return pb_1.Message.getField(this, 2) as string;
@@ -3220,7 +3220,7 @@ export namespace transit_realtime {
                 pb_1.Message.setField(this, 2, value);
             }
             get has_media_type() {
-                return pb_1.Message.getField(this, 2) != null;
+                return pb_1.Message.getField(this, 2);
             }
             get language() {
                 return pb_1.Message.getFieldWithDefault(this, 3, "") as string;
@@ -3229,7 +3229,7 @@ export namespace transit_realtime {
                 pb_1.Message.setField(this, 3, value);
             }
             get has_language() {
-                return pb_1.Message.getField(this, 3) != null;
+                return pb_1.Message.getField(this, 3);
             }
             static fromObject(data: {
                 url?: string;
@@ -3240,7 +3240,7 @@ export namespace transit_realtime {
                     url: data.url,
                     media_type: data.media_type
                 });
-                if (data.language != null) {
+                if (data.language) {
                     message.language = data.language;
                 }
                 return message;
@@ -3251,13 +3251,13 @@ export namespace transit_realtime {
                     media_type?: string;
                     language?: string;
                 } = {};
-                if (this.url != null) {
+                if (this.url) {
                     data.url = this.url;
                 }
-                if (this.media_type != null) {
+                if (this.media_type) {
                     data.media_type = this.media_type;
                 }
-                if (this.language != null) {
+                if (this.language) {
                     data.language = this.language;
                 }
                 return data;
@@ -3312,10 +3312,10 @@ export namespace transit_realtime {
             super();
             pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], this.#one_of_decls);
             if (!Array.isArray(data) && typeof data == "object") {
-                if ("shape_id" in data && data.shape_id != undefined) {
+                if ("shape_id" in data && data.shape_id) {
                     this.shape_id = data.shape_id;
                 }
-                if ("encoded_polyline" in data && data.encoded_polyline != undefined) {
+                if ("encoded_polyline" in data && data.encoded_polyline) {
                     this.encoded_polyline = data.encoded_polyline;
                 }
             }
@@ -3327,7 +3327,7 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 1, value);
         }
         get has_shape_id() {
-            return pb_1.Message.getField(this, 1) != null;
+            return pb_1.Message.getField(this, 1);
         }
         get encoded_polyline() {
             return pb_1.Message.getFieldWithDefault(this, 2, "") as string;
@@ -3336,17 +3336,17 @@ export namespace transit_realtime {
             pb_1.Message.setField(this, 2, value);
         }
         get has_encoded_polyline() {
-            return pb_1.Message.getField(this, 2) != null;
+            return pb_1.Message.getField(this, 2);
         }
         static fromObject(data: {
             shape_id?: string;
             encoded_polyline?: string;
         }): Shape {
             const message = new Shape({});
-            if (data.shape_id != null) {
+            if (data.shape_id) {
                 message.shape_id = data.shape_id;
             }
-            if (data.encoded_polyline != null) {
+            if (data.encoded_polyline) {
                 message.encoded_polyline = data.encoded_polyline;
             }
             return message;
@@ -3356,10 +3356,10 @@ export namespace transit_realtime {
                 shape_id?: string;
                 encoded_polyline?: string;
             } = {};
-            if (this.shape_id != null) {
+            if (this.shape_id) {
                 data.shape_id = this.shape_id;
             }
-            if (this.encoded_polyline != null) {
+            if (this.encoded_polyline) {
                 data.encoded_polyline = this.encoded_polyline;
             }
             return data;
