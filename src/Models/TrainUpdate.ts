@@ -126,6 +126,22 @@ export class TrainUpdate extends TripUpdate {
     }
 
     /**
+     * Will create a TrainUpdate with a DELETE schedule relationship for the given tripId.
+     * @param tripId The tripId to create the TrainUpdate for.
+     */
+    public static fromTripId(tripId: TripIdWithDate): TrainUpdate {
+        return new TrainUpdate({
+            trip: {
+                tripId: tripId.tripId.toString(),
+                scheduleRelationship: ScheduleRelationship.CANCELED,
+                startTime: tripId.operationDate.replaceAll('-', ''),
+            },
+            hasCustomTripId: false,
+            stopTimeUpdate: []
+        })
+    }
+
+    /**
      * Marks this TrainUpdate as deleted, by setting the schedule relationship to DELETED (or CANCELED).
      *
      * @modifies this.trip.scheduleRelationShip
