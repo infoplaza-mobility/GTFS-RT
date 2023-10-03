@@ -4,34 +4,43 @@
  * Questions? Email: tristantriest@gmail.com
  */
 
-import { transit_realtime } from 'gtfs-realtime-bindings';
-import ITripUpdate = transit_realtime.ITripUpdate;
-import ITripDescriptor = transit_realtime.ITripDescriptor;
-import IStopTimeUpdate = transit_realtime.TripUpdate.IStopTimeUpdate;
+import {transit_realtime} from '../Compiled/gtfs-realtime';
+import TripDescriptor = transit_realtime.TripDescriptor;
 import {IDatabaseRitInfoUpdate} from "../Interfaces/DatabaseRitInfoUpdate";
 import {RitInfoUpdate} from "./RitInfoUpdate";
 import ScheduleRelationship = transit_realtime.TripDescriptor.ScheduleRelationship;
 import FeedEntity = transit_realtime.FeedEntity;
+import {TripIdWithDate} from "../Interfaces/TVVManager";
 
-export class TrainUpdate implements ITripUpdate {
-    trip: ITripDescriptor & { shapeId?: string };
-    stopTimeUpdate: IStopTimeUpdate[];
+import TripUpdate = transit_realtime.TripUpdate;
 
-    hasCustomTripId: boolean = false;
-
-    constructor(tripUpdate: ITripUpdate & { hasCustomTripId: boolean, trip: ITripDescriptor & { shapeId?: string }}) {
-        Object.assign(this, tripUpdate);
+export class TrainUpdate extends TripUpdate {
+    constructor(tripUpdate: TripUpdate,  private readonly shape_id: string | undefined, public readonly hasCustomTripId: boolean = false) {
+        super(tripUpdate);
     }
 
     public static fromRitInfoUpdate(infoPlusTripUpdate: IDatabaseRitInfoUpdate): TrainUpdate | null {
         const createdTrip = new RitInfoUpdate(infoPlusTripUpdate);
 
-        const { routeId, startTime, startDate, directionId, isCancelled, isAdded, timestamp, shapeId, hadChangedStops, hadPlatformChange, hasChangedTrip, isSpecialTrain } = createdTrip;
-        let { tripId, stopTimeUpdates } = createdTrip;
+        const {
+            routeId,
+            startTime,
+            startDate,
+            directionId,
+            isCancelled,
+            isAdded,
+            timestamp,
+            shapeId,
+            hadChangedStops,
+            hadPlatformChange,
+            hasChangedTrip,
+            isSpecialTrain
+        } = createdTrip;
+        let {tripId, stopTimeUpdates} = createdTrip;
 
         let customTripId = false;
 
-        if(!tripId) {
+        if (!tripId) {
             tripId = `${infoPlusTripUpdate.trainNumber}_${infoPlusTripUpdate.trainType}_${infoPlusTripUpdate.agency}`;
             customTripId = true;
         }
@@ -40,7 +49,7 @@ export class TrainUpdate implements ITripUpdate {
 
         let shouldRemoveSkippedStops = false;
 
-        if(hasChangedTrip || hadPlatformChange || hadChangedStops) {
+        if (hasChangedTrip || hadPlatformChange || hadChangedStops) {
 
             // if(hasChangedTrip)
             //     console.log(`[TrainUpdate] Trip ${tripId} had a changed trip. Change types: ` + createdTrip.changes!.map(change => change.changeType).join(', '));
@@ -54,14 +63,14 @@ export class TrainUpdate implements ITripUpdate {
         }
 
         // If this is a special train, we want to mark it as a replacement, as the sequence numbers do not match with the static GTFS.
-        if(isSpecialTrain) {
+        if (isSpecialTrain) {
             scheduleRelationship = ScheduleRelationship.REPLACEMENT;
 
             //For these special trains there can be duplicate stops, so we need to remove them. Only keep one stop with the same stopId.
             stopTimeUpdates = stopTimeUpdates.filter((stopTimeUpdate, index, self) =>
-                index === self.findIndex((t) => (
-                    t.stopId === stopTimeUpdate.stopId
-                ))
+                    index === self.findIndex((t) => (
+                        t.stop_id === stopTimeUpdate.stop_id
+                    ))
             )
         }
 
@@ -86,23 +95,41 @@ export class TrainUpdate implements ITripUpdate {
             return null;
 
         if (shouldRemoveSkippedStops)
-            stopTimeUpdates = stopTimeUpdates.filter(stopTimeUpdate => stopTimeUpdate.scheduleRelationship !== transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SKIPPED);
+            stopTimeUpdates = stopTimeUpdates.filter(stopTimeUpdate => stopTimeUpdate.schedule_relationship !== transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SKIPPED);
+
+        const tripDescriptor: TripDescriptor = TripDescriptor.fromObject({
+            trip_id: tripId,
+            route_id: routeId,
+            start_time: startTime,
+            start_date: startDate,
+            direction_id: directionId,
+            schedule_relationship: scheduleRelationship,
+        });
 
 
-        return new TrainUpdate({
-            trip: {
-                tripId,
-                routeId,
-                startTime,
-                startDate,
-                directionId,
-                scheduleRelationship,
-                shapeId: shapeId ?? undefined
-            },
-            stopTimeUpdate: !isCancelled ? stopTimeUpdates : undefined,
-            timestamp: timestamp,
-            hasCustomTripId: customTripId
+        const tripUpdate = TripUpdate.fromObject({
+            trip: tripDescriptor,
+            stop_time_update: !isCancelled ? stopTimeUpdates : [],
+            timestamp: timestamp
         })
+
+        return new TrainUpdate(tripUpdate, shapeId, customTripId)
+    }
+
+    /**
+     * Will create a TrainUpdate with a DELETE schedule relationship for the given tripId.
+     * @param tripId The tripId to create the TrainUpdate for.
+     */
+    public static fromTripId(tripId: TripIdWithDate): TrainUpdate {
+        return new TrainUpdate(
+            TripUpdate.fromObject({
+                trip: TripDescriptor.fromObject({
+                    trip_id: tripId.tripId.toString(),
+                    schedule_relationship: ScheduleRelationship.CANCELED,
+                    start_date: tripId.operationDate.replaceAll('-', '')
+                }),
+                stop_time_update: []
+            }), undefined)
     }
 
     /**
@@ -111,8 +138,8 @@ export class TrainUpdate implements ITripUpdate {
      * @modifies this.trip.scheduleRelationShip
      */
     public markAsDeleted() {
-        this.trip.scheduleRelationship = ScheduleRelationship.CANCELED;
-        this.stopTimeUpdate = [];
+        this.trip.schedule_relationship = ScheduleRelationship.DELETED;
+        this.stop_time_update = [];
     }
 
     /**
@@ -120,10 +147,16 @@ export class TrainUpdate implements ITripUpdate {
      * @returns {FeedEntity} The converted FeedEntity.
      */
     public toFeedEntity(): FeedEntity {
-        return new FeedEntity({
-            tripUpdate: this,
-            id: this.trip.tripId ?? Date.now().toString()
-        })
+        return FeedEntity.fromObject(
+            {
+                id: this.trip.trip_id + '_' + this.trip.start_date,
+                trip_update: this,
+                shape: {
+                    shape_id: this.shape_id,
+                    encoded_polyline: undefined
+                }
+            }
+        )
     }
 }
 

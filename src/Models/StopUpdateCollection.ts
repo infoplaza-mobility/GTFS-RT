@@ -5,7 +5,6 @@
  */
 
 import { Collection } from "./General/Collection";
-import Long from "long";
 import { StopUpdate } from "./StopUpdates/StopUpdate";
 
 export class StopUpdateCollection extends Collection<StopUpdate> {
@@ -42,8 +41,8 @@ export class StopUpdateCollection extends Collection<StopUpdate> {
      */
     private checkIncreasingTimes() {
         // Initialize variables to keep track of the last stop's arrival and departure times
-        let lastStopArrivalTime: Long | undefined = undefined;
-        let lastStopDepartureTime: Long | undefined = undefined;
+        let lastStopArrivalTime: number | undefined = undefined;
+        let lastStopDepartureTime: number | undefined = undefined;
 
         // Loop through each stop in the collection
         for (let i = 0; i < this.length; i++) {
@@ -124,10 +123,8 @@ export class StopUpdateCollection extends Collection<StopUpdate> {
 
         let timeToUse: Date = (currentStop.plannedArrivalTime ?? currentStop.plannedDepartureTime)!;
 
-        const newArrivalTime = timeToUse.getTime() / 1000 + minDelay;
-
-        //ArrivalTime is a Long
-        currentStop.arrivalTime = new Long(newArrivalTime)
+        //Add the delay to the time to use
+        currentStop.arrivalTime = timeToUse.getTime() / 1000 + minDelay;
 
         if (currentStop.plannedDepartureTime !== null) {
             //Calculate the difference between the planned arrival time and the planned departure time
@@ -140,8 +137,8 @@ export class StopUpdateCollection extends Collection<StopUpdate> {
             else
                 difference = 0;
 
-            let newDepartureTime = currentStop.arrivalTime.add(difference);
-            newDepartureTime = newDepartureTime.div(1000);
+            let newDepartureTime = currentStop.arrivalTime + difference;
+            newDepartureTime = newDepartureTime / 1000;
 
             //Set the departure time to the arrival time + the difference between the planned arrival time and the planned departure time
             currentStop.departureTime = newDepartureTime;

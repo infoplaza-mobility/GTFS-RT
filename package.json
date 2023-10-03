@@ -23,9 +23,10 @@
   "homepage": "https://github.com/R-OV-NL/Protobuf#readme",
   "dependencies": {
     "@turf/turf": "^6.5.0",
-    "axios": "^1.2.2",
+    "axios": "^1.5.1",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
+    "google-protobuf": "^3.21.2",
     "gtfs-rb": "^1.2.8",
     "gtfs-realtime-bindings": "^1.1.1",
     "knex": "^2.4.0",

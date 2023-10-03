@@ -7,11 +7,11 @@
 import { Collection } from "./General/Collection";
 import { TrainUpdate } from "./TrainUpdate";
 import { IDatabaseRitInfoUpdate } from "../Interfaces/DatabaseRitInfoUpdate";
-import { transit_realtime } from "gtfs-realtime-bindings";
-import Long from "long";
+import { transit_realtime } from "../Compiled/gtfs-realtime";
 import FeedEntity = transit_realtime.FeedEntity;
 import FeedMessage = transit_realtime.FeedMessage;
 import Incrementality = transit_realtime.FeedHeader.Incrementality;
+import {TripIdWithDate} from "../Interfaces/TVVManager";
 
 export class TrainUpdateCollection extends Collection<FeedEntity> {
 
@@ -31,7 +31,7 @@ export class TrainUpdateCollection extends Collection<FeedEntity> {
                     //If the train update has a custom trip ID, add it to the TrainUpdatesWithCustomTripId array.
                     //We do this so we can check if this update is there the next iteration as well, if not, we add a new stop time update
                     //that cancels the trip.
-                    if(trainUpdate.hasCustomTripId && !this.TrainUpdatesWithCustomTripId.find(u => u.trip.tripId == trainUpdate.trip.tripId)) {
+                    if(trainUpdate.hasCustomTripId && !this.TrainUpdatesWithCustomTripId.find(u => u.trip.trip_id == trainUpdate.trip.trip_id)) {
                         this.TrainUpdatesWithCustomTripId.push(trainUpdate);
                     }
 
@@ -49,7 +49,7 @@ export class TrainUpdateCollection extends Collection<FeedEntity> {
         const trainUpdatesNotFound = TrainUpdateCollection.checkForRemovedUpdatesWithCustomTripId(trainUpdates)
 
         console.info(`[TrainUpdateCollection] Found ${trainUpdatesNotFound.length} updates that were not found in the current collection of size ${this.TrainUpdatesWithCustomTripId.length}. Adding them as cancelled trips.`);
-        console.info(`[TrainUpdateCollection] ${trainUpdatesNotFound.map(update => update.trip.tripId).join(', ')}`)
+        console.info(`[TrainUpdateCollection] ${trainUpdatesNotFound.map(update => update.trip.trip_id).join(', ')}`)
 
         collection.addDeletedUpdates(trainUpdatesNotFound);
 
@@ -73,10 +73,19 @@ export class TrainUpdateCollection extends Collection<FeedEntity> {
         const lengthBefore = TrainUpdateCollection.TrainUpdatesWithCustomTripId.length;
 
         //Remove the updates from the TrainUpdatesWithCustomTripId array
-        TrainUpdateCollection.TrainUpdatesWithCustomTripId = TrainUpdateCollection.TrainUpdatesWithCustomTripId.filter(update => !trainUpdates.find(u => u.trip.tripId == update.trip.tripId));
+        TrainUpdateCollection.TrainUpdatesWithCustomTripId = TrainUpdateCollection.TrainUpdatesWithCustomTripId.filter(update => !trainUpdates.find(u => u.trip.trip_id == update.trip.trip_id));
 
         const lengthAfter = TrainUpdateCollection.TrainUpdatesWithCustomTripId.length;
         console.info(`[TrainUpdateCollection | AddDeletedUpdates] Removed ${lengthBefore - lengthAfter} updates from the TrainUpdatesWithCustomTripId array.`);
+    }
+
+    public applyRemovals(tripIdsToRemove: TripIdWithDate[]) {
+        console.log(`[TrainUpdateCollection | applyRemovals] Applying ${tripIdsToRemove.length} removals.`)
+        for(const tripId of tripIdsToRemove) {
+            const update = TrainUpdate.fromTripId(tripId);
+
+            this.push(update.toFeedEntity());
+        }
     }
 
     /**
@@ -88,7 +97,7 @@ export class TrainUpdateCollection extends Collection<FeedEntity> {
         const removedUpdates: TrainUpdate[] = [];
 
         this.TrainUpdatesWithCustomTripId.forEach(update => {
-            if(!collectionToCheckAgainst.find(u => u.trip.tripId == update.trip.tripId))
+            if(!collectionToCheckAgainst.find(u => u.trip.trip_id == update.trip.trip_id))
                 removedUpdates.push(update);
         })
         return removedUpdates;
@@ -99,10 +108,10 @@ export class TrainUpdateCollection extends Collection<FeedEntity> {
      * @returns {FeedMessage} The converted FeedMessage.
      */
     public toFeedMessage(): FeedMessage {
-        return new FeedMessage({
+        return FeedMessage.fromObject({
             header: {
-                gtfsRealtimeVersion: "2.0",
-                timestamp: Long.fromNumber(Date.now() / 1000),
+                gtfs_realtime_version: "2.0",
+                timestamp: Math.round(Date.now() / 1000),
                 incrementality: Incrementality.DIFFERENTIAL
             },
             entity: this.toArray()

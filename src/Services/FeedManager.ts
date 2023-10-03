@@ -6,18 +6,22 @@
 
 import {InfoplusRepository} from "../Repositories/InfoplusRepository";
 import {TrainUpdateCollection} from "../Models/TrainUpdateCollection";
-import {transit_realtime} from "gtfs-realtime-bindings";
-import FeedMessage = transit_realtime.FeedMessage;
+import {transit_realtime as extended_transit_realtime} from "../Compiled/mfdz-realtime-extensions";
 import { File } from "../Models/General/File";
 import { PassTimesRepository } from "../Repositories/PasstimesRepository";
 import { TripUpdateCollection } from "../Models/TripUpdateCollection";
+import {TripIdWithDate} from "../Interfaces/TVVManager";
 
+import {transit_realtime} from "../Compiled/gtfs-realtime";
+import FeedMessage = transit_realtime.FeedMessage;
+import FeedEntity = transit_realtime.FeedEntity;
+import TripUpdate = transit_realtime.TripUpdate;
 export class FeedManager {
 
     private static _infoplusRepository: InfoplusRepository = new InfoplusRepository();
     private static _passtimesRepository: PassTimesRepository = new PassTimesRepository();
 
-    public static async updateTrainFeed(): Promise<void> {
+    public static async updateTrainFeed(tripIdsToRemove: TripIdWithDate[]): Promise<void> {
         console.time('updateTrainFeed');
         console.log('Updating train feed...')
         //Get the current operationDate in YYYY-MM-DD format
@@ -27,17 +31,19 @@ export class FeedManager {
 
         const trainUpdateCollection = TrainUpdateCollection.fromDatabaseResult(trainUpdates);
 
+        trainUpdateCollection.applyRemovals(tripIdsToRemove);
+
         const trainUpdateFeed: FeedMessage = trainUpdateCollection.toFeedMessage();
 
         try {
-            FeedMessage.verify(trainUpdateFeed);
+            const constructedFeedMessage: FeedMessage = FeedMessage.fromObject(trainUpdateFeed);
 
-            const file: File = new File('./publish/', 'trainUpdates.pb', Buffer.from(FeedMessage.encode(trainUpdateFeed).finish()));
+            const file: File = new File('./publish/', 'trainUpdates.pb', Buffer.from(constructedFeedMessage.serialize()));
             file.saveSync();
 
             console.log('Saved updates to trainUpdates.pb');
 
-            const jsonFile: File = new File('./publish/', 'trainUpdates.json', Buffer.from(JSON.stringify(trainUpdateFeed)));
+            const jsonFile: File = new File('./publish/', 'trainUpdates.json', Buffer.from(JSON.stringify(constructedFeedMessage.toObject())));
             jsonFile.saveSync();
             console.log('Saved updates to trainUpdates.json');
 
@@ -46,37 +52,5 @@ export class FeedManager {
         }
 
         console.timeEnd('updateTrainFeed');
-    }
-
-    public static async updateTripUpdatesFeed(): Promise<void> {
-        console.time('updateTripUpdatesFeed');
-        console.log('Updating trip updates feed...');
-
-        //Get the current operationDate in YYYY-MM-DD format
-        const currentOperationDate = new Date().toISOString().split('T')[0];
-
-        const tripUpdates = await this._passtimesRepository.getCurrentRealtimeTripUpdates(currentOperationDate);
-        
-        const tripUpdateCollection = TripUpdateCollection.fromDatabaseResult(tripUpdates);
-
-        const tripUpdateFeed: FeedMessage = tripUpdateCollection.toFeedMessage();
-
-        try {
-            FeedMessage.verify(tripUpdateFeed);
-
-            const file: File = new File('./publish/', 'tripUpdates.pb', Buffer.from(FeedMessage.encode(tripUpdateFeed).finish()));
-            file.saveSync();
-
-            console.log('Saved updates to tripUpdates.pb');
-
-            const jsonFile: File = new File('./publish/', 'tripUpdates.json', Buffer.from(JSON.stringify(tripUpdateFeed)));
-            jsonFile.saveSync();
-            console.log('Saved updates to tripUpdates.json');
-
-        } catch (e) {
-            console.error(e);
-        }
-
-        console.timeEnd('updateTripUpdatesFeed');
     }
 }

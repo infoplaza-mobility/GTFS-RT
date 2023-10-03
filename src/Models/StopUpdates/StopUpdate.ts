@@ -5,12 +5,10 @@ import { IDatabaseStopUpdate } from "../../Interfaces/DatabaseStopUpdate";
 interface IStopUpdate {
     readonly departureDelay: number | null;
     readonly arrivalDelay: number | null;
-    readonly arrivalTime: Long | null;
-    readonly departureTime: Long | null;
+    readonly arrivalTime: number | null;
+    readonly departureTime: number | null;
     readonly plannedArrivalTime: Date | null;
     readonly plannedDepartureTime: Date | null;
-
-
 }
 
 export abstract class StopUpdate implements IStopUpdate {
@@ -119,41 +117,41 @@ export abstract class StopUpdate implements IStopUpdate {
      * Get the departure time.
      * @returns {Long} The departure time in seconds since epoch.
      */
-    public get departureTime(): Long {
+    public get departureTime(): number {
         if (!this._departureTime)
-            return Long.fromNumber(0);
+            return 0;
 
         if (this.isFirstStop)
-            return Long.fromNumber(this._departureTime.getTime() / 1000 + 1);
+            return this._departureTime.getTime() / 1000 + 1;
 
-        return Long.fromNumber(this._departureTime.getTime() / 1000);
+        return this._departureTime.getTime() / 1000;
     }
 
     /**
      * Set the departure time.
      * @param {Long} departureTime The departure time in seconds since epoch.
      */
-    public set departureTime(departureTime: Long) {
-        this._departureTime = new Date(departureTime.toNumber() * 1000);
+    public set departureTime(departureTime: number) {
+        this._departureTime = new Date(departureTime * 1000);
     }
 
     /**
      * Get the arrival time.
      * @returns {Long} The arrival time in seconds since epoch.
      */
-    public get arrivalTime(): Long {
+    public get arrivalTime(): number {
         if (!this._arrivalTime)
-            return Long.fromNumber(0);
+            return 0;
 
-        return Long.fromNumber(this._arrivalTime.getTime() / 1000);
+        return this._arrivalTime.getTime() / 1000;
     }
 
     /**
      * Set the arrival time.
      * @param {Long} arrivalTime The arrival time in seconds since epoch.
     */
-    public set arrivalTime(arrivalTime: Long) {
-        this._arrivalTime = new Date(arrivalTime.toNumber() * 1000);
+    public set arrivalTime(arrivalTime: number) {
+        this._arrivalTime = new Date(arrivalTime * 1000);
     }
 
     public get arrivalTimeAsDate(): Date | null {
