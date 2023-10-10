@@ -4,7 +4,7 @@
  * Questions? Email: tristantriest@gmail.com
  */
 
-import {transit_realtime} from "../../Compiled/gtfs-realtime";
+import {transit_realtime} from "../../Compiled/compiled";
 import StopTimeEvent = transit_realtime.TripUpdate.StopTimeEvent;
 import StopTimeUpdate = transit_realtime.TripUpdate.StopTimeUpdate;
 import { StopUpdate } from "../StopUpdates/StopUpdate";
@@ -32,13 +32,13 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
             departureTime = arrivalTime + 60;
         }
             
-        let departure = StopTimeEvent.fromObject({
+        let departure = StopTimeEvent.create({
             time: !departureIsZero ? departureTime : arrivalTime,
             delay: departureDelay,
             uncertainty: null
         });
 
-        let arrival = StopTimeEvent.fromObject({
+        let arrival = StopTimeEvent.create({
             time: !arrivalIsZero ? arrivalTime : departureTime,
             delay: arrivalDelay,
             uncertainty: null
@@ -50,7 +50,6 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
         if(isLastStop)
             departure = arrival;
 
-
         //The stop is skipped entirely if the passing is cancelled.
         const scheduleRelationship = update.isCancelled() ?
             transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SKIPPED :
@@ -58,15 +57,18 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
 
         const shouldHaveDepartureAndArrival = true;
 
-        return StopTimeUpdate.fromObject({
-            stop_id: stopId,
-            stop_sequence: sequence,
+        return StopTimeUpdate.create({
+            stopId,
+            stopSequence: sequence,
             arrival: shouldHaveDepartureAndArrival ? arrival : undefined,
             departure: shouldHaveDepartureAndArrival ? departure : undefined,
-            schedule_relationship: scheduleRelationship,
-            // stop_time_properties: {
-            //     assigned_stop_id: stopId,
-            // }
+            scheduleRelationship,
+            ".transit_realtime.ovapiStopTimeUpdate": {
+                stopHeadsign: "Test",
+                actualTrack: "1",
+                scheduledTrack: "2",
+                stationId: "UT",
+            }
         })
 
 

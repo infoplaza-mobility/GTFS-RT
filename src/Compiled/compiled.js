@@ -1,4 +1,5 @@
 /*eslint-disable block-scoped-var, id-length, no-control-regex, no-magic-numbers, no-prototype-builtins, no-redeclare, no-shadow, no-var, sort-vars*/
+// @ts-nocheck
 import * as $protobuf from "protobufjs/minimal";
 
 // Common aliases
@@ -3935,6 +3936,13 @@ export const transit_realtime = $root.transit_realtime = (() => {
             case 5:
                 message.scheduleRelationship = 5;
                 break;
+            case "DUPLICATED":
+            case 6:
+                message.scheduleRelationship = 6;
+                break;
+            case "DELETED":
+            case 7:
+                message.scheduleRelationship = 7;
             }
             if (object[".transit_realtime.ovapiTripdescriptor"] != null) {
                 if (typeof object[".transit_realtime.ovapiTripdescriptor"] !== "object")
@@ -4018,6 +4026,8 @@ export const transit_realtime = $root.transit_realtime = (() => {
          * @property {number} UNSCHEDULED=2 UNSCHEDULED value
          * @property {number} CANCELED=3 CANCELED value
          * @property {number} MODIFIED=5 MODIFIED value
+         * @property {number} DUPLICATED=6 DUPLICATED value
+         * @property {number} DELETED=7 DELETED value
          */
         TripDescriptor.ScheduleRelationship = (function() {
             const valuesById = {}, values = Object.create(valuesById);
@@ -4026,6 +4036,8 @@ export const transit_realtime = $root.transit_realtime = (() => {
             values[valuesById[2] = "UNSCHEDULED"] = 2;
             values[valuesById[3] = "CANCELED"] = 3;
             values[valuesById[5] = "MODIFIED"] = 5;
+            values[valuesById[6] = "DUPLICATED"] = 6;
+            values[valuesById[7] = "DELETED"] = 7;
             return values;
         })();
 
