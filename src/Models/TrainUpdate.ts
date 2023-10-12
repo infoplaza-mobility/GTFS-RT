@@ -35,7 +35,10 @@ export class TrainUpdate extends TripUpdate {
             hadChangedStops,
             hadPlatformChange,
             hasChangedTrip,
-            isSpecialTrain
+            isSpecialTrain,
+            hasModifiedStopBehaviour,
+            trainType,
+
         } = createdTrip;
         let {tripId, stopTimeUpdates} = createdTrip;
 
@@ -50,7 +53,7 @@ export class TrainUpdate extends TripUpdate {
 
         let shouldRemoveSkippedStops = false;
 
-        if (hasChangedTrip || hadPlatformChange || hadChangedStops) {
+        if (hasChangedTrip || hadPlatformChange || hadChangedStops || hasModifiedStopBehaviour) {
 
             // if(hasChangedTrip)
             //     console.log(`[TrainUpdate] Trip ${tripId} had a changed trip. Change types: ` + createdTrip.changes!.map(change => change.changeType).join(', '));
@@ -106,7 +109,7 @@ export class TrainUpdate extends TripUpdate {
             directionId,
             scheduleRelationship,
             ".transit_realtime.ovapiTripdescriptor": {
-                realtimeTripId: "IFF:" + infoPlusTripUpdate.trainNumber,
+                realtimeTripId: "IFF:" + trainType + ":" + infoPlusTripUpdate.trainNumber,
                 tripShortName: infoPlusTripUpdate.trainNumber.toString(),
             }
         });
@@ -131,7 +134,7 @@ export class TrainUpdate extends TripUpdate {
                 trip: TripDescriptor.create({
                     tripId: tripId.tripId.toString(),
                     scheduleRelationship: ScheduleRelationship.DELETED,
-                    startDate: tripId.operationDate.replaceAll('-', '')
+                    startDate: tripId.operationDate.replaceAll('-', ''),
                 }),
                 stopTimeUpdate: []
             }), undefined)
@@ -154,12 +157,9 @@ export class TrainUpdate extends TripUpdate {
     public toFeedEntity(): FeedEntity {
         return FeedEntity.create(
             {
-                id: this.trip.tripId + '_' + this.trip.startDate,
+                id: this.trip.tripId,
                 tripUpdate: {
                     ...this,
-                    ".transit_realtime.ovapiTripUpdate": {
-                        tripHeadsign: "TestHeadSign",
-                    }
                 },
 
             }

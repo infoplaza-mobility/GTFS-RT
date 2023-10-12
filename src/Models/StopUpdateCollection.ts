@@ -6,12 +6,13 @@
 
 import { Collection } from "./General/Collection";
 import { StopUpdate } from "./StopUpdates/StopUpdate";
+import {RitInfoStopUpdate} from "./StopUpdates/RitinfoStopUpdate";
 
-export class StopUpdateCollection extends Collection<StopUpdate> {
+export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
 
     private tripId?: string;
 
-    constructor(items: StopUpdate[], tripId?: string) {
+    constructor(items: RitInfoStopUpdate[], tripId?: string) {
         super(items);
         this.tripId = tripId;
         this.setFirstStop();

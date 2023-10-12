@@ -31,6 +31,10 @@ export class TrainUpdateCollection extends Collection<FeedEntity> {
                     //If the train update has a custom trip ID, add it to the TrainUpdatesWithCustomTripId array.
                     //We do this so we can check if this update is there the next iteration as well, if not, we add a new stop time update
                     //that cancels the trip.
+                    if(trainUpdate.hasCustomTripId) {
+                        console.log(`[TrainUpdateCollection] Adding ${trainUpdate.trip.tripId} to TrainUpdatesWithCustomTripId array.`)
+                    }
+
                     if(trainUpdate.hasCustomTripId && !this.TrainUpdatesWithCustomTripId.find(u => u.trip.tripId == trainUpdate.trip.tripId)) {
                         this.TrainUpdatesWithCustomTripId.push(trainUpdate);
                     }
@@ -95,6 +99,8 @@ export class TrainUpdateCollection extends Collection<FeedEntity> {
      */
     private static checkForRemovedUpdatesWithCustomTripId(collectionToCheckAgainst: TrainUpdate[]): TrainUpdate[] {
         const removedUpdates: TrainUpdate[] = [];
+
+        console.log(`[TrainUpdateCollection | checkForRemovedUpdatesWithCustomTripId] Checking for removed updates. Current size of TrainUpdatesWithCustomTripId: ${this.TrainUpdatesWithCustomTripId.length}`)
 
         this.TrainUpdatesWithCustomTripId.forEach(update => {
             if(!collectionToCheckAgainst.find(u => u.trip.tripId == update.trip.tripId))

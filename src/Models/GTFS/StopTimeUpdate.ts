@@ -8,6 +8,7 @@ import {transit_realtime} from "../../Compiled/compiled";
 import StopTimeEvent = transit_realtime.TripUpdate.StopTimeEvent;
 import StopTimeUpdate = transit_realtime.TripUpdate.StopTimeUpdate;
 import { StopUpdate } from "../StopUpdates/StopUpdate";
+import {RitInfoStopUpdate} from "../StopUpdates/RitinfoStopUpdate";
 
 export class ExtendedStopTimeUpdate extends StopTimeUpdate {
 
@@ -20,9 +21,21 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
      * @param update The RitInfoStopUpdate to convert.
      * @returns {StopTimeUpdate} The converted StopTimeUpdate.
      */
-    public static fromStopUpdate(update: StopUpdate): StopTimeUpdate {
+    public static fromStopUpdate(update: RitInfoStopUpdate): StopTimeUpdate {
 
-        let { departureDelay, arrivalDelay, departureTime, arrivalTime, stopId, sequence, isLastStop, isFirstStop  } = update;
+        let {
+            departureDelay,
+            arrivalDelay,
+            departureTime,
+            arrivalTime,
+            stopId,
+            sequence,
+            isLastStop,
+            isFirstStop  ,
+            actualTrack,
+            plannedTrack,
+            stationCode
+        } = update;
 
         const departureBeforeArrival = departureTime !== 0 && arrivalTime !== 0 && departureTime < arrivalTime;
         const arrivalIsZero = arrivalTime === 0;
@@ -64,10 +77,10 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
             departure: shouldHaveDepartureAndArrival ? departure : undefined,
             scheduleRelationship,
             ".transit_realtime.ovapiStopTimeUpdate": {
-                stopHeadsign: "Test",
-                actualTrack: "1",
-                scheduledTrack: "2",
-                stationId: "UT",
+                //We also use the planned track as a fallback for the actual track. Sometimes the actual track doesn't get filled, even though the train stops there.
+                actualTrack: actualTrack || plannedTrack,
+                scheduledTrack: plannedTrack,
+                stationId: stationCode,
             }
         })
 

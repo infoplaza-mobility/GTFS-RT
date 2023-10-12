@@ -44,6 +44,10 @@ export class InfoplusRepository extends Repository {
                            jsonb_build_object(
                                    'stationCode',
                                    si."stationCode",
+                                   'plannedWillStop',
+                                   si."plannedWillStop",
+                                   'actualWillStop',
+                                   si."actualWillStop",
                                    'plannedArrivalTime',
                                    si."plannedArrivalTime",
                                    'plannedDepartureTime',
@@ -80,7 +84,8 @@ export class InfoplusRepository extends Repository {
                                                                         jpjl."operationDate" = r."operationDate"
                      JOIN "InfoPlus".stop_information si
                           ON jpjl."logicalJourneyPartNumber" = si."logicalJourneyPartNumber" AND
-                             jpjl."operationDate" = si."operationDate" AND "plannedWillStop" = true AND
+                             jpjl."operationDate" = si."operationDate" AND
+                             ("plannedWillStop" = true OR "actualWillStop" = true) AND
                              (coalesce("plannedDepartureTime", "actualArrivalTime") IS NOT NULL OR
                               coalesce("plannedArrivalTime", "actualArrivalTime") IS NOT NULL)
 --                                                                 AND ("plannedDepartureTime" != "actualDepartureTime" OR "plannedArrivalTime" != "actualArrivalTime")
