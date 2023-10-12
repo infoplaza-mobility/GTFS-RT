@@ -13,4 +13,8 @@ export interface IDatabaseStopUpdate {
     plannedArrivalTime: number | string | null;
     /** Planned departure time in seconds since Epoch, or ISO string */
     plannedDepartureTime: number | string | null;
+    /** Was this vehicle planned to stop at this stop? */
+    plannedWillStop: boolean;
+    /** Is this vehicle actually stopping at this stop? */
+    actualWillStop: boolean;
 }
