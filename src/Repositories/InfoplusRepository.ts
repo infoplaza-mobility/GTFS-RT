@@ -44,6 +44,10 @@ export class InfoplusRepository extends Repository {
                            jsonb_build_object(
                                    'stationCode',
                                    si."stationCode",
+                                   'plannedWillStop',
+                                   si."plannedWillStop",
+                                   'actualWillStop',
+                                   si."actualWillStop",
                                    'plannedArrivalTime',
                                    si."plannedArrivalTime",
                                    'plannedDepartureTime',
@@ -80,7 +84,8 @@ export class InfoplusRepository extends Repository {
                                                                         jpjl."operationDate" = r."operationDate"
                      JOIN "InfoPlus".stop_information si
                           ON jpjl."logicalJourneyPartNumber" = si."logicalJourneyPartNumber" AND
-                             jpjl."operationDate" = si."operationDate" AND "plannedWillStop" = true AND
+                             jpjl."operationDate" = si."operationDate" AND
+                             ("plannedWillStop" = true OR "actualWillStop" = true) AND
                              (coalesce("plannedDepartureTime", "actualArrivalTime") IS NOT NULL OR
                               coalesce("plannedArrivalTime", "actualArrivalTime") IS NOT NULL)
 --                                                                 AND ("plannedDepartureTime" != "actualDepartureTime" OR "plannedArrivalTime" != "actualArrivalTime")
@@ -98,7 +103,7 @@ LEFT JOIN trips t_short
                 r."operationDate" = ?:: date - INTERVAL '2 hours')
             GROUP BY r."trainNumber", jpjl."logicalJourneyPartNumber", r."shortTrainNumber", r."trainType", r.agency, r."showsInTripPlanner", r.timestamp,
                 coalesce (jpjl."logicalJourneyPartChanges", jpjl."logicalJourneyChanges"), coalesce (trips."tripId", t_short."tripId"), coalesce (trips."routeId", t_short."routeId"), coalesce (trips."directionId", t_short."directionId"), coalesce (trips."shapeId", t_short."shapeId")
-            HAVING max (coalesce (si."actualDepartureTime", si."plannedDepartureTime")) >= now() - INTERVAL '1 hours';
+            HAVING max (coalesce (si."actualDepartureTime", si."plannedDepartureTime")) >= now() - INTERVAL '1 hours';  
         `, [operationDate, operationDate, operationDate, operationDate]).then(result => {
             console.timeEnd('getCurrentRealtimeTripUpdates');
             return result.rows;

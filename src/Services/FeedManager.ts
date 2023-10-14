@@ -6,16 +6,15 @@
 
 import {InfoplusRepository} from "../Repositories/InfoplusRepository";
 import {TrainUpdateCollection} from "../Models/TrainUpdateCollection";
-import {transit_realtime as extended_transit_realtime} from "../Compiled/mfdz-realtime-extensions";
+
 import { File } from "../Models/General/File";
 import { PassTimesRepository } from "../Repositories/PasstimesRepository";
-import { TripUpdateCollection } from "../Models/TripUpdateCollection";
+
 import {TripIdWithDate} from "../Interfaces/TVVManager";
 
-import {transit_realtime} from "../Compiled/gtfs-realtime";
+import {transit_realtime} from "../Compiled/compiled";
 import FeedMessage = transit_realtime.FeedMessage;
-import FeedEntity = transit_realtime.FeedEntity;
-import TripUpdate = transit_realtime.TripUpdate;
+
 export class FeedManager {
 
     private static _infoplusRepository: InfoplusRepository = new InfoplusRepository();
@@ -38,12 +37,12 @@ export class FeedManager {
         try {
             const constructedFeedMessage: FeedMessage = FeedMessage.fromObject(trainUpdateFeed);
 
-            const file: File = new File('./publish/', 'trainUpdates.pb', Buffer.from(constructedFeedMessage.serialize()));
+            const file: File = new File('./publish/', 'trainUpdates.pb', Buffer.from(FeedMessage.encode(constructedFeedMessage).finish()));
             file.saveSync();
 
             console.log('Saved updates to trainUpdates.pb');
 
-            const jsonFile: File = new File('./publish/', 'trainUpdates.json', Buffer.from(JSON.stringify(constructedFeedMessage.toObject())));
+            const jsonFile: File = new File('./publish/', 'trainUpdates.json', Buffer.from(JSON.stringify(constructedFeedMessage.toJSON())));
             jsonFile.saveSync();
             console.log('Saved updates to trainUpdates.json');
 

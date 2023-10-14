@@ -19,7 +19,11 @@ export class PasstimesUpdate {
     private readonly _routeId: number | null;
 
     constructor(update: IDatabasePasstimesUpdate) {
-        this._stopCollection = new StopUpdateCollection(update.stops.map(stop => new PasstimesStopUpdate(stop)), update.tripId?.toString());
+        this._stopCollection = new StopUpdateCollection(
+            [],
+            // update.stops.map(stop => new PasstimesStopUpdate(stop)),
+            update.tripId?.toString()
+        );
         this._tripId = update.tripId;
         this._routeId = update.routeId;
 
@@ -81,7 +85,7 @@ export class PasstimesUpdate {
         const firstStop = this.stops.first();
 
         if(!firstStop || !firstStop.departureTimeAsDate)
-            return '00000000';
+            return new Date().toISOString().slice(0, 10).replaceAll('-', '');
 
         return firstStop
             .departureTimeAsDate

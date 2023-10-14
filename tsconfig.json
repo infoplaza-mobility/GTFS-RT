@@ -22,7 +22,10 @@
     "noImplicitAny": false,                            /* Enable error reporting for expressions and declarations with an implied `any` type.. */
     "strictPropertyInitialization": false,
     /* Completeness */
-    "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
+    "skipLibCheck": true,                                 /* Skip type checking all .d.ts files. */
+
+    "declaration": true,
+    "declarationMap": true
   },
   "watchOptions": {
     // Use native file system events for files and directories
@@ -38,7 +41,9 @@
     "excludeDirectories": ["**/node_modules", "/build"],
     "excludeFiles": ["build/**/*.js", "build/**/*.d.ts"]
   },
-  "include": ["./src"],
+  "include": [
+    "./src",
+  ],
   "exclude": [
     "**/test/**",
     "node_modules",
