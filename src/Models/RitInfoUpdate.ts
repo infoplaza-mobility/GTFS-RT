@@ -33,7 +33,11 @@ export class RitInfoUpdate {
         this._changes = update.changes;
         this._shortTrainNumber = update.shortTrainNumber;
         this._showsInTripPlanner = update.showsInTripPlanner;
-        this._stopCollection = new StopUpdateCollection(update.stops.map(stop => new RitInfoStopUpdate(stop)), update.tripId?.toString());
+        this._stopCollection = new StopUpdateCollection(
+            update.stops.map(stop => new RitInfoStopUpdate(stop)),
+            update.tripId?.toString()
+        );
+
         this._shapeId = update.shapeId;
         this._trainNumber = update.trainNumber;
         this._trainType = update.trainType;
@@ -43,6 +47,11 @@ export class RitInfoUpdate {
         this._timestamp = update.timestamp;
 
         this._isInternationalTrain = this.setInternationalTrain();
+
+        //Replacement busses have some weird quirks with sometimes double stops from two trips.
+        if(this._trainNumber > 900_000) {
+            this._stopCollection = this._stopCollection.removeStopsNotServed();
+        }
     }
 
     private setInternationalTrain(): boolean {
@@ -85,6 +94,10 @@ export class RitInfoUpdate {
             return null;
 
         return this._shapeId.toString();
+    }
+
+    public get trainType(): string {
+        return this._trainType;
     }
 
     public get directionId(): number | null {
@@ -219,7 +232,21 @@ export class RitInfoUpdate {
             ) || this._shortTrainNumber !== this._trainNumber || this._trainNumber > 200_000;
 
         // If the short train number does not match the train number, it is an extra train. (E.g. 301234 vs 1234, 701234 vs 1234 or 201234 vs 1234)
-        return this._shortTrainNumber !== this._trainNumber || this._trainNumber > 200_000;
+        return this._shortTrainNumber !== this._trainNumber || this._trainNumber > 100_000;
+    }
+
+    public get hasModifiedStopBehaviour(): boolean {
+        let didModify = false;
+
+        if(this._changes)
+            didModify = this._changes.some(change =>
+                change.changeType == JourneyChangeType.ChangeStopBehaviour
+            )
+
+        if(!didModify)
+            didModify = this.stops.some(stop => stop.isExtraPassing() || stop.wasntPlannedToStop())
+
+        return didModify;
     }
 
     /**

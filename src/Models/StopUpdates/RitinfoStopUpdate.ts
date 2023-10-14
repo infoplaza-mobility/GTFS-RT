@@ -12,13 +12,16 @@ export class RitInfoStopUpdate extends StopUpdate {
 
     private readonly changes: RitInfo.Internal.JourneyStationChange[] | null;
 
-    private readonly plannedTrack: string | null;
-    private readonly actualTrack: string | null;
+    public readonly plannedTrack: string | null;
+    public readonly actualTrack: string | null;
 
     private readonly platform: string | null;
     private readonly track: string | null;
 
-    private readonly stationCode: string;
+    private readonly plannedWillStop: boolean;
+    private readonly actualWillStop: boolean;
+
+    public readonly stationCode: string;
 
     constructor(update: IRitInfoStopUpdate) {
         super(update);
@@ -26,8 +29,11 @@ export class RitInfoStopUpdate extends StopUpdate {
         this.changes = update.changes;
         this.stationCode = update.stationCode;
 
-        this.plannedTrack = update.plannedTrack;
-        this.actualTrack = update.actualTrack;
+        if(update.plannedTrack)
+            this.plannedTrack = update.plannedTrack.toString();
+
+        if(update.actualTrack)
+            this.actualTrack = update.actualTrack.toString();
 
         this.platform = update.platform;
         this.track = update.track;
@@ -140,5 +146,13 @@ export class RitInfoStopUpdate extends StopUpdate {
             change.changeType == JourneyStationChangeType.ExtraArrival ||
             change.changeType == JourneyStationChangeType.ExtraDeparture
         );
+    }
+
+    /**
+     * Was this stop planned as a passing (or no stop at all), but will the vehicle actually stop at this stop?
+     * @returns {boolean} True if the vehicle will stop at this newly added stop, false otherwise.
+     */
+    public wasntPlannedToStop(): boolean {
+        return !this.plannedWillStop && this.actualWillStop;
     }
 }
