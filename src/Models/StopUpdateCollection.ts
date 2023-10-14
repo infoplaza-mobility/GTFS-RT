@@ -195,11 +195,29 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
         const filteredStops = this.filter(stop => !stop.isCancelled());
         const filteredLength = filteredStops.length;
 
-        if(withoutFilterLength !== filteredLength) {
-            console.warn(`[StopUpdateCollection] Removed ${withoutFilterLength - filteredLength} stops from trip ${this.tripId} as they were not served.`);
-            return new StopUpdateCollection(filteredStops, this.tripId);
-        }
+        //Sort the stops by their respective arrival or departure times.
+        const withNewIndexes = filteredStops.sort((a, b) => {
+            if(a.arrivalTime && b.arrivalTime)
+                return a.arrivalTime - b.arrivalTime;
 
-        return this;
+            if(a.departureTime && b.departureTime)
+                return a.departureTime - b.departureTime;
+
+            if(a.arrivalTime && b.departureTime)
+                return a.arrivalTime - b.departureTime;
+
+            if(a.departureTime && b.arrivalTime)
+                return a.departureTime - b.arrivalTime;
+
+            return 0;
+        // Set the sequence number of each stop to its index in the array + 1
+        }).map((stop, index) => {
+            stop.sequence = index + 1;
+            return stop;
+        })
+
+        console.warn(`[StopUpdateCollection] Removed ${withoutFilterLength - filteredLength} stops from trip ${this.tripId} as they were not served.`);
+        return new StopUpdateCollection(withNewIndexes, this.tripId);
+
     }
 }

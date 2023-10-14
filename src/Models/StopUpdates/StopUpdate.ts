@@ -18,7 +18,7 @@ export abstract class StopUpdate implements IStopUpdate {
     
     private readonly _plannedArrivalTime: Date | null;
     private readonly _plannedDepartureTime: Date | null;
-    private readonly _sequence: number;
+
     private readonly _stopId: number | null;
 
     private _isFirstStop: boolean = false;
@@ -28,6 +28,7 @@ export abstract class StopUpdate implements IStopUpdate {
     private _departureTime: Date | null;
     private _arrivalTime: Date | null;
 
+    private _sequence: number;
 
     constructor(update: IDatabaseStopUpdate) {
         this._departureDelay = update.departureDelay;
@@ -180,5 +181,13 @@ export abstract class StopUpdate implements IStopUpdate {
      */
     public get sequence(): number {
         return this._sequence;
+    }
+
+    /**
+     * ONLY USE IN CASE OF RE-SORTING STOP UPDATES!
+     * @param sequence The new sequence number.
+     */
+    public set sequence(sequence: number) {
+        this._sequence = sequence;
     }
 }

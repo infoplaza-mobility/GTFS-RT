@@ -133,7 +133,7 @@ export class TrainUpdate extends TripUpdate {
             TripUpdate.create({
                 trip: TripDescriptor.create({
                     tripId: tripId.tripId.toString(),
-                    scheduleRelationship: ScheduleRelationship.DELETED,
+                    scheduleRelationship: ScheduleRelationship.CANCELED,
                     startDate: tripId.operationDate.replaceAll('-', ''),
                 }),
                 stopTimeUpdate: []
@@ -146,7 +146,7 @@ export class TrainUpdate extends TripUpdate {
      * @modifies this.trip.scheduleRelationShip
      */
     public markAsDeleted() {
-        this.trip.scheduleRelationship = ScheduleRelationship.DELETED;
+        this.trip.scheduleRelationship = ScheduleRelationship.CANCELED;
         this.stopTimeUpdate = [];
     }
 
