@@ -15,6 +15,9 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
     constructor(items: RitInfoStopUpdate[], tripId?: string) {
         super(items);
         this.tripId = tripId;
+
+        if(items.length === 0) return;
+
         this.setFirstStop();
         this.setLastStop();
         this.setIsLastStopBeforeOnlyCancelledStops();
@@ -178,5 +181,25 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
         }
 
         return lastStopBeforeOnlyCancelledStops;
+    }
+
+    /**
+     * Removes all stops that are cancelled in this collection, and returns a new collection without the cancelled stops.
+     */
+    public removeStopsNotServed() {
+        //First check if all stops are cancelled, if so we can just return an empty collection.
+        if(this.every(stop => stop.isCancelled()))
+            return new StopUpdateCollection([], this.tripId);
+
+        const withoutFilterLength = this.length;
+        const filteredStops = this.filter(stop => !stop.isCancelled());
+        const filteredLength = filteredStops.length;
+
+        if(withoutFilterLength !== filteredLength) {
+            console.warn(`[StopUpdateCollection] Removed ${withoutFilterLength - filteredLength} stops from trip ${this.tripId} as they were not served.`);
+            return new StopUpdateCollection(filteredStops, this.tripId);
+        }
+
+        return this;
     }
 }

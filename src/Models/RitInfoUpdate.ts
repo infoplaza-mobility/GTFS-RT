@@ -37,6 +37,7 @@ export class RitInfoUpdate {
             update.stops.map(stop => new RitInfoStopUpdate(stop)),
             update.tripId?.toString()
         );
+
         this._shapeId = update.shapeId;
         this._trainNumber = update.trainNumber;
         this._trainType = update.trainType;
@@ -46,6 +47,11 @@ export class RitInfoUpdate {
         this._timestamp = update.timestamp;
 
         this._isInternationalTrain = this.setInternationalTrain();
+
+        //Replacement busses have some weird quirks with sometimes double stops from two trips.
+        if(this._trainNumber > 900_000) {
+            this._stopCollection = this._stopCollection.removeStopsNotServed();
+        }
     }
 
     private setInternationalTrain(): boolean {
