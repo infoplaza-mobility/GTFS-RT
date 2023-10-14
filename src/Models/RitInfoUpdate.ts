@@ -47,11 +47,6 @@ export class RitInfoUpdate {
         this._timestamp = update.timestamp;
 
         this._isInternationalTrain = this.setInternationalTrain();
-
-        //Replacement busses have some weird quirks with sometimes double stops from two trips.
-        if(this._trainNumber > 900_000) {
-            this._stopCollection = this._stopCollection.removeStopsNotServed();
-        }
     }
 
     private setInternationalTrain(): boolean {
@@ -226,13 +221,20 @@ export class RitInfoUpdate {
      * @returns {boolean} True if the trip is an extra trip, false otherwise.
      */
     public get isAdded(): boolean {
-        if (this._changes)
-            return this._changes.some(change =>
-                change.changeType == JourneyChangeType.ExtraTrain
-            ) || this._shortTrainNumber !== this._trainNumber || this._trainNumber > 200_000;
+        let isAdded = false;
 
-        // If the short train number does not match the train number, it is an extra train. (E.g. 301234 vs 1234, 701234 vs 1234 or 201234 vs 1234)
-        return this._shortTrainNumber !== this._trainNumber || this._trainNumber > 100_000;
+        if (this._changes)
+            isAdded = this._changes.some(change =>
+                change.changeType == JourneyChangeType.ExtraTrain
+            )
+
+        //Could be incorrect, maybe only 300.000 and 700.000 are added.
+        if(!isAdded) {
+            // If the short train number does not match the train number, it is an extra train. (E.g. 301234 vs 1234, 701234 vs 1234 or 201234 vs 1234)
+            this._shortTrainNumber !== this._trainNumber || (this._trainNumber > 100_000 && this._trainNumber < 900_000);
+        }
+
+        return isAdded;
     }
 
     public get hasModifiedStopBehaviour(): boolean {

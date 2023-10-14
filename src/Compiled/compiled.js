@@ -3943,6 +3943,7 @@ export const transit_realtime = $root.transit_realtime = (() => {
             case "DELETED":
             case 7:
                 message.scheduleRelationship = 7;
+                break;
             }
             if (object[".transit_realtime.ovapiTripdescriptor"] != null) {
                 if (typeof object[".transit_realtime.ovapiTripdescriptor"] !== "object")
