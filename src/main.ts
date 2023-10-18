@@ -6,11 +6,12 @@
 
 import path from "path";
 
-import {FeedManager} from "./Services/FeedManager";
+import {FeedManager, IFeedManager} from "./Services/FeedManager";
 import express from 'express';
 import {ITVVManager, TripIdWithDate, TVVManager} from "./Interfaces/TVVManager";
 import {InfoplusRepository} from "./Repositories/InfoplusRepository";
 import {IStaticDataRepository, StaticDataRepository} from "./Repositories/StaticDataRepository";
+import {PassTimesRepository} from "./Repositories/PasstimesRepository";
 
 require('dotenv').config();
 
@@ -20,7 +21,9 @@ require('dotenv').config();
 export class Main {
 
   private readonly _tvvManager: ITVVManager;
+  private readonly _feedManager: IFeedManager;
   private readonly _infoplusRepo: InfoplusRepository;
+  private readonly _passtimesRepo: PassTimesRepository;
   private readonly _staticDataRepo: IStaticDataRepository;
 
   private tripIdsThatShouldbeRemoved: TripIdWithDate[] = [];
@@ -29,9 +32,11 @@ export class Main {
     console.log(`[Main] Starting GTFS-RT generator version ${process.env.npm_package_version}`)
 
     this._infoplusRepo = new InfoplusRepository();
+    this._passtimesRepo = new PassTimesRepository();
     this._staticDataRepo = new StaticDataRepository();
 
     this._tvvManager = new TVVManager(this._staticDataRepo, this._infoplusRepo);
+    this._feedManager = new FeedManager(this._infoplusRepo, this._passtimesRepo);
 
     this.startWebServer();
 
@@ -46,10 +51,10 @@ export class Main {
    * @private
    */
   private async setUpTimer() {
-    await FeedManager.updateTrainFeed(this.tripIdsThatShouldbeRemoved);
+    await this._feedManager.updateTrainFeed(this.tripIdsThatShouldbeRemoved);
     // await FeedManager.updateTripUpdatesFeed();
     setInterval(async () => {
-        await FeedManager.updateTrainFeed(this.tripIdsThatShouldbeRemoved);
+        await this._feedManager.updateTrainFeed(this.tripIdsThatShouldbeRemoved);
         // await FeedManager.updateTripUpdatesFeed();
     }, 30 * 1000);
   }

@@ -15,18 +15,39 @@ import {TripIdWithDate} from "../Interfaces/TVVManager";
 import {transit_realtime} from "../Compiled/compiled";
 import FeedMessage = transit_realtime.FeedMessage;
 
-export class FeedManager {
+export interface IFeedManager {
+    /**
+     * Updates the train feed, fetches the current realtime train data
+     * from InfoPlus, then applies the specified removals and saves the generated
+     * protobuf file to disk in ./publish/trainUpdates.pb and ./publish/trainUpdates.json
+     * @param tripIdsToRemove The trip IDs to mark als "REMOVED"/"CANCELLED" in the feed
+     */
+    updateTrainFeed(tripIdsToRemove: TripIdWithDate[]): Promise<void>;
 
-    private static _infoplusRepository: InfoplusRepository = new InfoplusRepository();
-    private static _passtimesRepository: PassTimesRepository = new PassTimesRepository();
+    /**
+     * Updates the trip updates feed, fetches the current realtime trip updates
+     * from OVApi, reads this protobuf and checks all trips if they are valid.
+     * Fixes invalid trips and then writes back the protobuf to disk in ./publish/tripUpdates.pb
+     * @throws Error if the trip updates feed could not be updated in any way
+     */
+    updateTripUpdatesFeed(): Promise<void>;
+}
 
-    public static async updateTrainFeed(tripIdsToRemove: TripIdWithDate[]): Promise<void> {
+export class FeedManager implements IFeedManager {
+
+    public constructor(
+        private readonly infoplusRepository: InfoplusRepository,
+        private readonly passtimesRepository: PassTimesRepository) {
+    }
+
+    /** @inheritDoc */
+    public async updateTrainFeed(tripIdsToRemove: TripIdWithDate[]): Promise<void> {
         console.time('updateTrainFeed');
         console.log('Updating train feed...')
         //Get the current operationDate in YYYY-MM-DD format
         const currentOperationDate = new Date().toISOString().split('T')[0];
 
-        const trainUpdates = await this._infoplusRepository.getCurrentRealtimeTripUpdates(currentOperationDate);
+        const trainUpdates = await this.infoplusRepository.getCurrentRealtimeTripUpdates(currentOperationDate);
 
         const trainUpdateCollection = TrainUpdateCollection.fromDatabaseResult(trainUpdates);
 
@@ -51,5 +72,10 @@ export class FeedManager {
         }
 
         console.timeEnd('updateTrainFeed');
+    }
+
+    /** @inheritDoc */
+    public async updateTripUpdatesFeed(): Promise<void> {
+
     }
 }
