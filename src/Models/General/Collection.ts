@@ -31,6 +31,10 @@ export class Collection<T> {
         return this._items.map(callbackfn, thisArg);
     }
 
+    public filter(callbackfn: (value: T, index: number, array: T[]) => unknown, thisArg?: any): T[] {
+        return this._items.filter(callbackfn, thisArg);
+    }
+
     public toArray(): T[] {
         return this._items;
     }
@@ -45,5 +49,21 @@ export class Collection<T> {
 
     public get(index: number): T {
         return this._items[index];
+    }
+
+    public some(callbackfn: (value: T, index: number, array: T[]) => unknown, thisArg?: any): boolean {
+        return this._items.some(callbackfn, thisArg);
+    }
+
+    public every(callbackfn: (value: T, index: number, array: T[]) => unknown, thisArg?: any): boolean {
+        return this._items.every(callbackfn, thisArg);
+    }
+
+    /**
+     * Appends new elements to the end of an array, and returns the new length of the array.
+     * @param items New elements to add to the array.
+     */
+    public push(...items: T[]): number {
+        return this._items.push(...items);
     }
 }

@@ -7,6 +7,7 @@
 import {RitInfo} from "../Shared/src/Types/Infoplus/RitInfo";
 import JourneyChange = RitInfo.Internal.JourneyChange;
 import JourneyStationChange = RitInfo.Internal.JourneyStationChange;
+import { IDatabaseStopUpdate } from "./DatabaseStopUpdate";
 
 export interface IDatabaseRitInfoUpdate {
     trainNumber: number;
@@ -18,18 +19,22 @@ export interface IDatabaseRitInfoUpdate {
     tripId: number | null;
     routeId: number | null;
     directionId: number | null;
+    shapeId: number | null;
     changes: JourneyChange[] | null;
     timestamp: Date;
 }
 
-export interface IRitInfoStopUpdate {
-    stopId: number | null;
+export interface IRitInfoStopUpdate extends IDatabaseStopUpdate {
     changes: JourneyStationChange[] | null;
+    /** PlatformCode in GTFS */
     platform: string | null;
-    sequence: number;
-    arrivalTime: string | null;
-    departureTime: string | null;
+    /** Arrival or DepartureTrack Message in Infoplus */
+    track: string | null;
+
+    plannedArrivalTime: string | null;
+    plannedDepartureTime: string | null;
+
+    plannedTrack: string | null;
+    actualTrack: string | null;
     stationCode: string;
-    arrivalDelay: string | null;
-    departureDelay: string | null;
 }

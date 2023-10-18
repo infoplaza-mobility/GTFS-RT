@@ -4,21 +4,16 @@
  * Questions? Email: tristantriest@gmail.com
  */
 
-import {transit_realtime} from "gtfs-rb";
-import IStopTimeUpdate = transit_realtime.TripUpdate.IStopTimeUpdate;
-import IStopTimeEvent = transit_realtime.TripUpdate.IStopTimeEvent;
+import {transit_realtime} from "../../Compiled/compiled";
 import StopTimeEvent = transit_realtime.TripUpdate.StopTimeEvent;
-import {RitInfoStopUpdate} from "../RitinfoStopUpdate";
+import StopTimeUpdate = transit_realtime.TripUpdate.StopTimeUpdate;
+import { StopUpdate } from "../StopUpdates/StopUpdate";
+import {RitInfoStopUpdate} from "../StopUpdates/RitinfoStopUpdate";
 
-export class StopTimeUpdate implements IStopTimeUpdate {
-    departure: IStopTimeEvent;
-    arrival: IStopTimeEvent;
-    stopId: string;
-    scheduleRelationship: transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship;
-    stopSequence: number;
+export class ExtendedStopTimeUpdate extends StopTimeUpdate {
 
-    constructor(stopTimeUpdate: IStopTimeUpdate) {
-        Object.assign(this, stopTimeUpdate);
+    constructor(stopTimeUpdate: StopTimeUpdate) {
+        super(stopTimeUpdate);
     }
 
     /**
@@ -26,32 +21,69 @@ export class StopTimeUpdate implements IStopTimeUpdate {
      * @param update The RitInfoStopUpdate to convert.
      * @returns {StopTimeUpdate} The converted StopTimeUpdate.
      */
-    public static fromRitInfoStopUpdate(update: RitInfoStopUpdate): StopTimeUpdate {
+    public static fromStopUpdate(update: RitInfoStopUpdate): StopTimeUpdate {
 
-        const { departureDelay, arrivalDelay, departureTime, arrivalTime, stopId, sequence, isLastStop, isFirstStop  } = update;
+        let {
+            departureDelay,
+            arrivalDelay,
+            departureTime,
+            arrivalTime,
+            stopId,
+            sequence,
+            isLastStop,
+            isFirstStop  ,
+            actualTrack,
+            plannedTrack,
+            stationCode
+        } = update;
 
-        const departure = new StopTimeEvent({
-            time: departureTime,
-            delay: departureDelay
+        const departureBeforeArrival = departureTime !== 0 && arrivalTime !== 0 && departureTime < arrivalTime;
+        const arrivalIsZero = arrivalTime === 0;
+        const departureIsZero = departureTime === 0;
+        // If the departure is before the arrival, this must be an error, so we add 1 minute to the arrival time and make it the new departure time.
+        if(departureBeforeArrival) {
+            departureTime = arrivalTime + 60;
+        }
+            
+        let departure = StopTimeEvent.create({
+            time: !departureIsZero ? departureTime : arrivalTime,
+            delay: departureDelay,
+            uncertainty: null
         });
 
-        const arrival = new StopTimeEvent({
-            time: arrivalTime,
-            delay: arrivalDelay
+        let arrival = StopTimeEvent.create({
+            time: !arrivalIsZero ? arrivalTime : departureTime,
+            delay: arrivalDelay,
+            uncertainty: null
         });
 
+        if(isFirstStop)
+            arrival = departure;
 
+        if(isLastStop)
+            departure = arrival;
 
+        //The stop is skipped entirely if the passing is cancelled.
         const scheduleRelationship = update.isCancelled() ?
             transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SKIPPED :
             transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SCHEDULED;
 
-        return new StopTimeUpdate({
+        const shouldHaveDepartureAndArrival = true;
+
+        return StopTimeUpdate.create({
             stopId,
             stopSequence: sequence,
-            departure: !isLastStop ? departure : undefined,
-            arrival: !isFirstStop ? arrival : undefined,
-            scheduleRelationship
-        });
+            arrival: shouldHaveDepartureAndArrival ? arrival : undefined,
+            departure: shouldHaveDepartureAndArrival ? departure : undefined,
+            scheduleRelationship,
+            ".transit_realtime.ovapiStopTimeUpdate": {
+                //We also use the planned track as a fallback for the actual track. Sometimes the actual track doesn't get filled, even though the train stops there.
+                actualTrack: actualTrack || plannedTrack,
+                scheduledTrack: plannedTrack,
+                stationId: stationCode,
+            }
+        })
+
+
     }
 }
