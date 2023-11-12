@@ -3,25 +3,44 @@
  * This file is part of the R-OV source code and thus shall not be shared. Please respect the copyright of the original owner.
  * Questions? Email: tristantriest@gmail.com
  */
-
-import {InfoplusRepository} from "../Repositories/InfoplusRepository";
 import {TrainUpdateCollection} from "../Models/TrainUpdateCollection";
 
 import { File } from "../Models/General/File";
-import { PassTimesRepository } from "../Repositories/PasstimesRepository";
 
 import {TripIdWithDate} from "../Interfaces/TVVManager";
 
 import {transit_realtime} from "../Compiled/compiled";
 import FeedMessage = transit_realtime.FeedMessage;
+import {IInfoPlusRepository} from "../Interfaces/Repositories/InfoplusRepository";
 
+/**
+ * Singleton class that handles updating (for now only) the train feed.
+ * @Singleton
+ */
 export class FeedManager {
 
-    private static _infoplusRepository: InfoplusRepository = new InfoplusRepository();
-    private static _passtimesRepository: PassTimesRepository = new PassTimesRepository();
+    private static instance: FeedManager | null;
+    private readonly _infoplusRepository: IInfoPlusRepository;
 
-    public static async updateTrainFeed(tripIdsToRemove: TripIdWithDate[]): Promise<void> {
-        console.time('updateTrainFeed');
+    private constructor(infoPlusRepository: IInfoPlusRepository) {
+        this._infoplusRepository = infoPlusRepository;
+    }
+
+    public static getInstance(infoPlusRepository: IInfoPlusRepository): FeedManager {
+        if (!this.instance) {
+            this.instance = new FeedManager(infoPlusRepository);
+        }
+        return this.instance;
+    }
+
+    /**
+     * Update the protobuf feeds in the publish folder with the latest realtime train updates from infoplus.
+     * Removes the trips that are in the tripIdsToRemove array.
+     * Outputs both a .pb and .json file to /publish.
+     * @param tripIdsToRemove The tripIds that should be removed from the feed.
+     */
+    public async updateTrainFeed(tripIdsToRemove: TripIdWithDate[]): Promise<void> {
+        console.time('Updating train feed...');
         console.log('Updating train feed...')
         //Get the current operationDate in YYYY-MM-DD format
         const currentOperationDate = new Date().toISOString().split('T')[0];
@@ -36,20 +55,24 @@ export class FeedManager {
 
         try {
             const constructedFeedMessage: FeedMessage = FeedMessage.fromObject(trainUpdateFeed);
-
-            const file: File = new File('./publish/', 'trainUpdates.pb', Buffer.from(FeedMessage.encode(constructedFeedMessage).finish()));
-            file.saveSync();
-
-            console.log('Saved updates to trainUpdates.pb');
-
-            const jsonFile: File = new File('./publish/', 'trainUpdates.json', Buffer.from(JSON.stringify(constructedFeedMessage.toJSON())));
-            jsonFile.saveSync();
-            console.log('Saved updates to trainUpdates.json');
-
+            this.saveToFile(Buffer.from(FeedMessage.encode(constructedFeedMessage).finish()), 'trainUpdates.pb');
+            this.saveToFile(Buffer.from(JSON.stringify(constructedFeedMessage.toJSON())), 'trainUpdates.json');
         } catch (e) {
-            console.error(e);
+            console.error(`[FeedManager] Error while saving train feed`, e);
         }
 
-        console.timeEnd('updateTrainFeed');
+        console.timeEnd('Updating train feed...');
+    }
+
+    private saveToFile(buffer: Buffer, fileName: string): void {
+        const file: File = new File(
+            './publish/',
+            fileName,
+            buffer
+        );
+
+        file.saveSync();
+
+        console.log(`[FeedManager] Saved updates to ${fileName}`);
     }
 }
