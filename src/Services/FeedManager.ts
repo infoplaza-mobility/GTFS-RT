@@ -5,23 +5,14 @@
  */
 import {TrainUpdateCollection} from "../Models/TrainUpdateCollection";
 
-import { File } from "../Models/General/File";
+import {File} from "../Models/General/File";
 
 import {TripIdWithDate} from "../Interfaces/TVVManager";
 
 import {transit_realtime} from "../Compiled/compiled";
-import FeedMessage = transit_realtime.FeedMessage;
 import {IInfoPlusRepository} from "../Interfaces/Repositories/InfoplusRepository";
-
-export interface IFeedManager {
-    /**
-     * Updates the train feed, fetches the current realtime train data
-     * from InfoPlus, then applies the specified removals and saves the generated
-     * protobuf file to disk in ./publish/trainUpdates.pb and ./publish/trainUpdates.json
-     * @param tripIdsToRemove The trip IDs to mark als "REMOVED"/"CANCELLED" in the feed
-     */
-    updateTrainFeed(tripIdsToRemove: TripIdWithDate[]): Promise<void>;
-}
+import {IFeedManager} from "../Interfaces/Services/UpdateTrainFeed";
+import FeedMessage = transit_realtime.FeedMessage;
 
 /**
  * Singleton class that handles updating (for now only) the train feed.
@@ -44,7 +35,7 @@ export class FeedManager implements IFeedManager {
     }
 
     public async updateTrainFeed(tripIdsToRemove: TripIdWithDate[]): Promise<void> {
-        console.time('updateTrainFeed');
+        console.time('Updating train feed...');
         console.log('Updating train feed...')
         //Get the current operationDate in YYYY-MM-DD format
         const currentOperationDate = new Date().toISOString().split('T')[0];
