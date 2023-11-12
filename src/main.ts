@@ -10,7 +10,11 @@ import {FeedManager} from "./Services/FeedManager";
 import express from 'express';
 import {ITVVManager, TripIdWithDate, TVVManager} from "./Interfaces/TVVManager";
 import {InfoplusRepository} from "./Repositories/InfoplusRepository";
-import {IStaticDataRepository, StaticDataRepository} from "./Repositories/StaticDataRepository";
+import {StaticDataRepository} from "./Repositories/StaticDataRepository";
+import {IInfoPlusRepository} from "./Interfaces/Repositories/InfoplusRepository";
+
+import {IStaticDataRepository} from "./Interfaces/Repositories/IStaticDataRepository";
+import {IFeedManager} from "./Interfaces/Services/UpdateTrainFeed";
 
 require('dotenv').config();
 
@@ -20,10 +24,12 @@ require('dotenv').config();
 export class Main {
 
   private readonly _tvvManager: ITVVManager;
-  private readonly _infoplusRepo: InfoplusRepository;
+  private readonly _infoplusRepo: IInfoPlusRepository;
   private readonly _staticDataRepo: IStaticDataRepository;
 
-  private tripIdsThatShouldbeRemoved: TripIdWithDate[] = [];
+  private readonly _feedManager: IFeedManager;
+
+  private tripIdsThatShouldBeRemoved: TripIdWithDate[] = [];
 
   constructor() {
     console.log(`[Main] Starting GTFS-RT generator version ${process.env.npm_package_version}`)
@@ -32,6 +38,7 @@ export class Main {
     this._staticDataRepo = new StaticDataRepository();
 
     this._tvvManager = new TVVManager(this._staticDataRepo, this._infoplusRepo);
+    this._feedManager = FeedManager.getInstance(this._infoplusRepo);
 
     this.startWebServer();
 
@@ -46,19 +53,30 @@ export class Main {
    * @private
    */
   private async setUpTimer() {
-    await FeedManager.updateTrainFeed(this.tripIdsThatShouldbeRemoved);
+    await this._feedManager.updateTrainFeed(this.tripIdsThatShouldBeRemoved);
     // await FeedManager.updateTripUpdatesFeed();
     setInterval(async () => {
-        await FeedManager.updateTrainFeed(this.tripIdsThatShouldbeRemoved);
+        await this._feedManager.updateTrainFeed(this.tripIdsThatShouldBeRemoved);
         // await FeedManager.updateTripUpdatesFeed();
     }, 30 * 1000);
   }
 
+  /**
+   * Sets up a new timer that runs every hour to find all TVV trips that are in the planned data, but not in the InfoPlus data.
+   * @private
+   */
   private async setUpTVVTimer() {
-    this.tripIdsThatShouldbeRemoved = await this._tvvManager.findTVVNotInInfoPlus();
+    /**
+     * We want to find the trips that should be removed from the static data that OTP has loaded in memory.
+     * As infoplus train replacing trips are manually added, their train numbers often do not match between the static data and the infoplus data.
+     * This creates either: Duplicate trips, or worse, trips that are not actually running (anymore), or their times got changed.
+     * By simply removing all static-data trips that cannot be found in InfoPlus, we ensure this does not happen and let InfoPlus be the single
+     * source of truth for train replacing trips.
+     * */
+    this.tripIdsThatShouldBeRemoved = await this._tvvManager.findTVVNotInInfoPlus();
 
     setInterval(async () => {
-      this.tripIdsThatShouldbeRemoved = await this._tvvManager.findTVVNotInInfoPlus();
+      this.tripIdsThatShouldBeRemoved = await this._tvvManager.findTVVNotInInfoPlus();
       //Run every hour
     }, 60 * 60 * 1000);
   }

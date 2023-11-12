@@ -4,8 +4,9 @@
  * Questions? Email: tristantriest@gmail.com
  */
 
-import {InfoplusRepository} from "../Repositories/InfoplusRepository";
-import {IStaticDataRepository} from "../Repositories/StaticDataRepository";
+import {IInfoPlusRepository} from "./Repositories/InfoplusRepository";
+
+import {IStaticDataRepository} from "./Repositories/IStaticDataRepository";
 
 /**
  * The TVV (TreinVervangend Vervoer) manager is responsible for keeping track of any TVV trips that are in the planned data,
@@ -20,11 +21,16 @@ export interface ITVVManager {
 
 export type TripIdWithDate = { tripId: number, operationDate: string };
 
-
+/**
+ * The TVV (TreinVervangend Vervoer) manager is responsible for keeping track of any TVV trips that are in the planned data.
+ */
 export class TVVManager implements ITVVManager {
+    private readonly _staticDataRepository: IStaticDataRepository;
+    private readonly _infoPlusRepository: IInfoPlusRepository;
 
-    constructor(private readonly staticDataRepository: IStaticDataRepository, private readonly infoPlusRepository: InfoplusRepository) {
-
+    constructor(staticDataRepository: IStaticDataRepository, infoPlusRepository: IInfoPlusRepository) {
+        this._staticDataRepository = staticDataRepository;
+        this._infoPlusRepository = infoPlusRepository;
     }
 
     /** @inheritDoc */
@@ -71,11 +77,11 @@ export class TVVManager implements ITVVManager {
     private async fetchTVVNotInInfoPlus(date: string): Promise<number[]> {
         console.time("Find TVV not in InfoPlus")
 
-        const trainNumbers = await this.staticDataRepository.getTrainReplacementBusServiceTripShortNames(date);
+        const trainNumbers = await this._staticDataRepository.getTrainReplacementBusServiceTripShortNames(date);
 
         console.log(`[TVVManager] Found ${trainNumbers.length} train replacement bus service trips in the static data for ${date}`);
 
-        const tripIdsWithoutInfoPlusData = await this.infoPlusRepository.getTripIdsForTVVNotInInfoPlus(trainNumbers, date);
+        const tripIdsWithoutInfoPlusData = await this._infoPlusRepository.getTripIdsForTVVNotInInfoPlus(trainNumbers, date);
 
         console.log(`[TVVManager] Found ${tripIdsWithoutInfoPlusData.length} TVV trips in OpenTripPlanner that are not in InfoPlus for ${date}`);
         console.timeEnd("Find TVV not in InfoPlus")
