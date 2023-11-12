@@ -6,7 +6,7 @@
 
 import path from "path";
 
-import {FeedManager, IFeedManager} from "./Services/FeedManager";
+import {FeedManager} from "./Services/FeedManager";
 import express from 'express';
 import {ITVVManager, TripIdWithDate, TVVManager} from "./Interfaces/TVVManager";
 import {InfoplusRepository} from "./Repositories/InfoplusRepository";
@@ -14,6 +14,7 @@ import {StaticDataRepository} from "./Repositories/StaticDataRepository";
 import {IInfoPlusRepository} from "./Interfaces/Repositories/InfoplusRepository";
 
 import {IStaticDataRepository} from "./Interfaces/Repositories/IStaticDataRepository";
+import {IFeedManager} from "./Interfaces/Services/UpdateTrainFeed";
 
 require('dotenv').config();
 
