@@ -1,36 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="dataSourceStorageLocal" created-in="WS-232.9559.58">
+  <component name="dataSourceStorageLocal" created-in="WS-223.8214.51">
     <data-source name="r-ov@r-ov.nl" uuid="52ff5e7f-af4d-4f13-82af-ffe73c4c10ed">
-      <database-info product="PostgreSQL" version="14.9 (Debian 14.9-1.pgdg110+1)" jdbc-version="4.2" driver-name="PostgreSQL JDBC Driver" driver-version="42.6.0" dbms="POSTGRES" exact-version="14.9" exact-driver-version="42.6">
-        <identifier-quote-string>&quot;</identifier-quote-string>
-      </database-info>
-      <case-sensitivity plain-identifiers="lower" quoted-identifiers="exact" />
-      <secret-storage>session</secret-storage>
-      <user-name>postgres</user-name>
-      <schema-mapping>
-        <introspection-scope>
-          <node negative="1">
-            <node kind="database" qname="@">
-              <node kind="schema" qname="@" />
-            </node>
-            <node kind="database" qname="r-ov">
-              <node kind="schema">
-                <name qname="InfoPlus" />
-                <name qname="logs" />
-                <name qname="Messages" />
-                <name qname="PassTimes" />
-                <name qname="StaticData-BE-DELIJN" />
-                <name qname="StaticData-BE-MIVB" />
-                <name qname="StaticData-BE-TEC" />
-                <name qname="StaticData-NL" />
-                <name qname="VehiclePositions" />
-                <name qname="public" />
-              </node>
-            </node>
-          </node>
-        </introspection-scope>
-      </schema-mapping>
+      <database-info product="" version="" jdbc-version="" driver-name="" driver-version="" dbms="POSTGRES" exact-version="0" />
+      <schema-mapping />
     </data-source>
   </component>
 </project>

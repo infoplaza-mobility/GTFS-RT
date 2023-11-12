@@ -6,7 +6,7 @@
 
 import path from "path";
 
-import {FeedManager} from "./Services/FeedManager";
+import {FeedManager, IFeedManager} from "./Services/FeedManager";
 import express from 'express';
 import {ITVVManager, TripIdWithDate, TVVManager} from "./Interfaces/TVVManager";
 import {InfoplusRepository} from "./Repositories/InfoplusRepository";
@@ -26,7 +26,7 @@ export class Main {
   private readonly _infoplusRepo: IInfoPlusRepository;
   private readonly _staticDataRepo: IStaticDataRepository;
 
-  private readonly _feedManager: FeedManager;
+  private readonly _feedManager: IFeedManager;
 
   private tripIdsThatShouldBeRemoved: TripIdWithDate[] = [];
 

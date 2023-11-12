@@ -13,11 +13,21 @@ import {transit_realtime} from "../Compiled/compiled";
 import FeedMessage = transit_realtime.FeedMessage;
 import {IInfoPlusRepository} from "../Interfaces/Repositories/InfoplusRepository";
 
+export interface IFeedManager {
+    /**
+     * Updates the train feed, fetches the current realtime train data
+     * from InfoPlus, then applies the specified removals and saves the generated
+     * protobuf file to disk in ./publish/trainUpdates.pb and ./publish/trainUpdates.json
+     * @param tripIdsToRemove The trip IDs to mark als "REMOVED"/"CANCELLED" in the feed
+     */
+    updateTrainFeed(tripIdsToRemove: TripIdWithDate[]): Promise<void>;
+}
+
 /**
  * Singleton class that handles updating (for now only) the train feed.
  * @Singleton
  */
-export class FeedManager {
+export class FeedManager implements IFeedManager {
 
     private static instance: FeedManager | null;
     private readonly _infoplusRepository: IInfoPlusRepository;
@@ -33,14 +43,8 @@ export class FeedManager {
         return this.instance;
     }
 
-    /**
-     * Update the protobuf feeds in the publish folder with the latest realtime train updates from infoplus.
-     * Removes the trips that are in the tripIdsToRemove array.
-     * Outputs both a .pb and .json file to /publish.
-     * @param tripIdsToRemove The tripIds that should be removed from the feed.
-     */
     public async updateTrainFeed(tripIdsToRemove: TripIdWithDate[]): Promise<void> {
-        console.time('Updating train feed...');
+        console.time('updateTrainFeed');
         console.log('Updating train feed...')
         //Get the current operationDate in YYYY-MM-DD format
         const currentOperationDate = new Date().toISOString().split('T')[0];
