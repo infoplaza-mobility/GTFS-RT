@@ -4,10 +4,10 @@
  * Questions? Email: tristantriest@gmail.com
  */
 
-import {RitInfo} from "../Shared/src/Types/Infoplus/RitInfo";
-import JourneyChange = RitInfo.Internal.JourneyChange;
-import JourneyStationChange = RitInfo.Internal.JourneyStationChange;
 import { IDatabaseStopUpdate } from "./DatabaseStopUpdate";
+import {JourneyChange, JourneyStationChange} from "./Changes";
+
+
 
 export interface IDatabaseRitInfoUpdate {
     trainNumber: number;

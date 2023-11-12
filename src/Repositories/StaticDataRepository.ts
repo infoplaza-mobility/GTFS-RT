@@ -6,13 +6,7 @@
 
 import {Repository} from "./Repository";
 
-export interface IStaticDataRepository {
-    /**
-     * Gets all train replacement bus service trip short names for a given date.
-     * @param date The date to get the trips for.
-     */
-    getTrainReplacementBusServiceTripShortNames(date: string): Promise<number[]>;
-}
+import {IStaticDataRepository} from "../Interfaces/Repositories/IStaticDataRepository";
 
 export class StaticDataRepository extends Repository implements IStaticDataRepository {
     /** @inheritDoc */
