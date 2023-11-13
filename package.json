@@ -7,8 +7,8 @@
     "test": "echo \"Error: no tests specified\" && exit 0",
     "start": "node ./dist/main.js",
     "dev": "nodemon --watch",
-    "build": "tsc -p .",
-    "build:copy": "ncp src/Compiled dist/Compiled",
+    "build": "babel src --out-dir dist",
+    "build:ts": "tsc -p .",
     "debug": "nodemon --inspect",
     "patch": "npm version patch"
   },
@@ -41,6 +41,10 @@
     "ts-protoc-gen": "^0.15.1-pre.a71b34e"
   },
   "devDependencies": {
+    "@babel/cli": "^7.23.0",
+    "@babel/core": "^7.23.3",
+    "@babel/preset-env": "^7.23.3",
+    "@babel/preset-typescript": "^7.23.3",
     "@types/node": "^18.11.18",
     "protobufjs": "^7.2.5",
     "typescript": "^4.5.4"
