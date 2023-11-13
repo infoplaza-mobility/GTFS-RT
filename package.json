@@ -8,6 +8,7 @@
     "start": "node ./dist/main.js",
     "dev": "nodemon --watch",
     "build": "tsc -p .",
+    "build:copy": "ncp src/Compiled dist/Compiled",
     "debug": "nodemon --inspect",
     "patch": "npm version patch"
   },
@@ -32,6 +33,7 @@
     "gtfs-realtime-bindings": "^1.1.1",
     "knex": "^2.4.0",
     "moment-timezone": "^0.5.40",
+    "ncp": "^2.0.0",
     "node-fetch": "^3.3.0",
     "pg": "^8.8.0",
     "request": "^2.88.2",
