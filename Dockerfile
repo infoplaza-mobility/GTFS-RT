@@ -22,6 +22,6 @@ COPY . .
 RUN yarn add -D @types/node
 # Build the app
 RUN yarn build
-RUN yarn build:copy
+RUN yarn tsc
 
 CMD ["yarn", "start"]
