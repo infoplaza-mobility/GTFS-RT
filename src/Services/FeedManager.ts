@@ -13,6 +13,7 @@ import {transit_realtime} from "../Compiled/compiled";
 import {IInfoPlusRepository} from "../Interfaces/Repositories/InfoplusRepository";
 import {IFeedManager} from "../Interfaces/Services/UpdateTrainFeed";
 import FeedMessage = transit_realtime.FeedMessage;
+import moment from "moment-timezone";
 
 /**
  * Singleton class that handles updating (for now only) the train feed.
@@ -38,10 +39,45 @@ export class FeedManager implements IFeedManager {
         console.time('Updating train feed...');
         console.log('Updating train feed...')
         //Get the current operationDate in YYYY-MM-DD format
-        const currentOperationDate = new Date().toISOString().split('T')[0];
+        const currentOperationDate = moment()
+            .tz('Europe/Amsterdam')
+            .format('YYYY-MM-DD');
 
-        const trainUpdates = await this._infoplusRepository.getCurrentRealtimeTripUpdates(currentOperationDate);
+        const operationDateTomorrow = moment(currentOperationDate)
+            .add(1, 'days')
+            .format('YYYY-MM-DD')
 
+        const operationDateYesterday = moment(currentOperationDate)
+            .subtract(1, 'days')
+            .format('YYYY-MM-DD')
+
+        //Get the operationDate 3 days from now in YYYY-MM-DD format
+        const endOperationDate = moment(currentOperationDate)
+            .add(3, 'days')
+            .format('YYYY-MM-DD')
+
+        let operationDateOfTodayOrTomorrow = currentOperationDate;
+        let operationDateOfYesterdayOrToday = currentOperationDate;
+
+        //Check if the current time is between 00:00 and 04:00, if so, set the current operationDate to yesterday.
+        if (moment().tz('Europe/Amsterdam').hour(
+
+        ) < 4) {
+            operationDateOfYesterdayOrToday = operationDateYesterday;
+        }
+
+        //Check if the current time is after 22:00, if so, set the current operationDate to tomorrow.
+        if (moment().tz('Europe/Amsterdam').hour() >= 22) {
+            operationDateOfTodayOrTomorrow = operationDateTomorrow;
+        }
+
+        console.time('Getting realtime trip updates from database...')
+        const trainUpdates = await this._infoplusRepository.getCurrentRealtimeTripUpdates(
+            operationDateOfYesterdayOrToday,
+            operationDateOfTodayOrTomorrow,
+            endOperationDate
+        );
+        console.timeEnd('Getting realtime trip updates from database...')
         const trainUpdateCollection = TrainUpdateCollection.fromDatabaseResult(trainUpdates);
 
         trainUpdateCollection.applyRemovals(tripIdsToRemove);

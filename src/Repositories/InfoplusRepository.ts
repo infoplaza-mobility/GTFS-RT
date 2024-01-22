@@ -6,43 +6,38 @@
 
 import {Repository} from "./Repository";
 import {IDatabaseRitInfoUpdate} from "../Interfaces/DatabaseRitInfoUpdate";
-import knex from "knex";
 import {IInfoPlusRepository} from "../Interfaces/Repositories/InfoplusRepository";
 
 export class InfoplusRepository extends Repository implements IInfoPlusRepository {
 
-    /**
-     * Fetches all RitInfo messages plus their stops (including GTFS trip and stop ids) from the InfoPlus database.
-     * Limited to all trains that had at least one stop in the last hour and all planned trains in the future for the current day.
-     * @returns {Promise<IDatabaseRitInfoUpdate[]>} RitInfo messages with their associated stops.
-     * @param operationDate The operation date in YYYY-MM-DD format.
-     * If this query is slow all of a sudden, an index is probably missing.
-     */
-    public async getCurrentRealtimeTripUpdates(operationDate: string): Promise<IDatabaseRitInfoUpdate[]> {
+    /** @inheritDoc */
+    public async getCurrentRealtimeTripUpdates(operationDateOfTodayOrYesterday: string, operationDateOfTodayOrTomorrow: string, endOperationDate: string): Promise<IDatabaseRitInfoUpdate[]> {
         console.time('getCurrentRealtimeTripUpdates');
         return this.database.raw(`
-            WITH trips AS (SELECT "tripId", "routeId", "directionId", "tripShortName", "shapeId"
-                           FROM "StaticData-NL".trips
-                           WHERE agency = 'IFF'
-                             AND "serviceId" IN (SELECT "serviceId"
-                                                 FROM "StaticData-NL".calendar_dates
-                                                 WHERE date = ?)),
-                 -- We only need stops that are train stations, these all have 'IFF:' as a prefix.
+            WITH cal_dates AS (SELECT DISTINCT "serviceId", "date"
+                               FROM "StaticData-NL".calendar_dates
+                               WHERE "date" >= ?
+                                 AND date <= ?),
+                trips AS (SELECT "tripId", "routeId", "directionId", "tripShortName", "shapeId", "serviceId"
+            FROM "StaticData-NL".trips
+            WHERE agency = 'IFF'
+              AND "serviceId" IN (SELECT DISTINCT "serviceId"
+                FROM cal_dates)),
                 stops AS (SELECT "stopId", "zoneId", "platformCode"
             FROM "StaticData-NL".stops
-            WHERE "zoneId" LIKE 'IFF:%')
+            WHERE "zoneId" IS NOT NULL)
             SELECT r."trainNumber",
                    r."shortTrainNumber",
                    r."trainType",
                    r.agency,
+                   r."operationDate",
                    r."showsInTripPlanner",
                    r."timestamp",
                    coalesce(jpjl."logicalJourneyPartChanges", jpjl."logicalJourneyChanges") AS "changes",
-                   coalesce(trips."tripId", t_short."tripId")                               AS "tripId",
-                   coalesce(trips."routeId", t_short."routeId")                             AS "routeId",
-                   coalesce(trips."directionId", t_short."directionId")                     AS "directionId",
-                   coalesce(trips."shapeId", t_short."shapeId")                             AS "shapeId",
-                   -- Build the stops array
+                   t."tripId"                                 AS "tripId",
+                   coalesce(t."routeId", t_short."routeId")                                 AS "routeId",
+                   coalesce(t."directionId", t_short."directionId")                         AS "directionId",
+                   coalesce(t."shapeId", t_short."shapeId")                                 AS "shapeId",
                    jsonb_agg(
                            jsonb_build_object(
                                    'stationCode',
@@ -66,10 +61,7 @@ export class InfoplusRepository extends Repository implements IInfoPlusRepositor
                                    'changes',
                                    si.changes,
                                    'stopId',
-                                   coalesce(s."stopId", (SELECT "stopId"
-                                                         FROM stops
-                                                         WHERE stops."zoneId" = concat('IFF:', lower(si."stationCode"))
-                                            LIMIT 1), si."stationCode"),
+                                   COALESCE(s."stopId", lateral_stop."stopId", si."stationCode"),
                                    'platform',
                                    s."platformCode",
                                    'plannedTrack',
@@ -91,27 +83,38 @@ export class InfoplusRepository extends Repository implements IInfoPlusRepositor
                              ("plannedWillStop" = true OR "actualWillStop" = true) AND
                              (coalesce("plannedDepartureTime", "actualArrivalTime") IS NOT NULL OR
                               coalesce("plannedArrivalTime", "actualArrivalTime") IS NOT NULL)
---                                                                 AND ("plannedDepartureTime" != "actualDepartureTime" OR "plannedArrivalTime" != "actualArrivalTime")
-                     LEFT JOIN "StaticData-NL".stops s
-                               ON (s."zoneId" = concat('IFF:', lower(si."stationCode")) AND s."platformCode" = coalesce(
-                                       si."departureTrackMessage" -> 'Uitingen' ->> 'Uiting',
-                                   si."arrivalTrackMessage" -> 'Uitingen' ->> 'Uiting'))
-                -- We use either the original train number, or the short train number to match trips 
-                -- (Static data does not know about "ingelegde" ritten 100.000, 300.000, 700.000)
-                     LEFT JOIN trips ON trips."tripShortName"::int = jpjl."logicalJourneyPartNumber"
-         LEFT JOIN trips t_short ON t_short."tripShortName":: int = r."shortTrainNumber"
-            -- We only want to show trains that are running today or tomorrow, during the "magic" switchover times (0-4am), we need both days.
--- There's still a bug in here, where updates are not entirely correct during the switchover time.
-            WHERE r."operationDate" = ? OR (CURRENT_DATE = ?:: date + INTERVAL '1 day' AND r."operationDate" = ?:: date - INTERVAL '2 hours')
+                     LEFT JOIN trips t
+                               ON jpjl."logicalJourneyPartNumber" = t."tripShortName"::int
+                       AND EXISTS (SELECT 1
+                                   FROM cal_dates cd
+                                   WHERE cd."serviceId" = t."serviceId"
+                                     AND cd."date" = r."operationDate")
+                                     
+         LEFT JOIN trips t_short ON t."tripId" IS NULL AND r."shortTrainNumber" = t_short."tripShortName"::int
+                AND EXISTS (SELECT 1
+                FROM cal_dates cd
+                WHERE cd."serviceId" = t_short."serviceId"
+                AND cd."date" = r."operationDate")
+                LEFT JOIN stops s ON (s."zoneId" = concat('IFF:', lower(si."stationCode")) AND s."platformCode" = coalesce(
+                si."departureTrackMessage" -> 'Uitingen' ->> 'Uiting',
+                si."arrivalTrackMessage" -> 'Uitingen' ->> 'Uiting'))
+                LEFT JOIN LATERAL (
+                SELECT "stopId"
+                FROM stops lax
+                WHERE lax."zoneId" = concat('IFF:', lower(si."stationCode"))
+                LIMIT 1
+                ) AS lateral_stop ON s."stopId" IS NULL
+            WHERE r."operationDate" >= ?
+              AND NOT (
+                r."operationDate" > ?
+              AND jpjl."logicalJourneyChanges" IS NULL
+                )
             GROUP BY r."trainNumber", jpjl."logicalJourneyPartNumber", r."shortTrainNumber", r."trainType", r.agency,
-                r."showsInTripPlanner", r.timestamp,
+                r."showsInTripPlanner", r.timestamp, r."operationDate", t."tripId", coalesce(t."tripId", t_short."tripId"),
                 coalesce(jpjl."logicalJourneyPartChanges", jpjl."logicalJourneyChanges"),
-                coalesce(trips."tripId", t_short."tripId"), coalesce(trips."routeId", t_short."routeId"),
-                coalesce(trips."directionId", t_short."directionId"), coalesce(trips."shapeId", t_short."shapeId")
-            -- Only take trips where the train is still running, or the last stop has only been passed for max 1 hour.
--- You can remove or change this filter to your liking to only show trains that are still running, have all updates for the day, etc.
-            HAVING max(coalesce(si."actualDepartureTime", si."plannedDepartureTime")) >= now() - INTERVAL '1 hours';
-        `, [operationDate, operationDate, operationDate, operationDate]).then(result => {
+                t."tripId", coalesce(t."routeId", t_short."routeId"),
+                coalesce(t."directionId", t_short."directionId"), coalesce(t."shapeId", t_short."shapeId")
+        `, [operationDateOfTodayOrYesterday, endOperationDate, operationDateOfTodayOrYesterday, operationDateOfTodayOrTomorrow]).then(result => {
             console.timeEnd('getCurrentRealtimeTripUpdates');
             return result.rows;
         }).catch(error => {

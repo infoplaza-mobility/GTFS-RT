@@ -1,4 +1,3 @@
-import Long from "long";
 import { Delay } from "../Delay";
 import { IDatabaseStopUpdate } from "../../Interfaces/DatabaseStopUpdate";
 
@@ -12,8 +11,12 @@ interface IStopUpdate {
 }
 
 export abstract class StopUpdate implements IStopUpdate {
-    private readonly _departureDelay: string | number | null;
-    private readonly _arrivalDelay: string | number | null;
+
+    /* Can be updated in case of fixing stop times */
+    private _departureDelay: string | number | null;
+
+    /* Can be updated in case of fixing stop times */
+    private _arrivalDelay: string | number | null;
 
     
     private readonly _plannedArrivalTime: Date | null;
@@ -30,7 +33,7 @@ export abstract class StopUpdate implements IStopUpdate {
 
     private _sequence: number;
 
-    constructor(update: IDatabaseStopUpdate) {
+    protected constructor(update: IDatabaseStopUpdate) {
         this._departureDelay = update.departureDelay;
         this._arrivalDelay = update.arrivalDelay;
         this._arrivalTime = update.arrivalTime ? new Date(update.arrivalTime) : null;
@@ -99,6 +102,10 @@ export abstract class StopUpdate implements IStopUpdate {
         return new Delay(this._departureDelay).toSeconds();
     }
 
+    public set departureDelay(departureDelay: number) {
+        this._departureDelay = departureDelay;
+    }
+
     /**
      * Get the arrival delay in seconds.
      * @returns {number} The arrival delay in seconds.
@@ -112,6 +119,10 @@ export abstract class StopUpdate implements IStopUpdate {
             return this._arrivalDelay;
 
         return new Delay(this._arrivalDelay).toSeconds();
+    }
+
+    public set arrivalDelay(arrivalDelay: number) {
+        this._arrivalDelay = arrivalDelay;
     }
 
     /**

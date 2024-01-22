@@ -33,7 +33,7 @@ export class RitInfoStopUpdate extends StopUpdate {
             this.plannedTrack = update.plannedTrack.toString();
 
         if(update.actualTrack)
-            this.actualTrack = update.actualTrack.toString();
+            this.actualTrack = update.track.toString();
 
         this.platform = update.platform;
         this.track = update.track;

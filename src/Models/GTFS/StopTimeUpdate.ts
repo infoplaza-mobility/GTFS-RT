@@ -7,7 +7,6 @@
 import {transit_realtime} from "../../Compiled/compiled";
 import StopTimeEvent = transit_realtime.TripUpdate.StopTimeEvent;
 import StopTimeUpdate = transit_realtime.TripUpdate.StopTimeUpdate;
-import { StopUpdate } from "../StopUpdates/StopUpdate";
 import {RitInfoStopUpdate} from "../StopUpdates/RitinfoStopUpdate";
 
 export class ExtendedStopTimeUpdate extends StopTimeUpdate {
@@ -32,9 +31,6 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
             sequence,
             isLastStop,
             isFirstStop  ,
-            actualTrack,
-            plannedTrack,
-            stationCode
         } = update;
 
         const departureBeforeArrival = departureTime !== 0 && arrivalTime !== 0 && departureTime < arrivalTime;
@@ -76,12 +72,6 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
             arrival: shouldHaveDepartureAndArrival ? arrival : undefined,
             departure: shouldHaveDepartureAndArrival ? departure : undefined,
             scheduleRelationship,
-            ".transit_realtime.ovapiStopTimeUpdate": {
-                //We also use the planned track as a fallback for the actual track. Sometimes the actual track doesn't get filled, even though the train stops there.
-                actualTrack: actualTrack || plannedTrack,
-                scheduledTrack: plannedTrack,
-                stationId: stationCode,
-            }
         })
 
 
