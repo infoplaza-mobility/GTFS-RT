@@ -54,10 +54,8 @@ export class Main {
    */
   private async setUpTimer() {
     await this._feedManager.updateTrainFeed(this.tripIdsThatShouldBeRemoved);
-    // await FeedManager.updateTripUpdatesFeed();
     setInterval(async () => {
         await this._feedManager.updateTrainFeed(this.tripIdsThatShouldBeRemoved);
-        // await FeedManager.updateTripUpdatesFeed();
     }, 30 * 1000);
   }
 

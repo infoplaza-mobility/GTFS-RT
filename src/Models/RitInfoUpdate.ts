@@ -111,6 +111,7 @@ export class RitInfoUpdate {
         return this.stops.map(stop => ExtendedStopTimeUpdate.fromStopUpdate(stop));
     }
 
+
     /**
      * Did this trip have any platform changes?
      * @returns {boolean} True if the trip had any platform changes, false otherwise.
@@ -231,7 +232,7 @@ export class RitInfoUpdate {
         //Could be incorrect, maybe only 300.000 and 700.000 are added.
         if(!isAdded) {
             // If the short train number does not match the train number, it is an extra train. (E.g. 301234 vs 1234, 701234 vs 1234 or 201234 vs 1234)
-            this._shortTrainNumber !== this._trainNumber || (this._trainNumber > 100_000 && this._trainNumber < 900_000);
+            isAdded = this._shortTrainNumber !== this._trainNumber || (this._trainNumber > 100_000 && this._trainNumber < 900_000);
         }
 
         return isAdded;
