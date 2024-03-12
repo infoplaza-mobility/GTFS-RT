@@ -11,10 +11,11 @@ import JourneyChangeType = RitInfo.JourneyChangeType;
 import {RitInfoStopUpdate} from "./StopUpdates/RitinfoStopUpdate";
 import {StopUpdateCollection} from "./StopUpdateCollection";
 import { InternationalAgencys, InternationalTrainSeries } from '../Utilities/InternationalAgencys';
+import {JourneyChange} from "../Interfaces/Changes";
 
 export class RitInfoUpdate {
     private readonly _agency: string;
-    private readonly _changes: RitInfo.Internal.JourneyChange[] | null;
+    private readonly _changes: JourneyChange[];
     private readonly _shortTrainNumber: number;
     private readonly _showsInTripPlanner: boolean;
     private readonly _stopCollection: StopUpdateCollection;
@@ -157,7 +158,7 @@ export class RitInfoUpdate {
         );
     }
 
-    public get changes(): RitInfo.Internal.JourneyChange[] | null {
+    public get changes(): JourneyChange[] | null {
         return this._changes;
     }
 

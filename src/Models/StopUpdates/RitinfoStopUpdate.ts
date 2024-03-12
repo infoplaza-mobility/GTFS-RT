@@ -8,9 +8,10 @@ import { IRitInfoStopUpdate } from '../../Interfaces/DatabaseRitInfoUpdate'
 import { RitInfo } from "../../Shared/src/Types/Infoplus/RitInfo";
 import JourneyStationChangeType = RitInfo.JourneyStationChangeType;
 import { StopUpdate } from './StopUpdate';
+import {JourneyStationChange} from "../../Interfaces/Changes";
 export class RitInfoStopUpdate extends StopUpdate {
 
-    private readonly changes: RitInfo.Internal.JourneyStationChange[] | null;
+    private readonly changes: JourneyStationChange[];
 
     public readonly plannedTrack: string | null;
     public readonly actualTrack: string | null;

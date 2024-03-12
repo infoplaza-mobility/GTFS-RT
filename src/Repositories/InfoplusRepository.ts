@@ -23,18 +23,18 @@ export class InfoplusRepository extends Repository implements IInfoPlusRepositor
             WHERE agency = 'IFF'
               AND "serviceId" IN (SELECT DISTINCT "serviceId"
                 FROM cal_dates)),
-                stops AS (SELECT "stopId", "zoneId", "platformCode"
+                stops AS (SELECT "stopId", "stationCode", "platformCode"
             FROM "StaticData-NL".stops
-            WHERE "zoneId" IS NOT NULL)
-            SELECT r."trainNumber",
-                   r."shortTrainNumber",
+            WHERE "stationCode" IS NOT NULL)
+            SELECT jpjl."logicalJourneyPartNumber"                                          AS "trainNumber",
+                   jpjl."shortJourneyPartNumber"                                            AS "shortTrainNumber",
                    r."trainType",
                    r.agency,
                    r."operationDate",
                    r."showsInTripPlanner",
                    r."timestamp",
                    coalesce(jpjl."logicalJourneyPartChanges", jpjl."logicalJourneyChanges") AS "changes",
-                   t."tripId"                                 AS "tripId",
+                   t."tripId"                                                               AS "tripId",
                    coalesce(t."routeId", t_short."routeId")                                 AS "routeId",
                    coalesce(t."directionId", t_short."directionId")                         AS "directionId",
                    coalesce(t."shapeId", t_short."shapeId")                                 AS "shapeId",
@@ -73,7 +73,7 @@ export class InfoplusRepository extends Repository implements IInfoPlusRepositor
                                 si."arrivalTrackMessage" -> 'Uitingen' ->> 'Uiting'),
                                    'sequence',
                                    si."stopOrder"
-                               ) ORDER BY si."stopOrder")                                      stops
+                           ) ORDER BY si."stopOrder")                                          stops
             FROM "InfoPlus".ritinfo r
                      JOIN "InfoPlus".journey_part_journey_links jpjl ON jpjl."trainNumber" = r."trainNumber" AND
                                                                         jpjl."operationDate" = r."operationDate"
@@ -89,19 +89,17 @@ export class InfoplusRepository extends Repository implements IInfoPlusRepositor
                                    FROM cal_dates cd
                                    WHERE cd."serviceId" = t."serviceId"
                                      AND cd."date" = r."operationDate")
-                                     
-         LEFT JOIN trips t_short ON t."tripId" IS NULL AND r."shortTrainNumber" = t_short."tripShortName"::int
+
+         LEFT JOIN trips t_short ON t."tripId" IS NULL AND jpjl."shortJourneyPartNumber" = t_short."tripShortName"::int
                 AND EXISTS (SELECT 1
                 FROM cal_dates cd
                 WHERE cd."serviceId" = t_short."serviceId"
                 AND cd."date" = r."operationDate")
-                LEFT JOIN stops s ON (s."zoneId" = concat('IFF:', lower(si."stationCode")) AND s."platformCode" = coalesce(
-                si."departureTrackMessage" -> 'Uitingen' ->> 'Uiting',
-                si."arrivalTrackMessage" -> 'Uitingen' ->> 'Uiting'))
+                LEFT JOIN stops s ON (s."stationCode" = lower(si."stationCode") AND s."platformCode" = coalesce(si."departureTrackFull", si."arrivalTrackFull"))
                 LEFT JOIN LATERAL (
                 SELECT "stopId"
                 FROM stops lax
-                WHERE lax."zoneId" = concat('IFF:', lower(si."stationCode"))
+                WHERE lax."stationCode" = lower(si."stationCode")
                 LIMIT 1
                 ) AS lateral_stop ON s."stopId" IS NULL
             WHERE r."operationDate" >= ?
@@ -109,11 +107,12 @@ export class InfoplusRepository extends Repository implements IInfoPlusRepositor
                 r."operationDate" > ?
               AND jpjl."logicalJourneyChanges" IS NULL
                 )
-            GROUP BY r."trainNumber", jpjl."logicalJourneyPartNumber", r."shortTrainNumber", r."trainType", r.agency,
+            GROUP BY r."trainNumber", jpjl."logicalJourneyPartNumber", r."shortTrainNumber", jpjl."shortJourneyPartNumber",
+                r."trainType", r.agency,
                 r."showsInTripPlanner", r.timestamp, r."operationDate", t."tripId", coalesce(t."tripId", t_short."tripId"),
                 coalesce(jpjl."logicalJourneyPartChanges", jpjl."logicalJourneyChanges"),
                 t."tripId", coalesce(t."routeId", t_short."routeId"),
-                coalesce(t."directionId", t_short."directionId"), coalesce(t."shapeId", t_short."shapeId")
+                coalesce(t."directionId", t_short."directionId"), coalesce(t."shapeId", t_short."shapeId");
         `, [operationDateOfTodayOrYesterday, endOperationDate, operationDateOfTodayOrYesterday, operationDateOfTodayOrTomorrow]).then(result => {
             console.timeEnd('getCurrentRealtimeTripUpdates');
             return result.rows;
