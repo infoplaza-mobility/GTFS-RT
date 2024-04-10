@@ -49,10 +49,12 @@ export class TrainUpdateCollection extends Collection<FeedEntity> {
 
         const trainUpdatesNotFound = TrainUpdateCollection.checkForRemovedUpdatesWithCustomTripId(trainUpdates)
 
-        console.info(`[TrainUpdateCollection] Found ${trainUpdatesNotFound.length} updates that were not found in the current collection of size ${this.TrainUpdatesWithCustomTripId.length}. Adding them as cancelled trips.`);
-        console.info(`[TrainUpdateCollection] ${trainUpdatesNotFound.map(update => update.trip.tripId).join(', ')}`)
+        if(trainUpdatesNotFound.length > 0) {
+            console.info(`[TrainUpdateCollection] Found ${trainUpdatesNotFound.length} updates that were not found in the current collection of size ${this.TrainUpdatesWithCustomTripId.length}. Adding them as cancelled trips.`);
+            console.info(`[TrainUpdateCollection] ${trainUpdatesNotFound.map(update => update.trip.tripId).join(', ')}`)
 
-        collection.addDeletedUpdates(trainUpdatesNotFound);
+            collection.addDeletedUpdates(trainUpdatesNotFound);
+        }
 
         return collection;
     }

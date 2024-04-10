@@ -13,10 +13,11 @@ import {RitInfoUpdate} from "./RitInfoUpdate";
 import FeedEntity = transit_realtime.FeedEntity;
 import {TripIdWithDate} from "../Interfaces/TVVManager";
 import TripUpdate = transit_realtime.TripUpdate;
+import {EInfoPlusAgency, InfoPlusAgency} from "../Shared/src/Types/API/V2/InfoPlus/Agency";
 
 
 export class TrainUpdate extends TripUpdate {
-    constructor(tripUpdate: TripUpdate,  private readonly shapeId: string | undefined, public readonly hasCustomTripId: boolean = false) {
+    constructor(tripUpdate: TripUpdate, public readonly hasCustomTripId: boolean = false) {
         super(tripUpdate);
     }
 
@@ -24,7 +25,7 @@ export class TrainUpdate extends TripUpdate {
         const createdTrip = new RitInfoUpdate(infoPlusTripUpdate);
 
         const {
-            routeId,
+            routeLongName,
             startTime,
             startDate,
             directionId,
@@ -40,13 +41,32 @@ export class TrainUpdate extends TripUpdate {
             trainType,
 
         } = createdTrip;
-        let {tripId, stopTimeUpdates} = createdTrip;
+        let {tripId, stopTimeUpdates, routeId, agencyId, routeType } = createdTrip;
 
         let customTripId = false;
 
         if (!tripId) {
             tripId = `${infoPlusTripUpdate.trainNumber}_${infoPlusTripUpdate.trainType}_${infoPlusTripUpdate.agency}`;
             customTripId = true;
+        }
+
+        if(!agencyId) {
+            agencyId = InfoPlusAgency.toAgencyId(infoPlusTripUpdate.agency as unknown as EInfoPlusAgency);
+            console.log(`[TrainUpdate] AgencyId not found for trip ${tripId}. Using agency from InfoPlus: ${infoPlusTripUpdate.agency} -> ${agencyId}`);
+        }
+
+        if(!routeId) {
+            routeId = `${infoPlusTripUpdate.agency}_${infoPlusTripUpdate.trainType}_${infoPlusTripUpdate.trainNumber}`;
+            console.log(`[TrainUpdate] RouteId not found for trip ${tripId}. Using custom routeId: ${routeId}`);
+        }
+
+        if(!routeType) {
+            if(infoPlusTripUpdate.trainNumber > 900_000)
+                routeType = 3;
+            else
+                routeType = 2;
+            
+            console.error(`[TrainUpdate] RouteType not found for trip ${tripId}. Using routeType: ${routeType}`);
         }
 
         let scheduleRelationship = ScheduleRelationship.SCHEDULED;
@@ -58,7 +78,7 @@ export class TrainUpdate extends TripUpdate {
             // if(hasChangedTrip)
             //     console.log(`[TrainUpdate] Trip ${tripId} had a changed trip. Change types: ` + createdTrip.changes!.map(change => change.changeType).join(', '));
 
-            scheduleRelationship = ScheduleRelationship.MODIFIED;
+            scheduleRelationship = ScheduleRelationship.REPLACEMENT;
             /**
              * Remove all skipped stops, as OTP expects no skipped stops.
              * @deprecated OTP Does allow skipped stops, but they *need* an arrival and departure event.
@@ -68,7 +88,7 @@ export class TrainUpdate extends TripUpdate {
 
         // If this is a special train, we want to mark it as a replacement, as the sequence numbers do not match with the static GTFS.
         if (isSpecialTrain) {
-            scheduleRelationship = ScheduleRelationship.MODIFIED;
+            scheduleRelationship = ScheduleRelationship.REPLACEMENT;
 
             //For these special trains there can be duplicate stops, so we need to remove them. Only keep one stop with the same stopId.
             stopTimeUpdates = stopTimeUpdates.filter((stopTimeUpdate, index, self) =>
@@ -111,6 +131,11 @@ export class TrainUpdate extends TripUpdate {
             ".transit_realtime.ovapiTripdescriptor": {
                 realtimeTripId: "IFF:" + trainType + ":" + infoPlusTripUpdate.trainNumber,
                 tripShortName: infoPlusTripUpdate.trainNumber.toString(),
+            },
+            ".transit_realtime.tripDescriptor": {
+                agencyId: agencyId,
+                routeType: routeType,
+                routeLongName: routeLongName,
             }
         });
 
@@ -118,10 +143,13 @@ export class TrainUpdate extends TripUpdate {
         const tripUpdate = TripUpdate.create({
             trip: tripDescriptor,
             stopTimeUpdate: !isCancelled ? stopTimeUpdates : [],
-            timestamp: timestamp
+            timestamp: timestamp,
+            tripProperties: {
+                shapeId: shapeId,
+            },
         })
 
-        return new TrainUpdate(tripUpdate, shapeId, customTripId)
+        return new TrainUpdate(tripUpdate, customTripId)
     }
 
     /**

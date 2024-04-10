@@ -5,7 +5,11 @@
  */
 
 import { IDatabaseStopUpdate } from "./DatabaseStopUpdate";
-import {JourneyChange, JourneyStationChange} from "./Changes";
+import {IJourneyChange} from "../Shared/src/Types/Infoplus/V2/JourneyChange";
+import {LogicalJourneyChangeType} from "../Shared/src/Types/Infoplus/V2/Changes/LogicalJourneyChangeType";
+import {
+    LogicalJourneyPartStationChangeType
+} from "../Shared/src/Types/Infoplus/V2/Changes/LogicalJourneyPartStationChangeType";
 
 
 
@@ -18,14 +22,17 @@ export interface IDatabaseRitInfoUpdate {
     stops: IRitInfoStopUpdate[];
     tripId: number | null;
     routeId: number | null;
+    routeType: number | null;
+    routeLongName: string | null;
+    agencyId: string | null;
     directionId: number | null;
     shapeId: number | null;
-    changes: JourneyChange[] | null;
+    changes: IJourneyChange<LogicalJourneyChangeType>[] | null;
     timestamp: Date;
 }
 
 export interface IRitInfoStopUpdate extends IDatabaseStopUpdate {
-    changes: JourneyStationChange[] | null;
+    changes: IJourneyChange<LogicalJourneyPartStationChangeType>[] | null;
     /** PlatformCode in GTFS */
     platform: string | null;
     /** Arrival or DepartureTrack Message in Infoplus */

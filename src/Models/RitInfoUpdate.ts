@@ -5,17 +5,16 @@
  */
 
 import {IDatabaseRitInfoUpdate} from '../Interfaces/DatabaseRitInfoUpdate'
-import {RitInfo} from "../Shared/src/Types/Infoplus/RitInfo";
 import {ExtendedStopTimeUpdate} from "./GTFS/StopTimeUpdate";
-import JourneyChangeType = RitInfo.JourneyChangeType;
 import {RitInfoStopUpdate} from "./StopUpdates/RitinfoStopUpdate";
 import {StopUpdateCollection} from "./StopUpdateCollection";
-import { InternationalAgencys, InternationalTrainSeries } from '../Utilities/InternationalAgencys';
-import {JourneyChange} from "../Interfaces/Changes";
+import {InternationalAgencys, InternationalTrainSeries} from '../Utilities/InternationalAgencys';
+import {IJourneyChange} from "../Shared/src/Types/Infoplus/V2/JourneyChange";
+import {LogicalJourneyChangeType} from "../Shared/src/Types/Infoplus/V2/Changes/LogicalJourneyChangeType";
 
 export class RitInfoUpdate {
     private readonly _agency: string;
-    private readonly _changes: JourneyChange[];
+    private readonly _changes: IJourneyChange<LogicalJourneyChangeType>[];
     private readonly _shortTrainNumber: number;
     private readonly _showsInTripPlanner: boolean;
     private readonly _stopCollection: StopUpdateCollection;
@@ -23,6 +22,9 @@ export class RitInfoUpdate {
     private readonly _trainType: string;
     private readonly _tripId: number | null;
     private readonly _routeId: number | null;
+    private readonly _routeLongName: string | null;
+    private readonly _routeType: number | null;
+    private readonly _agencyId: string | null;
     private readonly _shapeId: number | null;
     private readonly _directionId: number | null;
     private readonly _timestamp: Date;
@@ -47,20 +49,24 @@ export class RitInfoUpdate {
         this._directionId = update.directionId;
         this._timestamp = update.timestamp;
 
+        this._routeType = update.routeType;
+        this._routeLongName = update.routeLongName;
+        this._agencyId = update.agencyId;
+
         this._isInternationalTrain = this.setInternationalTrain();
     }
 
     private setInternationalTrain(): boolean {
         let isInternationalTrain = false;
 
-        if(InternationalAgencys.includes(this._agency))
+        if (InternationalAgencys.includes(this._agency))
             isInternationalTrain = true;
 
-        if(this._trainNumber < 500)
+        if (this._trainNumber < 500)
             isInternationalTrain = true;
 
-        for(const series of InternationalTrainSeries) {
-            if(this._trainNumber >= series.start && this._trainNumber <= series.end)
+        for (const series of InternationalTrainSeries) {
+            if (this._trainNumber >= series.start && this._trainNumber <= series.end)
                 isInternationalTrain = true;
         }
 
@@ -79,17 +85,29 @@ export class RitInfoUpdate {
     }
 
     public get routeId(): string | null {
-        if(!this._routeId)
+        if (!this._routeId)
             return null;
 
         return this._routeId.toString();
     }
 
     public get shapeId(): string | null {
-        if(!this._shapeId)
+        if (!this._shapeId)
             return null;
 
         return this._shapeId.toString();
+    }
+
+    public get agencyId(): string | null {
+        return this._agencyId;
+    }
+
+    public get routeType(): number | null {
+        return this._routeType;
+    }
+
+    public get routeLongName(): string | null {
+        return this._routeLongName;
     }
 
     public get trainType(): string {
@@ -133,32 +151,32 @@ export class RitInfoUpdate {
      * Did this trip change its route?
      * True for the following:
      * ChangeStopBehaviour = "30",
-        DivertedTrain = "33",
-        ShortenedDestination = "34",
-        ExtendedDestination = "35",
-        OriginShortening = "36",
-        OriginExtension = "37",
-        ChangedDestination = "41",
-        ChangedOrigin = "42",
+     DivertedTrain = "33",
+     ShortenedDestination = "34",
+     ExtendedDestination = "35",
+     OriginShortening = "36",
+     OriginExtension = "37",
+     ChangedDestination = "41",
+     ChangedOrigin = "42",
      * @returns {boolean} True if the trip changed its route, false otherwise.
      */
     public get hasChangedTrip(): boolean {
-        if(!this._changes)
+        if (!this._changes)
             return false;
 
         return this._changes.some(change =>
-            change.changeType == JourneyChangeType.ChangeStopBehaviour ||
-            change.changeType == JourneyChangeType.DivertedTrain ||
-            change.changeType == JourneyChangeType.ShortenedDestination ||
-            change.changeType == JourneyChangeType.ExtendedDestination ||
-            change.changeType == JourneyChangeType.OriginShortening ||
-            change.changeType == JourneyChangeType.OriginExtension ||
-            change.changeType == JourneyChangeType.ChangedDestination ||
-            change.changeType == JourneyChangeType.ChangedOrigin
+            change.changeType == LogicalJourneyChangeType.StopPatternChange ||
+            change.changeType == LogicalJourneyChangeType.Diversion ||
+            change.changeType == LogicalJourneyChangeType.ShortenedDestination ||
+            change.changeType == LogicalJourneyChangeType.ExtendedDestination ||
+            change.changeType == LogicalJourneyChangeType.ShortenedOrigin ||
+            change.changeType == LogicalJourneyChangeType.ExtendedOrigin ||
+            change.changeType == LogicalJourneyChangeType.ChangedDestination ||
+            change.changeType == LogicalJourneyChangeType.ChangedOrigin
         );
     }
 
-    public get changes(): JourneyChange[] | null {
+    public get changes(): IJourneyChange<LogicalJourneyChangeType>[] | null {
         return this._changes;
     }
 
@@ -167,7 +185,7 @@ export class RitInfoUpdate {
      * @returns {string} The trip ID of the trip.
      */
     public get tripId(): string | null {
-        if(!this._tripId)
+        if (!this._tripId)
             return null;
         return this._tripId.toString();
     }
@@ -180,7 +198,7 @@ export class RitInfoUpdate {
 
         const firstStop = this.stops.first();
 
-        if(!firstStop || !firstStop.departureTimeAsDate)
+        if (!firstStop || !firstStop.departureTimeAsDate)
             return '00:00:00';
 
         return firstStop
@@ -195,7 +213,7 @@ export class RitInfoUpdate {
     public get startDate(): string {
         const firstStop = this.stops.first();
 
-        if(!firstStop || !firstStop.departureTimeAsDate)
+        if (!firstStop || !firstStop.departureTimeAsDate)
             return '00000000';
 
         return firstStop
@@ -210,11 +228,11 @@ export class RitInfoUpdate {
      * @returns {boolean} True if the trip is cancelled, false otherwise.
      */
     public get isCancelled(): boolean {
-        if(!this._changes)
+        if (!this._changes)
             return false;
 
         return this._changes.some(change =>
-            change.changeType == JourneyChangeType.CancelledTrain
+            change.changeType == LogicalJourneyChangeType.Cancelled
         )
     }
 
@@ -227,11 +245,11 @@ export class RitInfoUpdate {
 
         if (this._changes)
             isAdded = this._changes.some(change =>
-                change.changeType == JourneyChangeType.ExtraTrain
+                change.changeType == LogicalJourneyChangeType.ExtraTrain
             )
 
         //Could be incorrect, maybe only 300.000 and 700.000 are added.
-        if(!isAdded) {
+        if (!isAdded) {
             // If the short train number does not match the train number, it is an extra train. (E.g. 301234 vs 1234, 701234 vs 1234 or 201234 vs 1234)
             isAdded = this._shortTrainNumber !== this._trainNumber || (this._trainNumber > 100_000 && this._trainNumber < 900_000);
         }
@@ -242,12 +260,12 @@ export class RitInfoUpdate {
     public get hasModifiedStopBehaviour(): boolean {
         let didModify = false;
 
-        if(this._changes)
+        if (this._changes)
             didModify = this._changes.some(change =>
-                change.changeType == JourneyChangeType.ChangeStopBehaviour
+                change.changeType == LogicalJourneyChangeType.StopPatternChange
             )
 
-        if(!didModify)
+        if (!didModify)
             didModify = this.stops.some(stop => stop.isExtraPassing() || stop.wasntPlannedToStop())
 
         return didModify;
