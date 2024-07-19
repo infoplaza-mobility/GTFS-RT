@@ -4,14 +4,13 @@
  * Questions? Email: tristantriest@gmail.com
  */
 
-import {RitInfo} from "../Shared/src/Types/Infoplus/RitInfo";
+
 import {transit_realtime} from "gtfs-realtime-bindings";
 import {ExtendedStopTimeUpdate} from "./GTFS/StopTimeUpdate";
 import IStopTimeUpdate = transit_realtime.TripUpdate.IStopTimeUpdate;
 import Long from "long";
 import {StopUpdateCollection} from "./StopUpdateCollection";
 import { IDatabasePasstimesUpdate } from '../Interfaces/DatabasePasstimesUpdate';
-import { PasstimesStopUpdate } from './StopUpdates/PasstimesStopUpdate';
 
 export class PasstimesUpdate {
     private readonly _stopCollection: StopUpdateCollection;

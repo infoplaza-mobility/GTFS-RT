@@ -4,9 +4,6 @@
  * Questions? Email: tristantriest@gmail.com
  */
 
-
-import { RitInfo } from "../../Shared/src/Types/Infoplus/RitInfo";
-import JourneyStationChangeType = RitInfo.JourneyStationChangeType;
 import { StopUpdate } from './StopUpdate';
 import { IDatabasePasstimesStopUpdate } from '../../Interfaces/DatabasePasstimesUpdate';
 

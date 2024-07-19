@@ -5,13 +5,14 @@
  */
 
 import { IRitInfoStopUpdate } from '../../Interfaces/DatabaseRitInfoUpdate'
-import { RitInfo } from "../../Shared/src/Types/Infoplus/RitInfo";
-import JourneyStationChangeType = RitInfo.JourneyStationChangeType;
 import { StopUpdate } from './StopUpdate';
-import {JourneyStationChange} from "../../Interfaces/Changes";
+import {IJourneyChange} from "../../Shared/src/Types/Infoplus/V2/JourneyChange";
+import {
+    LogicalJourneyPartStationChangeType
+} from "../../Shared/src/Types/Infoplus/V2/Changes/LogicalJourneyPartStationChangeType";
 export class RitInfoStopUpdate extends StopUpdate {
 
-    private readonly changes: JourneyStationChange[];
+    private readonly changes: IJourneyChange<LogicalJourneyPartStationChangeType>[];
 
     public readonly plannedTrack: string | null;
     public readonly actualTrack: string | null;
@@ -55,7 +56,7 @@ export class RitInfoStopUpdate extends StopUpdate {
         if (!this.changes) return false;
 
         return this.changes.some(change =>
-            change.changeType == JourneyStationChangeType.CancelledArrival
+            change.changeType == LogicalJourneyPartStationChangeType.CancelledArrival
         );
     }
 
@@ -70,7 +71,7 @@ export class RitInfoStopUpdate extends StopUpdate {
         if (!this.changes) return false;
 
         return this.changes.some(change =>
-            change.changeType == JourneyStationChangeType.CancelledDeparture
+            change.changeType == LogicalJourneyPartStationChangeType.CancelledDeparture
         );
     }
 
@@ -85,7 +86,7 @@ export class RitInfoStopUpdate extends StopUpdate {
         if (!this.changes) return false;
 
         return this.changes.some(change =>
-            change.changeType == JourneyStationChangeType.CancelledPassing
+            change.changeType == LogicalJourneyPartStationChangeType.CancelledPassing
         );
     }
 
@@ -119,10 +120,10 @@ export class RitInfoStopUpdate extends StopUpdate {
 
         if(this.changes)
             hasChange = this.changes.some(change =>
-                change.changeType == JourneyStationChangeType.ArrivalTrackChange ||
-                change.changeType == JourneyStationChangeType.DepartureTrackChange ||
-                change.changeType == JourneyStationChangeType.FixArrivalTrack ||
-                change.changeType == JourneyStationChangeType.FixDepartureTrack
+                change.changeType == LogicalJourneyPartStationChangeType.ChangedArrivalPlatform ||
+                change.changeType == LogicalJourneyPartStationChangeType.ChangedDeparturePlatform ||
+                change.changeType == LogicalJourneyPartStationChangeType.FixedArrivalPlatform ||
+                change.changeType == LogicalJourneyPartStationChangeType.FixedDeparturePlatform
             );
 
         if(hasChange)
@@ -143,9 +144,9 @@ export class RitInfoStopUpdate extends StopUpdate {
         if (!this.changes) return false;
 
         return this.changes.some(change =>
-            change.changeType == JourneyStationChangeType.ExtraPassing ||
-            change.changeType == JourneyStationChangeType.ExtraArrival ||
-            change.changeType == JourneyStationChangeType.ExtraDeparture
+            change.changeType == LogicalJourneyPartStationChangeType.ExtraPassing ||
+            change.changeType == LogicalJourneyPartStationChangeType.ExtraArrival ||
+            change.changeType == LogicalJourneyPartStationChangeType.ExtraDeparture
         );
     }
 

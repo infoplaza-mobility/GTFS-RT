@@ -72,6 +72,9 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
             arrival: shouldHaveDepartureAndArrival ? arrival : undefined,
             departure: shouldHaveDepartureAndArrival ? departure : undefined,
             scheduleRelationship,
+            ".transit_realtime.ovapiStopTimeUpdate": {
+                stationId: update.stationCode,
+            },
         })
 
 
