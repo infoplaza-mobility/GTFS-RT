@@ -1,7 +1,7 @@
 {
-  "name": "r-ov_protobuf_service",
+  "name": "infoplaza_infoplus_gtfsrt_service",
   "version": "1.1.0",
-  "description": "The Protobuf converter for the R-OV OTP instance.",
+  "description": "The GTFS-RT train feed generator for the InfoPlaza OTP instance.",
   "main": "main.ts",
   "scripts": {
     "test": "echo \"Error: no tests specified\" && exit 0",
@@ -14,20 +14,20 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/R-OV-NL/Protobuf.git"
+    "url": "https://github.com/infoplaza-mobility/GTFS-RT"
   },
   "author": "Tristan van Triest",
   "license": "None",
   "bugs": {
-    "url": "https://github.com/R-OV-NL/Protobuf/issues"
+    "url": "https://github.com/infoplaza-mobility/GTFS-RT/issues"
   },
-  "homepage": "https://github.com/R-OV-NL/Protobuf#readme",
+  "homepage": "https://github.com/infoplaza-mobility/GTFS-RT#readme",
   "dependencies": {
     "@protobuf-ts/plugin": "^2.9.1",
     "@turf/turf": "^6.5.0",
-    "axios": "^1.5.1",
+    "axios": "^1.7.7",
     "dotenv": "^16.0.3",
-    "express": "^4.18.2",
+    "express": "^4.21.1",
     "google-protobuf": "^3.21.2",
     "gtfs-rb": "^1.2.8",
     "gtfs-realtime-bindings": "^1.1.1",
@@ -36,7 +36,6 @@
     "ncp": "^2.0.0",
     "node-fetch": "^3.3.0",
     "pg": "^8.8.0",
-    "request": "^2.88.2",
     "ts-proto": "^1.160.0",
     "ts-protoc-gen": "^0.15.1-pre.a71b34e"
   },

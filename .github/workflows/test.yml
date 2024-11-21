@@ -1,4 +1,4 @@
-name: Test service no push.
+name: Test service
 
 on:
   push:
@@ -10,24 +10,32 @@ on:
       - '**'
       - '!main'
 
-  workflow_dispatch:
-
 jobs:
-  build:
-    runs-on: ["self-hosted", "main"]
+  build_and_test:
+    runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v3
         with:
           token: ${{ secrets.SHARED_PAT }}
           submodules: recursive
-      - name: Rebuild Compose Images
-        run: docker compose -f docker-compose.test.yml build --no-cache
-      - name: Test image with Docker Compose
-        run: docker compose -f docker-compose.test.yml up --force-recreate --abort-on-container-exit --exit-code-from app
-  compose-down:
-    runs-on: ["self-hosted", "main"]
-    if: ${{ always() }}
-    needs: [build]
-    steps:
-      - name: Docker compose down
+
+      - name: Build and start services
+        run: |
+          docker compose -f docker-compose.test.yml up -d database
+          sleep 10 # Adjust sleep time as needed to allow services to start
+
+      - name: Wait for database to be ready
+        run: |
+          until docker compose -f docker-compose.test.yml exec -T database pg_isready -U postgres; do
+            >&2 echo "Postgres is unavailable - sleeping"
+            sleep 1
+          done
+
+      - name: Start app service
+        run: docker compose -f docker-compose.test.yml up --force-recreate --build --exit-code-from app app
+
+      - name: Clean up
+        if: always()
         run: docker compose -f docker-compose.test.yml down
