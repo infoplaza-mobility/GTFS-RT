@@ -4,13 +4,14 @@
  * Questions? Email: tristantriest@gmail.com
  */
 
-import {IDatabaseRitInfoUpdate} from '../Interfaces/DatabaseRitInfoUpdate'
+import {IDatabaseRitInfoUpdate, IRitInfoStopUpdate} from '../Interfaces/DatabaseRitInfoUpdate'
 import {ExtendedStopTimeUpdate} from "./GTFS/StopTimeUpdate";
 import {RitInfoStopUpdate} from "./StopUpdates/RitinfoStopUpdate";
 import {StopUpdateCollection} from "./StopUpdateCollection";
 import {InternationalAgencys, InternationalTrainSeries} from '../Utilities/InternationalAgencys';
 import {IJourneyChange} from "../Shared/src/Types/Infoplus/V2/JourneyChange";
 import {LogicalJourneyChangeType} from "../Shared/src/Types/Infoplus/V2/Changes/LogicalJourneyChangeType";
+import {TrainType} from "../Shared/src/Types/API/V2/InfoPlus/TrainType";
 
 export class RitInfoUpdate {
     private readonly _agency: string;
@@ -50,10 +51,34 @@ export class RitInfoUpdate {
         this._timestamp = update.timestamp;
 
         this._routeType = update.routeType;
-        this._routeLongName = update.routeLongName;
+        this._routeLongName = this.getRouteLongName(update);
         this._agencyId = update.agencyId;
 
         this._isInternationalTrain = this.setInternationalTrain();
+    }
+
+    private getRouteLongName(update: IDatabaseRitInfoUpdate): string {
+        if(update.routeLongName)
+            return update.routeLongName;
+
+        const firstStop = this.stops.first();
+        const lastStop = this.stops.last();
+
+        //The trainseries of e.g. 1234 is 1200, 570 is 500, 29290 is 29000
+        const trainSeries = update.trainNumber - (update.trainNumber % 100);
+        const trainType = update.trainType;
+        const longTrainType = TrainType.shortToLong(TrainType.fromStringToShort(trainType));
+
+        //Haarlem <-> Amsterdam Sloterdijk BST26000
+        //Nachtnettrein Amsterdam Bijlmer ArenA <-> Leiden Centraal
+
+        //Rotterdam Centraal <-> Amsterdam Centraal ICD1100
+        if(firstStop.name && lastStop.name) {
+            return `${firstStop.name} <-> ${lastStop.name} ${trainType}${trainSeries}`;
+        }
+
+        return `${longTrainType} ${trainSeries}`;
+
     }
 
     private setInternationalTrain(): boolean {
