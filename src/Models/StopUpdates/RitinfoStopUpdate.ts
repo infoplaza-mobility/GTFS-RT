@@ -25,6 +25,8 @@ export class RitInfoStopUpdate extends StopUpdate {
 
     public readonly stationCode: string;
 
+    public readonly name: string;
+
     constructor(update: IRitInfoStopUpdate) {
         super(update);
 
@@ -39,6 +41,9 @@ export class RitInfoStopUpdate extends StopUpdate {
 
         this.platform = update.platform;
         this.track = update.track;
+
+
+        this.name = update.name;
 
         if(this.platform !== this.track)
             console.log(`[RitInfoStopUpdate] Platform and Track are not the same for stop ${this.stationCode}! Platform: ${this.platform}, Track: ${this.track}`)

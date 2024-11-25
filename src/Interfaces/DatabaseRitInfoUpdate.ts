@@ -44,4 +44,5 @@ export interface IRitInfoStopUpdate extends IDatabaseStopUpdate {
     plannedTrack: string | null;
     actualTrack: string | null;
     stationCode: string;
+    name: string;
 }

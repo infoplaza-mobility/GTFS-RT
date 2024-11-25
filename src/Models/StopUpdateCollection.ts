@@ -24,6 +24,12 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
 
         //Make sure all times are increasing
         this.checkIncreasingTimes();
+
+        /*
+        @InfoPlaza - Specific to Infoplaza IFF GTFS
+        Set all stop sequences sequentually irrespective of the sequence in InfoPlus
+        */
+        this.setSequenceNumbers();
     }
 
     private setFirstStop() {
@@ -102,6 +108,18 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
     }
 
     /**
+     * Set the sequence number of each stop to its index in the array + 1
+     * @private
+     */
+    private setSequenceNumbers() {
+        for (let i = 0; i < this.length; i++) {
+            const stop = this.get(i);
+            stop.sequence = i + 1;
+            this.set(i, stop);
+        }
+    }
+
+    /**
      * Fix the current stop time by setting the arrival time to the planned arrival time + min(delay at previous stop, delay at next stop)
      * @param previousStop The previous stop in the sequence
      * @param currentStop The stop that needs to be fixed
@@ -136,7 +154,7 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
         if (stopToFix.plannedArrivalTime === null) return;
 
         // Calculate the new arrival time by adding the departure delay at the previous stop to the planned arrival time at the current stop
-        const newArrivalTime = stopToFix.plannedArrivalTime.getTime() + previousStop.departureDelay;
+        const newArrivalTime = (stopToFix.plannedArrivalTime.getTime() / 1000) + previousStop.departureDelay;
 
         // If the new arrival time is not increasing, we can't fix the arrival time
         if (newArrivalTime < previousStop.departureTime) {
