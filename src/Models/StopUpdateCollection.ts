@@ -24,12 +24,6 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
 
         //Make sure all times are increasing
         this.checkIncreasingTimes();
-
-        /*
-        @InfoPlaza - Specific to Infoplaza IFF GTFS
-        Set all stop sequences sequentually irrespective of the sequence in InfoPlus
-        */
-        this.setSequenceNumbers();
     }
 
     private setFirstStop() {
