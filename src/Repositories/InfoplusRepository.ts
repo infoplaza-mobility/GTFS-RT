@@ -77,6 +77,7 @@ FROM "InfoPlus-new".ritinfo r
          JOIN "InfoPlus-new".stop_information si
               ON jpjl."journeyPartNumber" = si."journeyPartNumber" AND
                  jpjl."operationDate" = si."operationDate" AND
+                 si."stopType" != 'N' AND
                  ("plannedWillStop" = true OR "actualWillStop" = true) AND
                  (coalesce("plannedDepartureTime", "actualArrivalTime") IS NOT NULL OR
                   coalesce("plannedArrivalTime", "actualArrivalTime") IS NOT NULL)
