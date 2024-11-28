@@ -120,7 +120,7 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
      * @param fixDeparture Whether the departure time should be fixed
      */
     private fixStopTime(previousStop: RitInfoStopUpdate, currentStop: RitInfoStopUpdate, fixArrival: boolean, fixDeparture: boolean) {
-        console.info(`[StopUpdateCollection] Fixing stop times for stop ${currentStop.stopId}: ${currentStop.name} [${currentStop.sequence}]`)
+        //console.info(`[StopUpdateCollection] Fixing stop times for stop ${currentStop.stopId}: ${currentStop.name} [${currentStop.sequence}]`)
 
         if(fixArrival)
             this.fixArrivalTime(previousStop, currentStop);
@@ -170,13 +170,13 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
             stopToFix.departureTime = stopToFix.arrivalTime + stopToFix.departureDelay;
 
             //Log what was fixed, the original stop time, the new arrival time, the new departure time and the delay.
-            console.info(`[StopUpdateCollection] Fixed stop ${stopToFix.stopId}: ${stopToFix.name} [${stopToFix.sequence}] Arrival time: ${new Date(stopToFix.arrivalTime * 1000)} Departure time: ${new Date(stopToFix.departureTime * 1000)} Original stop time: ${orignalStopTime} seconds. Arrival delay: ${stopToFix.arrivalDelay} seconds. Departure delay: ${stopToFix.departureDelay} seconds.`);
+            //console.info(`[StopUpdateCollection] Fixed stop ${stopToFix.stopId}: ${stopToFix.name} [${stopToFix.sequence}] Arrival time: ${new Date(stopToFix.arrivalTime * 1000)} Departure time: ${new Date(stopToFix.departureTime * 1000)} Original stop time: ${orignalStopTime} seconds. Arrival delay: ${stopToFix.arrivalDelay} seconds. Departure delay: ${stopToFix.departureDelay} seconds.`);
         }
         //If there is no delay, we can just set the departure time to the planned departure time.
         else {
             stopToFix.departureTime = stopToFix.plannedDepartureTime.getTime() / 1000;
             //Log what was fixed, the original stop time, the new arrival time, the new departure time and the delay.
-            console.info(`[StopUpdateCollection] Fixed stop ${stopToFix.stopId}: ${stopToFix.name} [${stopToFix.sequence}] Arrival time: ${new Date(stopToFix.arrivalTime * 1000)} Departure time: ${new Date(stopToFix.departureTime * 1000)} Original stop time: ${orignalStopTime} seconds. Arrival delay: ${stopToFix.arrivalDelay} seconds. Departure delay: ${stopToFix.departureDelay} seconds.`);
+            //console.info(`[StopUpdateCollection] Fixed stop ${stopToFix.stopId}: ${stopToFix.name} [${stopToFix.sequence}] Arrival time: ${new Date(stopToFix.arrivalTime * 1000)} Departure time: ${new Date(stopToFix.departureTime * 1000)} Original stop time: ${orignalStopTime} seconds. Arrival delay: ${stopToFix.arrivalDelay} seconds. Departure delay: ${stopToFix.departureDelay} seconds.`);
         }
 
     }
