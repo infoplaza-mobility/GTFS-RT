@@ -20,6 +20,7 @@ jobs:
         with:
           token: ${{ secrets.SHARED_PAT }}
           submodules: recursive
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Build and start services
         run: |
