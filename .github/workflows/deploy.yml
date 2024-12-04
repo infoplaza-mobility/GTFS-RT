@@ -3,18 +3,23 @@ name: Deploy to Production
 on:
   push:
     branches:
-      - 'main'
-
-  workflow_dispatch:
+      - main
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
 
 jobs:
-#  build:
-#    runs-on: ["self-hosted", "main"]
-#    steps:
-#      - name: Run compose script in Deployment repository.
-#        uses: benc-uk/workflow-dispatch@v1
-#        with:
-#          workflow: Deploy Docker Images of R-OV
-#          repo: R-OV-NL/Deploy
-#          token: ${{ secrets.SHARED_PAT }}
-#          ref: main
+  deploy:
+    name: Deploy to Production
+    if: github.event.pull_request.merged == true || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run compose script in Deployment repository.
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: Deploy Docker Images
+          repo: infoplaza-mobility/Deploy
+          token: ${{ secrets.SHARED_PAT }}
+          ref: main
