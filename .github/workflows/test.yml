@@ -14,9 +14,9 @@ on:
 
 jobs:
   build:
-    runs-on: ["self-hosted", "main"]
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           token: ${{ secrets.SHARED_PAT }}
           submodules: recursive

@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: ["self-hosted", "main"]
+    runs-on: ubuntu-latest
     steps:
       - name: Run compose script in Deployment repository.
         uses: benc-uk/workflow-dispatch@v1
