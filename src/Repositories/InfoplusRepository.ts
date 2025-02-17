@@ -138,7 +138,7 @@ GROUP BY r."trainNumber", jpjl."journeyPartNumber", r."shortTrainNumber", jpjl."
                   FROM "StaticData-NL".trips
                   WHERE "journeyNumber" NOT IN
                         (SELECT DISTINCT "trainNumber"
-                         FROM "InfoPlus".ritInfo
+                         FROM "InfoPlus-new".ritInfo
                          WHERE "trainNumber" IN (${trainNumberPlaceHolders})
                            AND "operationDate" = ?)
                     AND "journeyNumber" IN (${trainNumberPlaceHolders})`, [...TVVTrainNumbers, date, ...TVVTrainNumbers])

@@ -2,7 +2,7 @@
   "name": "r-ov_protobuf_service",
   "version": "1.1.0",
   "description": "The Protobuf converter for the R-OV OTP instance.",
-  "main": "main.ts",
+  "main": "src/main.ts",
   "scripts": {
     "test": "echo \"Error: no tests specified\" && exit 0",
     "start": "node ./dist/main.js",
@@ -24,30 +24,32 @@
   "homepage": "https://github.com/R-OV-NL/Protobuf#readme",
   "dependencies": {
     "@protobuf-ts/plugin": "^2.9.1",
-    "@turf/turf": "^6.5.0",
-    "axios": "^1.5.1",
-    "dotenv": "^16.0.3",
-    "express": "^4.18.2",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
     "google-protobuf": "^3.21.2",
-    "gtfs-rb": "^1.2.8",
     "gtfs-realtime-bindings": "^1.1.1",
     "knex": "^2.4.0",
     "moment-timezone": "^0.5.40",
     "ncp": "^2.0.0",
     "node-fetch": "^3.3.0",
-    "pg": "^8.8.0",
-    "request": "^2.88.2",
-    "ts-proto": "^1.160.0",
-    "ts-protoc-gen": "^0.15.1-pre.a71b34e"
+    "pg": "^8.8.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.23.0",
     "@babel/core": "^7.23.3",
     "@babel/preset-env": "^7.23.3",
     "@babel/preset-typescript": "^7.23.3",
+    "@turf/turf": "^6.5.0",
+    "@types/bun": "^1.2.2",
+    "@types/express": "^4.17.21",
     "@types/node": "^18.11.18",
     "protobufjs": "^7.2.5",
+    "ts-proto": "^1.160.0",
+    "ts-protoc-gen": "^0.15.1-pre.a71b34e",
     "typescript": "^4.5.4"
   },
-  "keywords": []
+  "keywords": [],
+  "trustedDependencies": [
+    "protobufjs"
+  ]
 }

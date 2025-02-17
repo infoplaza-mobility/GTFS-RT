@@ -14,6 +14,7 @@ import FeedEntity = transit_realtime.FeedEntity;
 import {TripIdWithDate} from "../Interfaces/TVVManager";
 import TripUpdate = transit_realtime.TripUpdate;
 import {EInfoPlusAgency, InfoPlusAgency} from "../Shared/src/Types/API/V2/InfoPlus/Agency";
+import {ERouteType} from "../Shared/src/Types/API/V2/GTFS/TRoute";
 
 
 export class TrainUpdate extends TripUpdate {
@@ -52,21 +53,24 @@ export class TrainUpdate extends TripUpdate {
 
         if(!agencyId) {
             agencyId = InfoPlusAgency.toAgencyId(infoPlusTripUpdate.agency as unknown as EInfoPlusAgency);
-            console.log(`[TrainUpdate] AgencyId not found for trip ${tripId}. Using agency from InfoPlus: ${infoPlusTripUpdate.agency} -> ${agencyId}`);
+            // console.log(`[TrainUpdate] AgencyId not found for trip ${tripId}. Using agency from InfoPlus: ${infoPlusTripUpdate.agency} -> ${agencyId}`);
         }
 
         if(!routeId) {
             routeId = `${infoPlusTripUpdate.agency}_${infoPlusTripUpdate.trainType}_${infoPlusTripUpdate.trainNumber}`;
-            console.log(`[TrainUpdate] RouteId not found for trip ${tripId}. Using custom routeId: ${routeId}`);
+            // console.log(`[TrainUpdate] RouteId not found for trip ${tripId}. Using custom routeId: ${routeId}`);
         }
 
         if(!routeType) {
-            if(infoPlusTripUpdate.trainNumber > 900_000)
+            if(infoPlusTripUpdate.trainType.includes("MTS") || infoPlusTripUpdate.trainType.includes("MTR") || infoPlusTripUpdate.trainType.includes("NSM"))
+                routeType = 1;
+            else if(infoPlusTripUpdate.trainType.includes("NST"))
+                routeType = 0;
+            else if(infoPlusTripUpdate.trainNumber > 900_000)
                 routeType = 3;
             else
                 routeType = 2;
-            
-            console.error(`[TrainUpdate] RouteType not found for trip ${tripId}. Using routeType: ${routeType}`);
+
         }
 
         let scheduleRelationship = ScheduleRelationship.SCHEDULED;
