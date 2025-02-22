@@ -16,8 +16,6 @@ import {IInfoPlusRepository} from "./Interfaces/Repositories/InfoplusRepository"
 import {IStaticDataRepository} from "./Interfaces/Repositories/IStaticDataRepository";
 import {IFeedManager} from "./Interfaces/Services/UpdateTrainFeed";
 
-require('dotenv').config();
-
 /**
  * Main class of the ProtoBuf constructor. Set's up a timer that runs every 30 seconds to create a new ProtoBuf file.
  */
@@ -42,10 +40,10 @@ export class Main {
 
     this.startWebServer();
 
-    (async() => {
+    (async () => {
       await this.setUpTVVTimer();
       await this.setUpTimer();
-    })();
+    })()
   }
 
   /**

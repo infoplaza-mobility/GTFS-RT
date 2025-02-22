@@ -1,36 +1,67 @@
-name: Test service on main
+name: Build, Test, and Release
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
     branches:
-      - 'main'
-
-  workflow_dispatch:
+      - main
 
 jobs:
-  build:
-    runs-on: ["self-hosted", "main"]
+  build-and-test:
+    runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v2
+      # Checkout the repository
+      - name: Checkout Code
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.SHARED_PAT }}
           submodules: recursive
+
+      # Set up Docker
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
+
+      # Build the test stage of the Dockerfile
       - name: Rebuild Compose Images
         run: docker compose -f docker-compose.test.yml build --no-cache
       - name: Test image with Docker Compose
         run: docker compose -f docker-compose.test.yml up --force-recreate --abort-on-container-exit --exit-code-from app
-      - name: Build and Push Docker Image
-        uses: mr-smithers-excellent/docker-build-push@v5
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      # Checkout the repository
+      - name: Checkout Code
+        uses: actions/checkout@v4
         with:
-          image: arilith/r_ov
-          registry: docker.io
-          tags: gtfsrt
+          token: ${{ secrets.SHARED_PAT }}
+          submodules: recursive
+
+      # Log in to DockerHub
+      - name: Log in to DockerHub
+        uses: docker/login-action@v2
+        with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-  compose-down:
-    runs-on: ["self-hosted", "main"]
-    if: ${{ always() }}
-    needs: [build]
-    steps:
-      - name: Docker compose down
-        run: docker compose -f docker-compose.test.yml down
+
+      # Build the release stage of the Dockerfile
+      - name: Build and Push Docker Image
+        run: |
+          docker build --target release -t r_ov:gtfsrt .
+          docker tag r_ov:gtfsrt arilith/r_ov:gtfsrt
+          docker push arilith/r_ov:gtfsrt
+
+      # Deploy the new Docker image by running the workflow in the Deploy repository
+      - name: Deploy new Docker image
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: Deploy Docker Images of R-OV
+          repo: R-OV-NL/Deploy
+          token: ${{ secrets.SHARED_PAT }}
+          ref: main
