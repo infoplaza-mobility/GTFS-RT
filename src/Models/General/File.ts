@@ -26,6 +26,11 @@ export class File {
     }
 
     public saveSync(): void {
-        writeFileSync(`${this._path}/${this._name}`, this._contents);
+        if(!this.path.endsWith('/') && !this._name.startsWith('/')) {
+            writeFileSync(`${this._path}/${this._name}`, this._contents);
+        }
+        else {
+            writeFileSync(`${this._path}${this._name}`, this._contents);
+        }
     }
 }
