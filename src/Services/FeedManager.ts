@@ -5,8 +5,6 @@
  */
 import {TrainUpdateCollection} from "../Models/TrainUpdateCollection";
 
-import {File} from "../Models/General/File";
-
 import {TripIdWithDate} from "../Interfaces/TVVManager";
 
 import {transit_realtime} from "../Compiled/compiled";
@@ -96,13 +94,7 @@ export class FeedManager implements IFeedManager {
     }
 
     private saveToFile(buffer: Buffer, fileName: string): void {
-        const file: File = new File(
-            './publish/',
-            fileName,
-            buffer
-        );
-
-        file.saveSync();
+        Bun.write(`./publish/${fileName}`, buffer);
 
         console.log(`[FeedManager] Saved updates to ${fileName}`);
     }

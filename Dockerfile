@@ -24,7 +24,7 @@ COPY . .
 # [optional] tests & build
 ENV NODE_ENV=production
 RUN bun test
-RUN bun run build
+RUN bun run build:ts
 
 FROM base AS test
 COPY --from=prerelease /usr/src/app/src src
@@ -36,6 +36,7 @@ ENTRYPOINT [ "bun", "test" ]
 FROM base AS release
 COPY --from=install /temp/prod/node_modules node_modules
 COPY --from=prerelease /usr/src/app/src src
+COPY --from=prerelease /usr/src/app/publish publish
 COPY --from=prerelease /usr/src/app/package.json .
 
 # run the app
