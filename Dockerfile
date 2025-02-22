@@ -39,6 +39,8 @@ COPY --from=prerelease /usr/src/app/src src
 COPY --from=prerelease /usr/src/app/publish publish
 COPY --from=prerelease /usr/src/app/package.json .
 
+RUN chown -R bun:bun publish && chmod -R u+w publish
+
 # run the app
 USER bun
 EXPOSE 9393/tcp
