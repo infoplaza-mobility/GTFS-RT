@@ -24,10 +24,3 @@ jobs:
         run: docker compose -f docker-compose.test.yml build --no-cache
       - name: Test image with Docker Compose
         run: docker compose -f docker-compose.test.yml up --force-recreate --abort-on-container-exit --exit-code-from app
-  compose-down:
-    runs-on: ["self-hosted", "main"]
-    if: ${{ always() }}
-    needs: [build]
-    steps:
-      - name: Docker compose down
-        run: docker compose -f docker-compose.test.yml down
