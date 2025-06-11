@@ -131,6 +131,9 @@ GROUP BY r."trainNumber", jpjl."journeyPartNumber", r."shortTrainNumber", jpjl."
      * @param date The date to check for.
      */
     public async getTripIdsForTVVNotInInfoPlus(TVVTrainNumbers: number[], date: string): Promise<number[]> {
+        if(TVVTrainNumbers.length === 0)
+            return [];
+
         const trainNumberPlaceHolders = TVVTrainNumbers.map(() => "?").join(",")
 
         return this.database

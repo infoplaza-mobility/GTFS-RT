@@ -168,7 +168,11 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
         }
         //If there is no delay, we can just set the departure time to the planned departure time.
         else {
-            stopToFix.departureTime = stopToFix.plannedDepartureTime.getTime() / 1000;
+
+            if(stopToFix.plannedDepartureTime)
+                stopToFix.departureTime = stopToFix.plannedDepartureTime.getTime() / 1000;
+            else
+                stopToFix.departureTime = stopToFix.arrivalTime + 30;
             //Log what was fixed, the original stop time, the new arrival time, the new departure time and the delay.
             // console.info(`[StopUpdateCollection] Fixed stop ${stopToFix.stopId}: ${stopToFix.name} [${stopToFix.sequence}] Arrival time: ${new Date(stopToFix.arrivalTime * 1000)} Departure time: ${new Date(stopToFix.departureTime * 1000)} Original stop time: ${orignalStopTime} seconds. Arrival delay: ${stopToFix.arrivalDelay} seconds. Departure delay: ${stopToFix.departureDelay} seconds.`);
         }

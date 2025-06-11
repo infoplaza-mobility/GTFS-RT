@@ -38,7 +38,7 @@ export class RitInfoUpdate {
         this._shortTrainNumber = update.shortTrainNumber;
         this._showsInTripPlanner = update.showsInTripPlanner;
         this._stopCollection = new StopUpdateCollection(
-            update.stops.map(stop => new RitInfoStopUpdate(stop)),
+            update.stops !== null ? update.stops.map(stop => new RitInfoStopUpdate(stop)) : [],
             update.tripId?.toString()
         );
 
@@ -73,7 +73,7 @@ export class RitInfoUpdate {
         //Nachtnettrein Amsterdam Bijlmer ArenA <-> Leiden Centraal
 
         //Rotterdam Centraal <-> Amsterdam Centraal ICD1100
-        if(firstStop.name && lastStop.name) {
+        if(firstStop?.name && lastStop?.name) {
             return `${firstStop.name} <-> ${lastStop.name} ${trainType}${trainSeries}`;
         }
 
