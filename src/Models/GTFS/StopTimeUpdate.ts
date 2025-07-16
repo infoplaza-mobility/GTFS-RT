@@ -30,7 +30,9 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
             stopId,
             sequence,
             isLastStop,
-            isFirstStop  ,
+            isFirstStop,
+            plannedTrack,
+            actualTrack
         } = update;
 
         const departureBeforeArrival = departureTime !== 0 && arrivalTime !== 0 && departureTime < arrivalTime;
@@ -74,6 +76,8 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
             scheduleRelationship,
             ".transit_realtime.ovapiStopTimeUpdate": {
                 stationId: update.stationCode,
+                scheduledTrack: plannedTrack,
+                actualTrack: actualTrack
             },
         })
 
