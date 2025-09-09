@@ -116,7 +116,7 @@ export class TrainUpdateCollection extends Collection<FeedEntity> {
             header: {
                 gtfsRealtimeVersion: "2.0",
                 timestamp: Math.round(Date.now() / 1000),
-                incrementality: Incrementality.DIFFERENTIAL
+                incrementality: Incrementality.FULL_DATASET
             },
             entity: this.toArray()
         })
