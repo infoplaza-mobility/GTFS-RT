@@ -29,6 +29,7 @@ export interface IDatabaseRitInfoUpdate {
     shapeId: number | null;
     changes: IJourneyChange<LogicalJourneyChangeType>[] | null;
     timestamp: Date;
+    operationDate: Date;
 }
 
 export interface IRitInfoStopUpdate extends IDatabaseStopUpdate {
