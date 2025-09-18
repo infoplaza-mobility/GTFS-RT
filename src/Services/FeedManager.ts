@@ -58,9 +58,7 @@ export class FeedManager implements IFeedManager {
         let operationDateOfYesterdayOrToday = currentOperationDate;
 
         //Check if the current time is between 00:00 and 04:00, if so, set the current operationDate to yesterday.
-        if (moment().tz('Europe/Amsterdam').hour(
-
-        ) < 4) {
+        if (moment().tz('Europe/Amsterdam').hour() < 4) {
             operationDateOfYesterdayOrToday = operationDateYesterday;
         }
 
@@ -84,6 +82,7 @@ export class FeedManager implements IFeedManager {
 
         try {
             const constructedFeedMessage: FeedMessage = FeedMessage.fromObject(trainUpdateFeed);
+            console.log(`[FeedManager] Constructed feed message with ${constructedFeedMessage.entity.length} entities.`);
             this.saveToFile(Buffer.from(FeedMessage.encode(constructedFeedMessage).finish()), 'trainUpdates.pb');
             this.saveToFile(Buffer.from(JSON.stringify(constructedFeedMessage.toJSON())), 'trainUpdates.json');
         } catch (e) {
