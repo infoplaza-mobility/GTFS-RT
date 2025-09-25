@@ -4,7 +4,7 @@
  * Questions? Email: tristantriest@gmail.com
  */
 
-import {IDatabaseRitInfoUpdate, IRitInfoStopUpdate} from '../Interfaces/DatabaseRitInfoUpdate'
+import {IDatabaseRitInfoUpdate} from '../Interfaces/DatabaseRitInfoUpdate'
 import {ExtendedStopTimeUpdate} from "./GTFS/StopTimeUpdate";
 import {RitInfoStopUpdate} from "./StopUpdates/RitinfoStopUpdate";
 import {StopUpdateCollection} from "./StopUpdateCollection";
@@ -29,6 +29,7 @@ export class RitInfoUpdate {
     private readonly _shapeId: number | null;
     private readonly _directionId: number | null;
     private readonly _timestamp: Date;
+    private readonly _operationDate: Date;
 
     private readonly _isInternationalTrain: boolean = false;
 
@@ -37,8 +38,9 @@ export class RitInfoUpdate {
         this._changes = update.changes;
         this._shortTrainNumber = update.shortTrainNumber;
         this._showsInTripPlanner = update.showsInTripPlanner;
+        this._operationDate = update.operationDate;
         this._stopCollection = new StopUpdateCollection(
-            update.stops.map(stop => new RitInfoStopUpdate(stop)),
+            update.stops !== null ? update.stops.map(stop => new RitInfoStopUpdate(stop)) : [],
             update.tripId?.toString()
         );
 
@@ -73,7 +75,7 @@ export class RitInfoUpdate {
         //Nachtnettrein Amsterdam Bijlmer ArenA <-> Leiden Centraal
 
         //Rotterdam Centraal <-> Amsterdam Centraal ICD1100
-        if(firstStop.name && lastStop.name) {
+        if(firstStop?.name && lastStop?.name) {
             return `${firstStop.name} <-> ${lastStop.name} ${trainType}${trainSeries}`;
         }
 
@@ -223,8 +225,16 @@ export class RitInfoUpdate {
 
         const firstStop = this.stops.first();
 
-        if (!firstStop || !firstStop.departureTimeAsDate)
+        if (!firstStop || !firstStop.departureTimeAsDate) {
+            if(firstStop && firstStop.arrivalTimeAsDate) {
+                return firstStop
+                    .arrivalTimeAsDate
+                    .toLocaleTimeString('nl-NL', {hour: '2-digit', minute: '2-digit', second: '2-digit'});
+            }
+
             return '00:00:00';
+        }
+
 
         return firstStop
             .departureTimeAsDate
@@ -238,8 +248,12 @@ export class RitInfoUpdate {
     public get startDate(): string {
         const firstStop = this.stops.first();
 
-        if (!firstStop || !firstStop.departureTimeAsDate)
-            return '00000000';
+        if (!firstStop || !firstStop.departureTimeAsDate) {
+            const y = this._operationDate.getFullYear();
+            const m = String(this._operationDate.getMonth() + 1).padStart(2, '0');
+            const d = String(this._operationDate.getDate()).padStart(2, '0');
+            return `${y}${m}${d}`;
+        }
 
         return firstStop
             .departureTimeAsDate

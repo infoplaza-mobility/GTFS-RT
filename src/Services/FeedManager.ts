@@ -5,8 +5,6 @@
  */
 import {TrainUpdateCollection} from "../Models/TrainUpdateCollection";
 
-import {File} from "../Models/General/File";
-
 import {TripIdWithDate} from "../Interfaces/TVVManager";
 
 import {transit_realtime} from "../Compiled/compiled";
@@ -60,9 +58,7 @@ export class FeedManager implements IFeedManager {
         let operationDateOfYesterdayOrToday = currentOperationDate;
 
         //Check if the current time is between 00:00 and 04:00, if so, set the current operationDate to yesterday.
-        if (moment().tz('Europe/Amsterdam').hour(
-
-        ) < 4) {
+        if (moment().tz('Europe/Amsterdam').hour() < 4) {
             operationDateOfYesterdayOrToday = operationDateYesterday;
         }
 
@@ -86,6 +82,7 @@ export class FeedManager implements IFeedManager {
 
         try {
             const constructedFeedMessage: FeedMessage = FeedMessage.fromObject(trainUpdateFeed);
+            console.log(`[FeedManager] Constructed feed message with ${constructedFeedMessage.entity.length} entities.`);
             this.saveToFile(Buffer.from(FeedMessage.encode(constructedFeedMessage).finish()), 'trainUpdates.pb');
             this.saveToFile(Buffer.from(JSON.stringify(constructedFeedMessage.toJSON())), 'trainUpdates.json');
         } catch (e) {
@@ -96,13 +93,7 @@ export class FeedManager implements IFeedManager {
     }
 
     private saveToFile(buffer: Buffer, fileName: string): void {
-        const file: File = new File(
-            './publish/',
-            fileName,
-            buffer
-        );
-
-        file.saveSync();
+        Bun.write(`./publish/${fileName}`, buffer);
 
         console.log(`[FeedManager] Saved updates to ${fileName}`);
     }

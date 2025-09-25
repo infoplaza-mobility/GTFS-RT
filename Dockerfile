@@ -1,27 +1,47 @@
-FROM node:lts-alpine AS base
+# use the official Bun image
+# see all versions at https://hub.docker.com/r/oven/bun/tags
+FROM oven/bun:1.2 AS base
+WORKDIR /usr/src/app
 
-# Add a work directory
-WORKDIR /app
-# Cache and Install dependencies
-COPY package.json package.json
-COPY yarn.lock yarn.lock
+# install dependencies into temp directory
+# this will cache them and speed up future builds
+FROM base AS install
+RUN mkdir -p /temp/dev
+COPY package.json bun.lock /temp/dev/
+RUN cd /temp/dev && bun install --frozen-lockfile
 
-RUN yarn global add ts-node typescript
+# install with --production (exclude devDependencies)
+RUN mkdir -p /temp/prod
+COPY package.json bun.lock /temp/prod/
+RUN cd /temp/prod && bun install --frozen-lockfile --production
 
-FROM base as test
-RUN yarn install --pure-lock-file
-# Copy app files
+# copy node_modules from temp directory
+# then copy all (non-ignored) project files into the image
+FROM base AS prerelease
+COPY --from=install /temp/dev/node_modules node_modules
 COPY . .
-CMD ["yarn", "test"]
 
-FROM base as prod
-RUN yarn install --pure-lock-file --production
+# [optional] tests & build
+ENV NODE_ENV=production
+RUN bun test
+RUN bun run build:ts
 
-COPY . .
+FROM base AS test
+COPY --from=prerelease /usr/src/app/src src
+COPY --from=prerelease /usr/src/app/package.json .
+ENTRYPOINT [ "bun", "test" ]
 
-RUN yarn add -D @types/node
-# Build the app
-RUN yarn build
-RUN yarn tsc
 
-CMD ["yarn", "start"]
+# copy production dependencies and source code into final image
+FROM base AS release
+COPY --from=install /temp/prod/node_modules node_modules
+COPY --from=prerelease /usr/src/app/src src
+COPY --from=prerelease /usr/src/app/publish publish
+COPY --from=prerelease /usr/src/app/package.json .
+
+RUN chown -R bun:bun publish && chmod -R u+w publish
+
+# run the app
+USER bun
+EXPOSE 9393/tcp
+ENTRYPOINT [ "bun", "run", "src/main.ts" ]

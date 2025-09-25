@@ -16,16 +16,16 @@ export class InfoplusRepository extends Repository implements IInfoPlusRepositor
         return this.database.raw(`
             WITH cal_dates AS (SELECT DISTINCT "serviceId", "date"
                    FROM "StaticData-NL".calendar_dates
-                   WHERE "date" >= ?::date
-                     AND date <= ?::date),
+                   WHERE "date" >= :operationDateOfTodayOrYesterday::date
+                     AND date <= :endOperationDate::date),
      trips AS (SELECT "tripId", "routeId", "directionId", "tripShortName", "shapeId", "serviceId"
                FROM "StaticData-NL".trips
                WHERE agency = 'IFF'
                  AND "serviceId" IN (SELECT DISTINCT "serviceId"
                                      FROM cal_dates)),
-     stops AS (SELECT "stopId", "stationCode", "platformCode", "stopName"
+     stops AS (SELECT "stopId", upper(replace("zoneId", 'IFF:', '')) AS "stationCode", "platformCode", "stopName"
                FROM "StaticData-NL".stops
-               WHERE "stationCode" IS NOT NULL)
+               WHERE stops."zoneId" IS NOT NULL AND stops."zoneId" LIKE 'IFF%')
 SELECT jpjl."journeyPartNumber"                                                              AS "trainNumber",
        jpjl."shortJourneyPartNumber"                                                         AS "shortTrainNumber",
        r."trainType" ->> 'code'                                                              AS "trainType",
@@ -93,20 +93,20 @@ FROM "InfoPlus-new".ritinfo r
                 FROM cal_dates cd
                 WHERE cd."serviceId" = t_short."serviceId"
                   AND cd."date" = r."operationDate")
-         LEFT JOIN stops s ON (s."stationCode" = lower(si."stationCode") AND
+         LEFT JOIN stops s ON (s."stationCode" = si."stationCode" AND
                                s."platformCode" =
                                coalesce(si."actualArrivalTracks", si."actualDepartureTracks", si."plannedArrivalTracks",
                                         si."plannedDepartureTracks"))
          LEFT JOIN LATERAL (
     SELECT "stopId", "stopName"
     FROM stops lax
-    WHERE lax."stationCode" = lower(si."stationCode")
+    WHERE lax."stationCode" = si."stationCode"
     LIMIT 1
     ) AS lateral_stop ON s."stopId" IS NULL
          LEFT JOIN "StaticData-NL".routes rt ON rt."routeId" = coalesce(t."routeId", t_short."routeId")
-WHERE r."operationDate" >= ?::date
+WHERE r."operationDate" >= :operationDateOfTodayOrYesterday::date
   AND NOT (
-    r."operationDate" > ?::date
+    r."operationDate" > :operationDateOfTodayOrTomorrow::date
         AND lj."journeyChanges" IS NULL
     )
 GROUP BY r."trainNumber", jpjl."journeyPartNumber", r."shortTrainNumber", jpjl."shortJourneyPartNumber",
@@ -116,7 +116,7 @@ GROUP BY r."trainNumber", jpjl."journeyPartNumber", r."shortTrainNumber", jpjl."
          t."tripId", coalesce(t."routeId", t_short."routeId"),
          coalesce(t."directionId", t_short."directionId"), coalesce(t."shapeId", t_short."shapeId"), rt."routeType",
          rt."agencyId", rt."routeLongName";
-        `, [operationDateOfTodayOrYesterday, endOperationDate, operationDateOfTodayOrYesterday, operationDateOfTodayOrTomorrow]).then(result => {
+        `, { operationDateOfTodayOrYesterday, endOperationDate, operationDateOfTodayOrTomorrow }).then(result => {
             console.timeEnd('getCurrentRealtimeTripUpdates');
             return result.rows;
         }).catch(error => {
@@ -131,6 +131,9 @@ GROUP BY r."trainNumber", jpjl."journeyPartNumber", r."shortTrainNumber", jpjl."
      * @param date The date to check for.
      */
     public async getTripIdsForTVVNotInInfoPlus(TVVTrainNumbers: number[], date: string): Promise<number[]> {
+        if(TVVTrainNumbers.length === 0)
+            return [];
+
         const trainNumberPlaceHolders = TVVTrainNumbers.map(() => "?").join(",")
 
         return this.database
@@ -138,7 +141,7 @@ GROUP BY r."trainNumber", jpjl."journeyPartNumber", r."shortTrainNumber", jpjl."
                   FROM "StaticData-NL".trips
                   WHERE "journeyNumber" NOT IN
                         (SELECT DISTINCT "trainNumber"
-                         FROM "InfoPlus".ritInfo
+                         FROM "InfoPlus-new".ritInfo
                          WHERE "trainNumber" IN (${trainNumberPlaceHolders})
                            AND "operationDate" = ?)
                     AND "journeyNumber" IN (${trainNumberPlaceHolders})`, [...TVVTrainNumbers, date, ...TVVTrainNumbers])

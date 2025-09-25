@@ -32,7 +32,6 @@ export class TrainUpdateCollection extends Collection<FeedEntity> {
                     //We do this so we can check if this update is there the next iteration as well, if not, we add a new stop time update
                     //that cancels the trip.
                     if(trainUpdate.hasCustomTripId && !this.TrainUpdatesWithCustomTripId.find(u => u.trip.tripId == trainUpdate.trip.tripId)) {
-                        // console.log(`[TrainUpdateCollection] Adding ${trainUpdate.trip.tripId} to TrainUpdatesWithCustomTripId array.`)
                         this.TrainUpdatesWithCustomTripId.push(trainUpdate);
                     }
 
@@ -117,7 +116,7 @@ export class TrainUpdateCollection extends Collection<FeedEntity> {
             header: {
                 gtfsRealtimeVersion: "2.0",
                 timestamp: Math.round(Date.now() / 1000),
-                incrementality: Incrementality.DIFFERENTIAL
+                incrementality: Incrementality.FULL_DATASET
             },
             entity: this.toArray()
         })
