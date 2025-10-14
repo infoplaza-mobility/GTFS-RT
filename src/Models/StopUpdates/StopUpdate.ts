@@ -8,6 +8,7 @@ interface IStopUpdate {
     readonly departureTime: number | null;
     readonly plannedArrivalTime: Date | null;
     readonly plannedDepartureTime: Date | null;
+    readonly destination: string | null;
 }
 
 export abstract class StopUpdate implements IStopUpdate {
@@ -33,6 +34,8 @@ export abstract class StopUpdate implements IStopUpdate {
 
     private _sequence: number;
 
+    private readonly _destination: string | null = null;
+
     protected constructor(update: IDatabaseStopUpdate) {
         this._departureDelay = update.departureDelay;
         this._arrivalDelay = update.arrivalDelay;
@@ -42,6 +45,7 @@ export abstract class StopUpdate implements IStopUpdate {
         this._plannedDepartureTime = update.plannedDepartureTime ? new Date(update.plannedDepartureTime) : null;
         this._sequence = update.sequence;
         this._stopId = update.stopId;
+        this._destination = update.destination;
     }
 
 
@@ -78,6 +82,10 @@ export abstract class StopUpdate implements IStopUpdate {
 
     public get isLastStop(): boolean {
         return this._isLastStop;
+    }
+
+    public get destination(): string | null {
+        return this._destination;
     }
 
     /**
