@@ -17,4 +17,6 @@ export interface IDatabaseStopUpdate {
     plannedWillStop: boolean;
     /** Is this vehicle actually stopping at this stop? */
     actualWillStop: boolean;
+    /** Destination on the vehicle from this stop */
+    destination: string | null;
 }

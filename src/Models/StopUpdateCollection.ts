@@ -277,4 +277,16 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
         return new StopUpdateCollection(withNewIndexes, this.tripId);
 
     }
+
+    public get destination(): string {
+        //Get the last stop before only cancelled stops.
+        const lastStopBeforeOnlyCancelledStops = this.findLastStopBeforeOnlyCancelledStops();
+
+        if(lastStopBeforeOnlyCancelledStops)
+            return lastStopBeforeOnlyCancelledStops.destination;
+
+        //If all stops are cancelled, return the destination of the last stop.
+        const lastStop = this.last();
+        return lastStop.destination;
+    }
 }
