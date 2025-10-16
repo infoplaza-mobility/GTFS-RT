@@ -86,7 +86,7 @@ export class InfoplusRepository extends Repository implements IInfoPlusRepositor
                 ON si."journeyPartNumber" = dest."journeyPartNumber" AND
                 si."operationDate" = dest."operationDate" AND
                 si."stationCode" = dest."stationCode"
-                JOIN "InfoPlus-new".stations stat ON dest."actualDestination" = stat."stationCode" OR dest."plannedDestination" = stat."stationCode"
+                JOIN "InfoPlus-new".stations stat ON stat."stationCode" = coalesce(dest."actualDestination", dest."plannedDestination")
                 LEFT JOIN trips t
                 ON jpjl."journeyPartNumber" = t."tripShortName"::int
                 AND EXISTS (SELECT 1
