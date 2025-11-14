@@ -208,7 +208,7 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
 
             if (currentStop.isCancelled()) {
                 // If this stop is cancelled, use the delay from the last non-cancelled stop
-                if (lastNonCancelledStop !== null) {
+                if (lastNonCancelledStop !== null && lastNonCancelledDepartureTime > 0) {
                     // Set arrival and departure delays to the last non-cancelled stop's departure delay
                     currentStop.arrivalDelay = lastNonCancelledDepartureDelay;
                     currentStop.departureDelay = lastNonCancelledDepartureDelay;
@@ -219,18 +219,17 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
                         currentStop.arrivalTime = plannedArrivalSeconds + lastNonCancelledDepartureDelay;
                         // Ensure arrival time is at least 1 second after last departure
                         currentStop.arrivalTime = Math.max(currentStop.arrivalTime, lastNonCancelledDepartureTime + 1);
+                    } else {
+                        // If no planned arrival, set it to 1 second after last departure
+                        currentStop.arrivalTime = lastNonCancelledDepartureTime + 1;
                     }
 
                     if (currentStop.plannedDepartureTime) {
                         const plannedDepartureSeconds = currentStop.plannedDepartureTime.getTime() / 1000;
                         currentStop.departureTime = plannedDepartureSeconds + lastNonCancelledDepartureDelay;
                         // Ensure departure time is at least equal to arrival time
-                        if (currentStop.arrivalTime) {
-                            currentStop.departureTime = Math.max(currentStop.departureTime, currentStop.arrivalTime);
-                        } else {
-                            currentStop.departureTime = Math.max(currentStop.departureTime, lastNonCancelledDepartureTime + 1);
-                        }
-                    } else if (currentStop.arrivalTime) {
+                        currentStop.departureTime = Math.max(currentStop.departureTime, currentStop.arrivalTime);
+                    } else {
                         // If no planned departure, set it to arrival time (zero dwell)
                         currentStop.departureTime = currentStop.arrivalTime;
                     }
@@ -261,7 +260,20 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
                 // Update the last non-cancelled stop reference
                 lastNonCancelledStop = currentStop;
                 lastNonCancelledDepartureDelay = currentStop.departureDelay;
-                lastNonCancelledDepartureTime = currentStop.departureTime;
+                // Use the actual departure time, ensuring it's not 0
+                // For scheduled stops, departureTime should always be > 0, but use arrivalTime as fallback
+                const actualDepartureTime = currentStop.departureTime > 0 ? currentStop.departureTime : 
+                    (currentStop.arrivalTime > 0 ? currentStop.arrivalTime : 0);
+                lastNonCancelledDepartureTime = actualDepartureTime;
+                
+                // Ensure we have a valid departure time for the next cancelled stop
+                if (actualDepartureTime === 0 && currentStop.plannedDepartureTime) {
+                    // Fallback: use planned departure + delay if actual time is 0
+                    lastNonCancelledDepartureTime = (currentStop.plannedDepartureTime.getTime() / 1000) + currentStop.departureDelay;
+                } else if (actualDepartureTime === 0 && currentStop.plannedArrivalTime) {
+                    // Fallback: use planned arrival + delay if actual time is 0
+                    lastNonCancelledDepartureTime = (currentStop.plannedArrivalTime.getTime() / 1000) + currentStop.departureDelay;
+                }
             }
         }
     }
