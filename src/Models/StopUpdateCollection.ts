@@ -24,6 +24,9 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
 
         //Make sure all times are increasing
         this.checkIncreasingTimes();
+        
+        // Propagate delays to cancelled stops to prevent negative hop times
+        this.propagateDelaysToCancelledStops();
     }
 
     private setFirstStop() {
@@ -189,6 +192,78 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
             // console.info(`[StopUpdateCollection] Fixed stop ${stopToFix.stopId}: ${stopToFix.name} [${stopToFix.sequence}] Arrival time: ${new Date(stopToFix.arrivalTime * 1000)} Departure time: ${new Date(stopToFix.departureTime * 1000)} Original stop time: ${orignalStopTime} seconds. Arrival delay: ${stopToFix.arrivalDelay} seconds. Departure delay: ${stopToFix.departureDelay} seconds.`);
         }
 
+    }
+
+    /**
+     * Propagates delays from the last non-cancelled stop to cancelled stops to prevent negative hop times.
+     * @private
+     */
+    private propagateDelaysToCancelledStops() {
+        let lastNonCancelledStop: RitInfoStopUpdate | null = null;
+        let lastNonCancelledDepartureDelay = 0;
+        let lastNonCancelledDepartureTime = 0;
+
+        for (let i = 0; i < this.length; i++) {
+            const currentStop = this.get(i);
+
+            if (currentStop.isCancelled()) {
+                // If this stop is cancelled, use the delay from the last non-cancelled stop
+                if (lastNonCancelledStop !== null) {
+                    // Set arrival and departure delays to the last non-cancelled stop's departure delay
+                    currentStop.arrivalDelay = lastNonCancelledDepartureDelay;
+                    currentStop.departureDelay = lastNonCancelledDepartureDelay;
+
+                    // Calculate times based on planned times + delay
+                    if (currentStop.plannedArrivalTime) {
+                        const plannedArrivalSeconds = currentStop.plannedArrivalTime.getTime() / 1000;
+                        currentStop.arrivalTime = plannedArrivalSeconds + lastNonCancelledDepartureDelay;
+                        // Ensure arrival time is at least 1 second after last departure
+                        currentStop.arrivalTime = Math.max(currentStop.arrivalTime, lastNonCancelledDepartureTime + 1);
+                    }
+
+                    if (currentStop.plannedDepartureTime) {
+                        const plannedDepartureSeconds = currentStop.plannedDepartureTime.getTime() / 1000;
+                        currentStop.departureTime = plannedDepartureSeconds + lastNonCancelledDepartureDelay;
+                        // Ensure departure time is at least equal to arrival time
+                        if (currentStop.arrivalTime) {
+                            currentStop.departureTime = Math.max(currentStop.departureTime, currentStop.arrivalTime);
+                        } else {
+                            currentStop.departureTime = Math.max(currentStop.departureTime, lastNonCancelledDepartureTime + 1);
+                        }
+                    } else if (currentStop.arrivalTime) {
+                        // If no planned departure, set it to arrival time (zero dwell)
+                        currentStop.departureTime = currentStop.arrivalTime;
+                    }
+
+                    this.set(i, currentStop);
+                } else {
+                    // No previous non-cancelled stop (cancelled stops at the start)
+                    // Use planned times with zero delay to ensure we have arrival/departure events
+                    if (currentStop.plannedArrivalTime) {
+                        currentStop.arrivalTime = currentStop.plannedArrivalTime.getTime() / 1000;
+                        currentStop.arrivalDelay = 0;
+                    }
+                    if (currentStop.plannedDepartureTime) {
+                        currentStop.departureTime = currentStop.plannedDepartureTime.getTime() / 1000;
+                        currentStop.departureDelay = 0;
+                        // Ensure departure is at least equal to arrival
+                        if (currentStop.arrivalTime) {
+                            currentStop.departureTime = Math.max(currentStop.departureTime, currentStop.arrivalTime);
+                        }
+                    } else if (currentStop.arrivalTime) {
+                        // If no planned departure, set it to arrival time (zero dwell)
+                        currentStop.departureTime = currentStop.arrivalTime;
+                        currentStop.departureDelay = 0;
+                    }
+                    this.set(i, currentStop);
+                }
+            } else {
+                // Update the last non-cancelled stop reference
+                lastNonCancelledStop = currentStop;
+                lastNonCancelledDepartureDelay = currentStop.departureDelay;
+                lastNonCancelledDepartureTime = currentStop.departureTime;
+            }
+        }
     }
 
     /**
