@@ -57,12 +57,16 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
             if(!previousStop)
                 continue;
 
+            // Skip fixing cancelled arrivals/departures
+            const isArrivalCancelled = currentStop.isCancelledArrival();
+            const isDepartureCancelled = currentStop.isCancelledDeparture();
+
             // Initialize variables to keep track of whether the arrival and departure times are increasing
             let arrivalTimeIsIncreasing = true;
             let departureTimeIsIncreasing = true;
 
-            // Check if the current stop's planned arrival time is increasing
-            if (currentStop.arrivalTime !== null) {
+            // Check if the current stop's planned arrival time is increasing (only if arrival is not cancelled)
+            if (!isArrivalCancelled && currentStop.arrivalTime !== null) {
                 if (currentStop.arrivalTime && currentStop.arrivalTime < previousStop.departureTime) {
                     // If the current stop's planned arrival time is not increasing, log a warning message
                     // console.warn(`[StopUpdateCollection ${this.tripId}] Non-increasing arrival time detected for stop ${currentStop.stationCode} [${currentStop.sequence}]`, new Date(currentStop.arrivalTime * 1000), new Date(lastStopDepartureTime * 1000))
@@ -70,8 +74,8 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
                 }
             }
 
-            // Check if the current stop's planned departure time is increasing
-            if (currentStop.departureTime !== null) {
+            // Check if the current stop's planned departure time is increasing (only if departure is not cancelled)
+            if (!isDepartureCancelled && currentStop.departureTime !== null) {
                 if (currentStop.departureTime && currentStop.departureTime < previousStop.departureTime) {
 
                     // If the current stop's planned departure time is not increasing, log a warning message
@@ -86,8 +90,8 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
             }
 
 
-            // If there is a previous and next stop, we can fix both times
-            this.fixStopTime(previousStop, currentStop, !arrivalTimeIsIncreasing, !departureTimeIsIncreasing);
+            // If there is a previous and next stop, we can fix both times (only if they're not cancelled)
+            this.fixStopTime(previousStop, currentStop, !arrivalTimeIsIncreasing && !isArrivalCancelled, !departureTimeIsIncreasing && !isDepartureCancelled);
 
             // Update the current stop in the collection
             this.set(i, currentStop);
@@ -134,6 +138,9 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
         // If the previous stop is cancelled, we can't fix the arrival time
         if (previousStop.isCancelled()) return;
 
+        // If the previous stop has a cancelled departure, we can't fix the arrival time
+        if (previousStop.isCancelledDeparture()) return;
+
         // If the previous stop has no departure time, we can't fix the arrival time
         if (previousStop.departureTime === null) return;
 
@@ -150,6 +157,11 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
 
         stopToFix.arrivalTime = newArrivalTime;
         stopToFix.arrivalDelay = previousStop.departureDelay;
+
+        // Don't set departure time/delay if departure is cancelled
+        if (stopToFix.isCancelledDeparture()) {
+            return;
+        }
 
         //We always stay at the station about 60 seconds, so we cannot run in all delay during the stop.
         if(orignalStopTime > 60)
@@ -186,6 +198,9 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
      * @private
      */
     private fixDepartureTime(stopToFix: RitInfoStopUpdate) {
+        // If the current stop has a cancelled arrival, we can't fix the departure time
+        if (stopToFix.isCancelledArrival()) return;
+
         // If the current stop has no planned arrival time, we can't fix the departure time
         if (stopToFix.plannedArrivalTime === null) return;
 
