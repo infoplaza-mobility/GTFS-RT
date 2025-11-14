@@ -36,6 +36,31 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
             destination
         } = update;
 
+        // Check cancellation status
+        const isFullyCancelled = update.isCancelled();
+        const isArrivalCancelled = update.isCancelledArrival();
+        const isDepartureCancelled = update.isCancelledDeparture();
+
+        // If the stop is fully cancelled, don't include arrival/departure fields
+        if (isFullyCancelled) {
+            const scheduleRelationship = transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SKIPPED;
+            return StopTimeUpdate.create({
+                stopId,
+                stopSequence: sequence,
+                arrival: undefined,
+                departure: undefined,
+                scheduleRelationship,
+                ".transit_realtime.ovapiStopTimeUpdate": {
+                    stationId: update.stationCode,
+                    scheduledTrack: plannedTrack,
+                    actualTrack: actualTrack
+                },
+                stopTimeProperties: {
+                    stopHeadsign: destination
+                }
+            });
+        }
+
         const departureBeforeArrival = departureTime !== 0 && arrivalTime !== 0 && departureTime < arrivalTime;
         const arrivalIsZero = arrivalTime === 0;
         const departureIsZero = departureTime === 0;
@@ -44,22 +69,30 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
             departureTime = arrivalTime + 60;
         }
             
-        let departure = StopTimeEvent.create({
-            time: !departureIsZero ? departureTime : arrivalTime,
-            delay: departureDelay,
-            uncertainty: null
-        });
+        // Only create departure event if departure is not cancelled
+        let departure: StopTimeEvent | undefined = undefined;
+        if (!isDepartureCancelled) {
+            departure = StopTimeEvent.create({
+                time: !departureIsZero ? departureTime : arrivalTime,
+                delay: departureDelay,
+                uncertainty: null
+            });
+        }
 
-        let arrival = StopTimeEvent.create({
-            time: !arrivalIsZero ? arrivalTime : departureTime,
-            delay: arrivalDelay,
-            uncertainty: null
-        });
+        // Only create arrival event if arrival is not cancelled
+        let arrival: StopTimeEvent | undefined = undefined;
+        if (!isArrivalCancelled) {
+            arrival = StopTimeEvent.create({
+                time: !arrivalIsZero ? arrivalTime : departureTime,
+                delay: arrivalDelay,
+                uncertainty: null
+            });
+        }
 
-        if(isFirstStop)
+        if(isFirstStop && arrival && departure)
             arrival = departure;
 
-        if(isLastStop)
+        if(isLastStop && arrival && departure)
             departure = arrival;
 
         //The stop is skipped entirely if the passing is cancelled.
@@ -67,13 +100,11 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
             transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SKIPPED :
             transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SCHEDULED;
 
-        const shouldHaveDepartureAndArrival = true;
-
         return StopTimeUpdate.create({
             stopId,
             stopSequence: sequence,
-            arrival: shouldHaveDepartureAndArrival ? arrival : undefined,
-            departure: shouldHaveDepartureAndArrival ? departure : undefined,
+            arrival: arrival,
+            departure: departure,
             scheduleRelationship,
             ".transit_realtime.ovapiStopTimeUpdate": {
                 stationId: update.stationCode,
