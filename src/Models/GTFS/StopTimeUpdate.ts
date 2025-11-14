@@ -69,7 +69,7 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
             departureTime = arrivalTime + 60;
         }
             
-        // Only create departure event if departure is not cancelled
+        // Create departure event
         let departure: StopTimeEvent | undefined = undefined;
         if (!isDepartureCancelled) {
             departure = StopTimeEvent.create({
@@ -77,14 +77,28 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
                 delay: departureDelay,
                 uncertainty: null
             });
+        } else if (isArrivalCancelled === false) {
+            // If departure is cancelled but arrival is not, use arrival time for departure
+            departure = StopTimeEvent.create({
+                time: !arrivalIsZero ? arrivalTime : departureTime,
+                delay: arrivalDelay,
+                uncertainty: null
+            });
         }
 
-        // Only create arrival event if arrival is not cancelled
+        // Create arrival event
         let arrival: StopTimeEvent | undefined = undefined;
         if (!isArrivalCancelled) {
             arrival = StopTimeEvent.create({
                 time: !arrivalIsZero ? arrivalTime : departureTime,
                 delay: arrivalDelay,
+                uncertainty: null
+            });
+        } else if (isDepartureCancelled === false) {
+            // If arrival is cancelled but departure is not, use departure time for arrival
+            arrival = StopTimeEvent.create({
+                time: !departureIsZero ? departureTime : arrivalTime,
+                delay: departureDelay,
                 uncertainty: null
             });
         }
