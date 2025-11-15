@@ -35,6 +35,10 @@ export class Collection<T> {
         return this._items.filter(callbackfn, thisArg);
     }
 
+    public forEach(callbackfn: (value: T, index: number, array: T[]) => void, thisArg?: any) {
+        return this._items.forEach(callbackfn, thisArg);
+    }
+
     public toArray(): T[] {
         return this._items;
     }
