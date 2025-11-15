@@ -77,12 +77,13 @@ export class FeedManager implements IFeedManager {
         const trainUpdateCollection = TrainUpdateCollection.fromDatabaseResult(trainUpdates);
 
         trainUpdateCollection.applyRemovals(tripIdsToRemove);
-
+        trainUpdateCollection.checkForErrors();
         const trainUpdateFeed: FeedMessage = trainUpdateCollection.toFeedMessage();
 
         try {
             const constructedFeedMessage: FeedMessage = FeedMessage.fromObject(trainUpdateFeed);
             console.log(`[FeedManager] Constructed feed message with ${constructedFeedMessage.entity.length} entities.`);
+
             this.saveToFile(Buffer.from(FeedMessage.encode(constructedFeedMessage).finish()), 'trainUpdates.pb');
             this.saveToFile(Buffer.from(JSON.stringify(constructedFeedMessage.toJSON())), 'trainUpdates.json');
         } catch (e) {

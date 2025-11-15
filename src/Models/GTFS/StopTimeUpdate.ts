@@ -36,11 +36,6 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
             destination
         } = update;
 
-        // Check cancellation status
-        const isFullyCancelled = update.isCancelled();
-        const isArrivalCancelled = update.isCancelledArrival();
-        const isDepartureCancelled = update.isCancelledDeparture();
-
         const departureBeforeArrival = departureTime !== 0 && arrivalTime !== 0 && departureTime < arrivalTime;
         const arrivalIsZero = arrivalTime === 0;
         const departureIsZero = departureTime === 0;
@@ -48,75 +43,23 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
         if(departureBeforeArrival) {
             departureTime = arrivalTime + 60;
         }
-            
-        // Create departure event
-        let departure: StopTimeEvent | undefined = undefined;
-        if (!isDepartureCancelled) {
-            departure = StopTimeEvent.create({
-                time: !departureIsZero ? departureTime : arrivalTime,
-                delay: departureDelay,
-                uncertainty: null
-            });
-        } else if (isArrivalCancelled === false) {
-            // If departure is cancelled but arrival is not, use arrival time for departure
-            departure = StopTimeEvent.create({
-                time: !arrivalIsZero ? arrivalTime : departureTime,
-                delay: arrivalDelay,
-                uncertainty: null
-            });
-        } else if (isFullyCancelled) {
-            // If fully cancelled, still create departure event using propagated delay to prevent negative hop times
-            const timeToUse = !departureIsZero ? departureTime : (!arrivalIsZero ? arrivalTime : 0);
-            if (timeToUse !== 0) {
-                departure = StopTimeEvent.create({
-                    time: timeToUse,
-                    delay: departureDelay,
-                    uncertainty: null
-                });
-            }
-        }
 
-        // Create arrival event
-        let arrival: StopTimeEvent | undefined = undefined;
-        if (!isArrivalCancelled) {
-            arrival = StopTimeEvent.create({
-                time: !arrivalIsZero ? arrivalTime : departureTime,
-                delay: arrivalDelay,
-                uncertainty: null
-            });
-        } else if (isDepartureCancelled === false) {
-            // If arrival is cancelled but departure is not, use departure time for arrival
-            arrival = StopTimeEvent.create({
-                time: !departureIsZero ? departureTime : arrivalTime,
-                delay: departureDelay,
-                uncertainty: null
-            });
-        } else if (isFullyCancelled) {
-            // If fully cancelled, still create arrival event using propagated delay to prevent negative hop times
-            const timeToUse = !arrivalIsZero ? arrivalTime : (!departureIsZero ? departureTime : 0);
-            if (timeToUse !== 0) {
-                arrival = StopTimeEvent.create({
-                    time: timeToUse,
-                    delay: arrivalDelay,
-                    uncertainty: null
-                });
-            }
-        }
+        let departure = StopTimeEvent.create({
+            time: !departureIsZero ? departureTime : arrivalTime,
+            delay: departureDelay,
+            uncertainty: null
+        });
 
-        // For fully cancelled stops, ensure arrival and departure are equal to prevent negative dwell time
-        if (isFullyCancelled && arrival && departure) {
-            // Use the later time for both to ensure no negative dwell
-            const arrivalTimeNum = typeof arrival.time === 'number' ? arrival.time : arrival.time.toNumber();
-            const departureTimeNum = typeof departure.time === 'number' ? departure.time : departure.time.toNumber();
-            const timeToUse = Math.max(arrivalTimeNum, departureTimeNum);
-            arrival.time = timeToUse as any;
-            departure.time = timeToUse as any;
-        }
+        let arrival = StopTimeEvent.create({
+            time: !arrivalIsZero ? arrivalTime : departureTime,
+            delay: arrivalDelay,
+            uncertainty: null
+        });
 
-        if(isFirstStop && arrival && departure)
+        if(isFirstStop)
             arrival = departure;
 
-        if(isLastStop && arrival && departure)
+        if(isLastStop)
             departure = arrival;
 
         //The stop is skipped entirely if the passing is cancelled.
@@ -124,11 +67,13 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
             transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SKIPPED :
             transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SCHEDULED;
 
+        const shouldHaveDepartureAndArrival = true;
+
         return StopTimeUpdate.create({
             stopId,
             stopSequence: sequence,
-            arrival: arrival,
-            departure: departure,
+            arrival: shouldHaveDepartureAndArrival ? arrival : undefined,
+            departure: shouldHaveDepartureAndArrival ? departure : undefined,
             scheduleRelationship,
             ".transit_realtime.ovapiStopTimeUpdate": {
                 stationId: update.stationCode,
@@ -139,7 +84,5 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
                 stopHeadsign: destination
             }
         })
-
-
     }
 }
