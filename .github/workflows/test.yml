@@ -1,31 +1,42 @@
-name: Test service no push.
+name: Test service
 
 on:
   push:
-    branches:
-      - '**'
-      - '!main'
+    branches-ignore:
+      - main
   pull_request:
-    branches:
-      - '**'
-      - '!main'
-
-  workflow_dispatch:
+    types:
+      - opened
+      - reopened
+      - synchronize
 
 jobs:
-  build:
+  build_and_test:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
         with:
           token: ${{ secrets.SHARED_PAT }}
           submodules: recursive
-      - name: Log in to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Rebuild Compose Images
-        run: docker compose -f docker-compose.test.yml build --no-cache
-      - name: Test image with Docker Compose
-        run: docker compose -f docker-compose.test.yml up --force-recreate --abort-on-container-exit --exit-code-from app
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Build and start services
+        run: |
+          docker compose -f docker-compose.test.yml up -d database
+          sleep 10 # Adjust sleep time as needed to allow services to start
+
+      - name: Wait for database to be ready
+        run: |
+          until docker compose -f docker-compose.test.yml exec -T database pg_isready -U postgres; do
+            >&2 echo "Postgres is unavailable - sleeping"
+            sleep 1
+          done
+
+      - name: Start app service
+        run: docker compose -f docker-compose.test.yml up --force-recreate --build --exit-code-from app app
+
+      - name: Clean up
+        if: always()
+        run: docker compose -f docker-compose.test.yml down

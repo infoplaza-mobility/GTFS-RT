@@ -3,9 +3,10 @@ export const InternationalAgencys = [
     "DB",
     "Eurostar",
     "Thalys",
-    "Euroahn",
+    "Eurobahn",
     "VIAS",
-    "NMBS" ];
+    "NMBS",
+    "NS International"];
 
 export const InternationalTrainSeries: {start: number, end: number}[] = [
     {
