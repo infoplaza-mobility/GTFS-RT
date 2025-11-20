@@ -130,8 +130,13 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
      * @private
      */
     private fixHopTime(previousStop: RitInfoStopUpdate, stopToFix: RitInfoStopUpdate) {
-        const previousStopScheduledDeparture = previousStop.plannedDepartureTime;
-        const currentStopScheduledArrival = stopToFix.plannedArrivalTime;
+        const previousStopScheduledDeparture = previousStop.plannedDepartureTime ?? previousStop.departureTimeAsDate;
+        const currentStopScheduledArrival = stopToFix.plannedArrivalTime ?? stopToFix.arrivalTimeAsDate;
+
+        if(previousStopScheduledDeparture == null || currentStopScheduledArrival == null) {
+            console.warn(`[StopUpdateCollection ${this.tripId}] Cannot fix hop time for stop ${stopToFix.stopId}: ${stopToFix.name} [${stopToFix.sequence}]. Missing planned times.`);
+            return;
+        }
 
         const regularHopTime = (currentStopScheduledArrival.getTime() - previousStopScheduledDeparture.getTime()) / 1000;
 
