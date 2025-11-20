@@ -138,13 +138,41 @@ export abstract class StopUpdate implements IStopUpdate {
      * @returns {Long} The departure time in seconds since epoch.
      */
     public get departureTime(): number {
-        if (!this._departureTime)
+        if(this._departureTime && this._arrivalTime) {
+            // Check if we have a valid dwell time; else we fix it.
+            // Compare time values directly to avoid precision issues with Date object comparison
+            const departureTimeValue = this._departureTime.getTime();
+            const arrivalTimeValue = this._arrivalTime.getTime();
+            if(departureTimeValue >= arrivalTimeValue) {
+                return departureTimeValue / 1000;
+            }
+
+            //We do not have a valid dwell time, fix it by getting the planned dwell time (which should be valid) and adding that to the arrival time.
+            if(this._plannedArrivalTime && this._plannedDepartureTime) {
+                const plannedDwellTime = (this._plannedDepartureTime.getTime() - this._plannedArrivalTime.getTime()) / 1000;
+                return (arrivalTimeValue / 1000) + plannedDwellTime;
+            }
+
+            //If we do not have planned times, just add 1 second to the arrival time.
+            return (arrivalTimeValue / 1000) + 1;
+        }
+
+        if(this._departureTime)
+            return this._departureTime.getTime() / 1000;
+
+        if(!this._departureTime && !this._arrivalTime) {
+            if(this._plannedDepartureTime)
+                return this._plannedDepartureTime.getTime() / 1000;
+
+            if(this._plannedArrivalTime)
+                return this._plannedArrivalTime.getTime() / 1000;
+
             return 0;
+        }
 
-        if (this.isFirstStop)
-            return this._departureTime.getTime() / 1000 + 1;
-
-        return this._departureTime.getTime() / 1000;
+        if(this._arrivalTime) {
+            return this._arrivalTime.getTime() / 1000;
+        }
     }
 
     /**
@@ -160,8 +188,26 @@ export abstract class StopUpdate implements IStopUpdate {
      * @returns {Long} The arrival time in seconds since epoch.
      */
     public get arrivalTime(): number {
-        if (!this._arrivalTime)
+        if(this._arrivalTime)
+            return this._arrivalTime.getTime() / 1000;
+
+        //If we do not have a realtime arrival time, but we do have scheduled arrival time, use that + the arrival delay.
+        if(this._plannedArrivalTime)
+        {
+            let plannedArrivalTimeSeconds = this._plannedArrivalTime.getTime() / 1000;
+            plannedArrivalTimeSeconds += this.departureDelay;
+            return plannedArrivalTimeSeconds;
+        }
+
+        if (!this._arrivalTime && !this._departureTime)
             return 0;
+
+        //If we do not have an arrival time, but we do have a departure time, use the departure time.
+        if(!this._arrivalTime)
+            return this._departureTime.getTime() / 1000;
+
+        if (this.isLastStop)
+            return this._arrivalTime.getTime() / 1000 - 1;
 
         return this._arrivalTime.getTime() / 1000;
     }

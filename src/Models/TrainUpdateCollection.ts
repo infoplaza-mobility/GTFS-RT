@@ -91,6 +91,35 @@ export class TrainUpdateCollection extends Collection<FeedEntity> {
     }
 
     /**
+     * Checks each update for invalid hop times, dwell times.
+     */
+    public checkForErrors() {
+        this.forEach(update => {
+            const tripUpdate = update.tripUpdate
+            const stops = tripUpdate.stopTimeUpdate;
+
+            for (let i = 0; i < stops.length; i++) {
+                const stop = stops[i];
+
+                const dwellTime = (stop.departure.time as number) - (stop.arrival.time as number);
+
+                if(dwellTime < 0) {
+                    console.warn(`[TrainUpdateCollection] Negative dwell time found for ${update.tripUpdate.trip.tripId}, at stop: ${stop.stopId}`)
+                }
+
+                if(i === 0) continue;
+
+                const previousStop = stops[i - 1];
+                const hopTime = (stop.arrival.time as number) - (previousStop.departure.time as number);
+
+                if(hopTime < 0) {
+                    console.warn(`[TrainUpdateCollection] Negative hop time found for ${update.tripUpdate.trip.tripId}, at stops:${previousStop.stopId} -> ${stop.stopId}`)
+                }
+            }
+        })
+    }
+
+    /**
      * Checks if there are any updates with a custom trip ID that have been removed.
      * (So if there is an update with a custom trip ID in the TrainUpdatesWithCustomTripId array, but not in the current collection)
      * @return {TrainUpdate[]} The removed updates.

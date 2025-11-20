@@ -43,7 +43,7 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
         if(departureBeforeArrival) {
             departureTime = arrivalTime + 60;
         }
-            
+
         let departure = StopTimeEvent.create({
             time: !departureIsZero ? departureTime : arrivalTime,
             delay: departureDelay,
@@ -84,7 +84,5 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
                 stopHeadsign: destination
             }
         })
-
-
     }
 }
