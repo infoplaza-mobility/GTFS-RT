@@ -221,11 +221,11 @@ export abstract class StopUpdate implements IStopUpdate {
     }
 
     public get arrivalTimeAsDate(): Date | null {
-        return this._arrivalTime;
+        return new Date(this.arrivalTime * 1000);
     }
 
     public get departureTimeAsDate(): Date | null {
-        return this._departureTime;
+        return new Date(this.departureTime * 1000);
     }
 
     /**
