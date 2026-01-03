@@ -25,7 +25,27 @@ export class InfoplusRepository extends Repository implements IInfoPlusRepositor
                 FROM cal_dates)),
                 stops AS (SELECT "stopId", upper(replace("zoneId", 'IFF:', '')) AS "stationCode", "platformCode", "stopName"
             FROM "StaticData-NL".stops
-            WHERE stops."zoneId" IS NOT NULL AND stops."zoneId" LIKE 'IFF%')
+            WHERE stops."zoneId" IS NOT NULL AND stops."zoneId" LIKE 'IFF%'),
+                trip_first_stops AS (
+            SELECT DISTINCT ON (st.trip_id)
+                st.trip_id::int AS trip_id,
+                upper(replace(s."zoneId", 'IFF:', '')) AS first_station_code
+            FROM "StaticData-NL".stop_times st
+            JOIN "StaticData-NL".stops s ON st.stop_id = s."stopId"
+            WHERE s."zoneId" IS NOT NULL AND s."zoneId" LIKE 'IFF%'
+            ORDER BY st.trip_id, st.stop_sequence
+                ),
+                journey_part_first_stops AS (
+            SELECT DISTINCT ON (si."journeyNumber", si."journeyPartNumber", si."operationDate")
+                si."journeyNumber",
+                si."journeyPartNumber",
+                si."operationDate",
+                si."stationCode" AS first_station_code
+            FROM "InfoPlus-new".stop_information si
+            WHERE si."stopType" != 'N'
+              AND (si."plannedWillStop" = true OR si."actualWillStop" = true)
+            ORDER BY si."journeyNumber", si."journeyPartNumber", si."operationDate", si."stopOrder"
+                )
             SELECT jpjl."journeyPartNumber"                                                              AS "trainNumber",
                    jpjl."shortJourneyPartNumber"                                                         AS "shortTrainNumber",
                    r."trainType" ->> 'code'                                                              AS "trainType",
@@ -76,29 +96,44 @@ export class InfoplusRepository extends Repository implements IInfoPlusRepositor
                 ON lj."journeyNumber" = jpjl."journeyNumber" AND
                 r."operationDate" = jpjl."operationDate"
                 JOIN "InfoPlus-new".stop_information si
-                ON jpjl."journeyPartNumber" = si."journeyPartNumber" AND
+                ON jpjl."journeyNumber" = si."journeyNumber" AND
+                jpjl."journeyPartNumber" = si."journeyPartNumber" AND
                 jpjl."operationDate" = si."operationDate" AND
                 si."stopType" != 'N' AND
                 ("plannedWillStop" = true OR "actualWillStop" = true) AND
                 (coalesce("plannedDepartureTime", "actualArrivalTime") IS NOT NULL OR
                 coalesce("plannedArrivalTime", "actualArrivalTime") IS NOT NULL)
                 JOIN "InfoPlus-new".destinations dest
-                ON si."journeyPartNumber" = dest."journeyPartNumber" AND
+                ON si."journeyNumber" = dest."journeyNumber" AND
+                si."journeyPartNumber" = dest."journeyPartNumber" AND
                 si."operationDate" = dest."operationDate" AND
                 si."stationCode" = dest."stationCode"
                 JOIN "InfoPlus-new".stations stat ON stat."stationCode" = coalesce(dest."actualDestination", dest."plannedDestination")
-                LEFT JOIN trips t
-                ON jpjl."journeyPartNumber" = t."tripShortName"::int
+                LEFT JOIN journey_part_first_stops jpfs
+                ON jpfs."journeyNumber" = jpjl."journeyNumber"
+                AND jpfs."journeyPartNumber" = jpjl."journeyPartNumber"
+                AND jpfs."operationDate" = jpjl."operationDate"
+                LEFT JOIN (
+                    SELECT trips.*, tfs.first_station_code
+                    FROM trips
+                    JOIN trip_first_stops tfs ON tfs.trip_id = trips."tripId"
+                ) t ON jpjl."journeyPartNumber" = t."tripShortName"::int
                 AND EXISTS (SELECT 1
                 FROM cal_dates cd
                 WHERE cd."serviceId" = t."serviceId"
                 AND cd."date" = r."operationDate")
+                AND t.first_station_code = jpfs.first_station_code
 
-                LEFT JOIN trips t_short ON t."tripId" IS NULL AND jpjl."shortJourneyPartNumber" = t_short."tripShortName"::int
+                LEFT JOIN (
+                    SELECT trips.*, tfs.first_station_code
+                    FROM trips
+                    JOIN trip_first_stops tfs ON tfs.trip_id = trips."tripId"
+                ) t_short ON t."tripId" IS NULL AND jpjl."shortJourneyPartNumber" = t_short."tripShortName"::int
                 AND EXISTS (SELECT 1
                 FROM cal_dates cd
                 WHERE cd."serviceId" = t_short."serviceId"
                 AND cd."date" = r."operationDate")
+                AND t_short.first_station_code = jpfs.first_station_code
                 LEFT JOIN stops s ON (s."stationCode" = si."stationCode" AND
                 s."platformCode" =
                 coalesce(si."actualArrivalTracks", si."actualDepartureTracks", si."plannedArrivalTracks",
@@ -115,7 +150,7 @@ export class InfoplusRepository extends Repository implements IInfoPlusRepositor
                 r."operationDate" > :operationDateOfTodayOrTomorrow::date
               AND lj."journeyChanges" IS NULL
                 )
-            GROUP BY r."trainNumber", jpjl."journeyPartNumber", r."shortTrainNumber", jpjl."shortJourneyPartNumber",
+            GROUP BY r."trainNumber", jpjl."journeyNumber", jpjl."journeyPartNumber", r."shortTrainNumber", jpjl."shortJourneyPartNumber",
                 r."trainType", r.agency,
                 r."showsInTravelPlanner", r.timestamp, r."operationDate", t."tripId", coalesce(t."tripId", t_short."tripId"),
                 coalesce(lj."journeyChanges", jpjl."journeyPartChanges"),
