@@ -6,7 +6,6 @@
     "module": "ESNext",
     "moduleDetection": "force",
     "allowJs": true,
-    "types": ["node"],
 
     // Bundler mode
     "moduleResolution": "node",
@@ -41,6 +40,7 @@
   },
   "include": [
     "./src",
+    "./bun.d.ts",
   ],
   "exclude": [
     "**/test/**",
