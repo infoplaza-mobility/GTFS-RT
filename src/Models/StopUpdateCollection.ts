@@ -4,8 +4,8 @@
  * Questions? Email: tristantriest@gmail.com
  */
 
-import { Collection } from "./General/Collection";
-import { StopUpdate } from "./StopUpdates/StopUpdate";
+import {Collection} from "./General/Collection";
+import {StopUpdate} from "./StopUpdates/StopUpdate";
 import {RitInfoStopUpdate} from "./StopUpdates/RitinfoStopUpdate";
 
 export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
@@ -16,7 +16,7 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
         super(items);
         this.tripId = tripId;
 
-        if(items.length === 0) return;
+        if (items.length === 0) return;
 
         this.setFirstStop();
         this.setLastStop();
@@ -56,45 +56,40 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
             const currentStop = this.get(i);
             const previousStop = this.get(i - 1);
 
-            // If the current stop is cancelled, skip it
-            if (currentStop.isCancelled()) continue;
-
             //If there is no previous stop, the arrival and departure times can not be non-increasing, as this is the first stop.
-            if(!previousStop)
+            if (!previousStop)
                 continue;
 
             // Initialize variables to keep track of whether the arrival and departure times are increasing
-            let arrivalTimeIsIncreasing = true;
-            let departureTimeIsIncreasing = true;
+            let hopTimeIsValid = true;
+            let dwellTimeIsValid = true;
 
-            // Check if the current stop's planned arrival time is increasing
-            if (currentStop.arrivalTime !== null) {
-                if (currentStop.arrivalTime && currentStop.arrivalTime < previousStop.departureTime) {
-                    // If the current stop's planned arrival time is not increasing, log a warning message
-                    // console.warn(`[StopUpdateCollection ${this.tripId}] Non-increasing arrival time detected for stop ${currentStop.stationCode} [${currentStop.sequence}]`, new Date(currentStop.arrivalTime * 1000), new Date(lastStopDepartureTime * 1000))
-                    arrivalTimeIsIncreasing = false;
+            // Check if the current stop's arrival time is increasing (only if arrival is not cancelled)
+            if (currentStop.arrivalTime !== null && currentStop.arrivalTime > 0) {
+                if (previousStop.departureTime > 0 && currentStop.arrivalTime < previousStop.departureTime) {
+                    // If the current stop's arrival time is not increasing, log a warning message
+                    console.warn(`[StopUpdateCollection ${this.tripId}] Non-increasing hop time detected for ${previousStop.stationCode}[${previousStop.sequence}]: ${new Date(previousStop.departureTime * 1000).toISOString()} -> ${currentStop.stationCode} [${currentStop.sequence}]: ${new Date(currentStop.arrivalTime * 1000).toISOString()}`);
+                    hopTimeIsValid = false;
                 }
             }
 
-            // Check if the current stop's planned departure time is increasing
-            if (currentStop.departureTime !== null) {
-                if (currentStop.departureTime && currentStop.departureTime < previousStop.departureTime) {
-
-                    // If the current stop's planned departure time is not increasing, log a warning message
-                    // console.warn(`[StopUpdateCollection ${this.tripId}] Non-increasing departure time detected for stop ${currentStop.stationCode} [${currentStop.sequence}]`, new Date(currentStop.departureTime * 1000), new Date(lastStopDepartureTime * 1000))
-                    departureTimeIsIncreasing = false;
-                }
+            // If the arrival is after the departure, the dwell time is invalid.
+            if (currentStop.arrivalTime > currentStop.departureTime) {
+                console.warn(`[StopUpdateCollection ${this.tripId}] Invalid dwell time detected for stop ${currentStop.stationCode} [${currentStop.sequence}]: Arrival time ${new Date(currentStop.arrivalTime * 1000).toISOString()} is after Departure time ${new Date(currentStop.departureTime * 1000).toISOString()}`);
+                dwellTimeIsValid = false
             }
 
             // If both the arrival and departure times are increasing, we don't need to fix anything
-            if (arrivalTimeIsIncreasing && departureTimeIsIncreasing) {
+            if (hopTimeIsValid && dwellTimeIsValid) {
                 continue;
             }
 
+            const beforeFix = currentStop.arrivalTime;
+            // If there is a previous and next stop, we can fix both times (only if they're not cancelled)
+            this.fixStopTime(previousStop, currentStop, hopTimeIsValid, dwellTimeIsValid);
+            const afterFix = currentStop.arrivalTime;
 
-            // If there is a previous and next stop, we can fix both times
-            this.fixStopTime(previousStop, currentStop, !arrivalTimeIsIncreasing, !departureTimeIsIncreasing);
-
+            console.log(`[StopUpdateCollection ${this.tripId}] Fixed stop times for stop ${currentStop.stationCode} [${currentStop.sequence}]: Arrival time changed from ${beforeFix ? new Date(beforeFix * 1000).toISOString() : 'null'} to ${afterFix ? new Date(afterFix * 1000).toISOString() : 'null'}`);
             // Update the current stop in the collection
             this.set(i, currentStop);
         }
@@ -116,16 +111,14 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
      * Fix the current stop time by setting the arrival time to the planned arrival time + min(delay at previous stop, delay at next stop)
      * @param previousStop The previous stop in the sequence
      * @param currentStop The stop that needs to be fixed
-     * @param fixArrival Whether the arrival time should be fixed
-     * @param fixDeparture Whether the departure time should be fixed
+     * @param hopTimeIsValid
+     * @param dwellTimeIsValid
      */
-    private fixStopTime(previousStop: RitInfoStopUpdate, currentStop: RitInfoStopUpdate, fixArrival: boolean, fixDeparture: boolean) {
-        console.info(`[StopUpdateCollection] Fixing stop times for stop ${currentStop.stopId}: ${currentStop.name} [${currentStop.sequence}]`)
+    private fixStopTime(previousStop: RitInfoStopUpdate, currentStop: RitInfoStopUpdate, hopTimeIsValid: boolean, dwellTimeIsValid: boolean) {
+        if (!hopTimeIsValid)
+            this.fixHopTime(previousStop, currentStop);
 
-        if(fixArrival)
-            this.fixArrivalTime(previousStop, currentStop);
-
-        if(fixDeparture)
+        if (!dwellTimeIsValid)
             this.fixDepartureTime(currentStop);
     }
 
@@ -136,53 +129,26 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
      * @param stopToFix The stop that needs to be fixed
      * @private
      */
-    private fixArrivalTime(previousStop: RitInfoStopUpdate, stopToFix: RitInfoStopUpdate) {
-        // If the previous stop is cancelled, we can't fix the arrival time
-        if (previousStop.isCancelled()) return;
+    private fixHopTime(previousStop: RitInfoStopUpdate, stopToFix: RitInfoStopUpdate) {
+        const previousStopScheduledDeparture = previousStop.plannedDepartureTime ?? previousStop.departureTimeAsDate;
+        const currentStopScheduledArrival = stopToFix.plannedArrivalTime ?? stopToFix.arrivalTimeAsDate;
 
-        // If the previous stop has no departure time, we can't fix the arrival time
-        if (previousStop.departureTime === null) return;
-
-        // If the current stop has no planned arrival time, we can't fix the arrival time
-        if (stopToFix.plannedArrivalTime === null) return;
-
-        const orignalStopTime = (stopToFix.departureTime - stopToFix.arrivalTime) / 1000;
-
-            // Calculate the base new arrival time
-        let newArrivalTime = (stopToFix.plannedArrivalTime.getTime() / 1000) + previousStop.departureDelay;
-
-        // Ensure the arrival time is strictly greater than the previous stop's departure time
-        newArrivalTime = Math.max(newArrivalTime, previousStop.departureTime + 1);
-
-        stopToFix.arrivalTime = newArrivalTime;
-        stopToFix.arrivalDelay = previousStop.departureDelay;
-
-        //We always stay at the station about 60 seconds, so we cannot run in all delay during the stop.
-        if(orignalStopTime > 60)
-            stopToFix.departureDelay = stopToFix.arrivalDelay - (orignalStopTime - 60);
-        //If we weren't planned to stop for longer than a minute, we don't have to adjust the delay.
-        else
-            stopToFix.departureDelay = stopToFix.arrivalDelay;
-
-        //If there is still a departure delay after the stop, we have to adjust the departure time.
-        if(stopToFix.departureDelay > 0) {
-            //The departure time will be the delay + the arrival time.
-            stopToFix.departureTime = stopToFix.arrivalTime + stopToFix.departureDelay;
-
-            //Log what was fixed, the original stop time, the new arrival time, the new departure time and the delay.
-            // console.info(`[StopUpdateCollection] Fixed stop ${stopToFix.stopId}: ${stopToFix.name} [${stopToFix.sequence}] Arrival time: ${new Date(stopToFix.arrivalTime * 1000)} Departure time: ${new Date(stopToFix.departureTime * 1000)} Original stop time: ${orignalStopTime} seconds. Arrival delay: ${stopToFix.arrivalDelay} seconds. Departure delay: ${stopToFix.departureDelay} seconds.`);
-        }
-        //If there is no delay, we can just set the departure time to the planned departure time.
-        else {
-
-            if(stopToFix.plannedDepartureTime)
-                stopToFix.departureTime = stopToFix.plannedDepartureTime.getTime() / 1000;
-            else
-                stopToFix.departureTime = stopToFix.arrivalTime + 30;
-            //Log what was fixed, the original stop time, the new arrival time, the new departure time and the delay.
-            // console.info(`[StopUpdateCollection] Fixed stop ${stopToFix.stopId}: ${stopToFix.name} [${stopToFix.sequence}] Arrival time: ${new Date(stopToFix.arrivalTime * 1000)} Departure time: ${new Date(stopToFix.departureTime * 1000)} Original stop time: ${orignalStopTime} seconds. Arrival delay: ${stopToFix.arrivalDelay} seconds. Departure delay: ${stopToFix.departureDelay} seconds.`);
+        if(previousStopScheduledDeparture == null || currentStopScheduledArrival == null) {
+            console.warn(`[StopUpdateCollection ${this.tripId}] Cannot fix hop time for stop ${stopToFix.stopId}: ${stopToFix.name} [${stopToFix.sequence}]. Missing planned times.`);
+            return;
         }
 
+        const regularHopTime = (currentStopScheduledArrival.getTime() - previousStopScheduledDeparture.getTime()) / 1000;
+
+        const previousStopActualDeparture = previousStop.departureTime;
+
+        stopToFix.arrivalTime = previousStopActualDeparture + regularHopTime;
+
+        //Check if this has actually fixed the issue:
+
+        if (stopToFix.arrivalTime < previousStop.departureTime) {
+            console.warn(`[StopUpdateCollection ${this.tripId}] Failed to fix hop time for stop ${stopToFix.stopId}: ${stopToFix.name} [${stopToFix.sequence}]. Arrival time is still before previous departure time. Arrival: ${new Date(stopToFix.arrivalTime * 1000).toISOString()}, Previous Departure: ${new Date(previousStop.departureTime * 1000).toISOString()}`);
+        }
     }
 
     /**
@@ -192,6 +158,9 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
      * @private
      */
     private fixDepartureTime(stopToFix: RitInfoStopUpdate) {
+        // If the current stop has a cancelled arrival, we can't fix the departure time
+        if (stopToFix.isCancelledArrival()) return;
+
         // If the current stop has no planned arrival time, we can't fix the departure time
         if (stopToFix.plannedArrivalTime === null) return;
 
@@ -210,7 +179,6 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
         stopToFix.departureTime = newDepartureTime;
         stopToFix.departureDelay = stopToFix.arrivalDelay;
     }
-
 
 
     /**
@@ -251,7 +219,7 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
      */
     public removeStopsNotServed() {
         //First check if all stops are cancelled, if so we can just return an empty collection.
-        if(this.every(stop => stop.isCancelled()))
+        if (this.every(stop => stop.isCancelled()))
             return new StopUpdateCollection([], this.tripId);
 
         const withoutFilterLength = this.length;
@@ -260,20 +228,20 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
 
         //Sort the stops by their respective arrival or departure times.
         const withNewIndexes = filteredStops.sort((a, b) => {
-            if(a.arrivalTime && b.arrivalTime)
+            if (a.arrivalTime && b.arrivalTime)
                 return a.arrivalTime - b.arrivalTime;
 
-            if(a.departureTime && b.departureTime)
+            if (a.departureTime && b.departureTime)
                 return a.departureTime - b.departureTime;
 
-            if(a.arrivalTime && b.departureTime)
+            if (a.arrivalTime && b.departureTime)
                 return a.arrivalTime - b.departureTime;
 
-            if(a.departureTime && b.arrivalTime)
+            if (a.departureTime && b.arrivalTime)
                 return a.departureTime - b.arrivalTime;
 
             return 0;
-        // Set the sequence number of each stop to its index in the array + 1
+            // Set the sequence number of each stop to its index in the array + 1
         }).map((stop, index) => {
             stop.sequence = index + 1;
             return stop;
@@ -282,5 +250,17 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
         console.warn(`[StopUpdateCollection] Removed ${withoutFilterLength - filteredLength} stops from trip ${this.tripId} as they were not served.`);
         return new StopUpdateCollection(withNewIndexes, this.tripId);
 
+    }
+
+    public get destination(): string {
+        //Get the last stop before only cancelled stops.
+        const lastStopBeforeOnlyCancelledStops = this.findLastStopBeforeOnlyCancelledStops();
+
+        if (lastStopBeforeOnlyCancelledStops)
+            return lastStopBeforeOnlyCancelledStops.destination;
+
+        //If all stops are cancelled, return the destination of the last stop.
+        const lastStop = this.last();
+        return lastStop.destination;
     }
 }

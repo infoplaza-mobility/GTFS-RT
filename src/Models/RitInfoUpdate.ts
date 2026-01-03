@@ -31,6 +31,8 @@ export class RitInfoUpdate {
     private readonly _timestamp: Date;
     private readonly _operationDate: Date;
 
+    private readonly _destination: string | null = null;
+
     private readonly _isInternationalTrain: boolean = false;
 
     constructor(update: IDatabaseRitInfoUpdate) {
@@ -55,6 +57,8 @@ export class RitInfoUpdate {
         this._routeType = update.routeType;
         this._routeLongName = this.getRouteLongName(update);
         this._agencyId = update.agencyId;
+
+        this._destination = this._stopCollection.destination;
 
         this._isInternationalTrain = this.setInternationalTrain();
     }
@@ -139,6 +143,14 @@ export class RitInfoUpdate {
 
     public get trainType(): string {
         return this._trainType;
+    }
+
+    public get trainNumber(): number {
+        return this._trainNumber;
+    }
+
+    public get destination(): string | null {
+        return this._destination;
     }
 
     public get directionId(): number | null {

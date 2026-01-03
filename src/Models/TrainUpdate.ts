@@ -14,7 +14,6 @@ import FeedEntity = transit_realtime.FeedEntity;
 import {TripIdWithDate} from "../Interfaces/TVVManager";
 import TripUpdate = transit_realtime.TripUpdate;
 import {EInfoPlusAgency, InfoPlusAgency} from "../Shared/src/Types/API/V2/InfoPlus/Agency";
-import {ERouteType} from "../Shared/src/Types/API/V2/GTFS/TRoute";
 
 
 export class TrainUpdate extends TripUpdate {
@@ -40,14 +39,15 @@ export class TrainUpdate extends TripUpdate {
             isSpecialTrain,
             hasModifiedStopBehaviour,
             trainType,
-
+            trainNumber,
+            destination
         } = createdTrip;
         let {tripId, stopTimeUpdates, routeId, agencyId, routeType } = createdTrip;
 
         let customTripId = false;
 
         if (!tripId) {
-            tripId = `${infoPlusTripUpdate.trainNumber}_${infoPlusTripUpdate.trainType}_${infoPlusTripUpdate.agency}`;
+            tripId = `${trainNumber}_${infoPlusTripUpdate.trainType}_${infoPlusTripUpdate.agency}`;
             customTripId = true;
         }
 
@@ -57,7 +57,7 @@ export class TrainUpdate extends TripUpdate {
         }
 
         if(!routeId) {
-            routeId = `${infoPlusTripUpdate.agency}_${infoPlusTripUpdate.trainType}_${infoPlusTripUpdate.trainNumber}`;
+            routeId = `${infoPlusTripUpdate.agency}_${infoPlusTripUpdate.trainType}_${trainNumber}`;
             // console.log(`[TrainUpdate] RouteId not found for trip ${tripId}. Using custom routeId: ${routeId}`);
         }
 
@@ -66,7 +66,7 @@ export class TrainUpdate extends TripUpdate {
                 routeType = 1;
             else if(infoPlusTripUpdate.trainType.includes("NST"))
                 routeType = 0;
-            else if(infoPlusTripUpdate.trainNumber > 900_000)
+            else if(trainNumber > 900_000)
                 routeType = 3;
             else
                 routeType = 2;
@@ -133,8 +133,7 @@ export class TrainUpdate extends TripUpdate {
             directionId,
             scheduleRelationship,
             ".transit_realtime.ovapiTripdescriptor": {
-                realtimeTripId: "IFF:" + trainType + ":" + infoPlusTripUpdate.trainNumber,
-                tripShortName: infoPlusTripUpdate.trainNumber.toString(),
+                realtimeTripId: "IFF:" + trainType + ":" + trainNumber,
             },
             ".transit_realtime.tripDescriptor": {
                 agencyId: agencyId,
@@ -150,6 +149,8 @@ export class TrainUpdate extends TripUpdate {
             timestamp: timestamp,
             tripProperties: {
                 shapeId: shapeId,
+                tripHeadsign: destination,
+                tripShortName: trainNumber.toString(),
             },
         })
 

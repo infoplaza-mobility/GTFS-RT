@@ -15,107 +15,148 @@ export class InfoplusRepository extends Repository implements IInfoPlusRepositor
         console.time('getCurrentRealtimeTripUpdates');
         return this.database.raw(`
             WITH cal_dates AS (SELECT DISTINCT "serviceId", "date"
-                   FROM "StaticData-NL".calendar_dates
-                   WHERE "date" >= :operationDateOfTodayOrYesterday::date
-                     AND date <= :endOperationDate::date),
-     trips AS (SELECT "tripId", "routeId", "directionId", "tripShortName", "shapeId", "serviceId"
-               FROM "StaticData-NL".trips
-               WHERE agency = 'IFF'
-                 AND "serviceId" IN (SELECT DISTINCT "serviceId"
-                                     FROM cal_dates)),
-     stops AS (SELECT "stopId", upper(replace("zoneId", 'IFF:', '')) AS "stationCode", "platformCode", "stopName"
-               FROM "StaticData-NL".stops
-               WHERE stops."zoneId" IS NOT NULL AND stops."zoneId" LIKE 'IFF%')
-SELECT jpjl."journeyPartNumber"                                                              AS "trainNumber",
-       jpjl."shortJourneyPartNumber"                                                         AS "shortTrainNumber",
-       r."trainType" ->> 'code'                                                              AS "trainType",
-       r.agency,
-       r."operationDate",
-       r."showsInTravelPlanner"                                                              AS "showsInTripPlanner",
-       r."timestamp",
-       coalesce(lj."journeyChanges", jpjl."journeyPartChanges")                              AS "changes",
-       t."tripId"                                                                            AS "tripId",
-       coalesce(t."routeId", t_short."routeId")                                              AS "routeId",
-       rt."routeType"                                                                        AS "routeType",
-       rt."agencyId"                                                                         AS "agencyId",
-       rt."routeLongName"                                                                    AS "routeLongName",
-       coalesce(t."directionId", t_short."directionId")                                      AS "directionId",
-       coalesce(t."shapeId", t_short."shapeId")                                              AS "shapeId",
-       jsonb_agg(
-       CASE
-           WHEN s."stopId" IS NOT NULL OR lateral_stop."stopId" IS NOT NULL THEN
-               jsonb_build_object(
-                       'stationCode', si."stationCode",
-                       'plannedWillStop', si."plannedWillStop",
-                       'actualWillStop', si."actualWillStop",
-                       'plannedArrivalTime', si."plannedArrivalTime",
-                       'plannedDepartureTime', si."plannedDepartureTime",
-                       'departureTime', coalesce(si."actualDepartureTime", si."plannedDepartureTime"),
-                       'arrivalTime', coalesce(si."actualArrivalTime", si."plannedArrivalTime"),
-                       'departureDelay', si."actualDepartureTime" - si."plannedDepartureTime",
-                       'arrivalDelay', si."actualArrivalTime" - si."plannedArrivalTime",
-                       'changes', si.changes,
-                       'stopId', COALESCE(s."stopId", lateral_stop."stopId"),
-                       'platform', s."platformCode",
-                       'plannedTrack', coalesce(si."plannedArrivalTracks", si."plannedDepartureTracks"),
-                       'actualTrack', coalesce(si."actualArrivalTracks", si."actualDepartureTracks"),
-                       'track',
-                       coalesce(si."actualArrivalTracks", si."actualDepartureTracks", si."plannedArrivalTracks",
-                                si."plannedDepartureTracks"),
-                       'sequence', si."stopOrder",
-                       'name', COALESCE(s."stopName", lateral_stop."stopName", si."stationCode")
-               )
-           END
-       ORDER BY si."stopOrder"
+                               FROM "StaticData-NL".calendar_dates
+                               WHERE "date" >= :operationDateOfTodayOrYesterday::date
+                AND date <= :endOperationDate::date),
+                trips AS (SELECT "tripId", "routeId", "directionId", "tripShortName", "shapeId", "serviceId"
+            FROM "StaticData-NL".trips
+            WHERE agency = 'IFF'
+              AND "serviceId" IN (SELECT DISTINCT "serviceId"
+                FROM cal_dates)),
+                stops AS (SELECT "stopId", upper(replace("zoneId", 'IFF:', '')) AS "stationCode", "platformCode", "stopName"
+            FROM "StaticData-NL".stops
+            WHERE stops."zoneId" IS NOT NULL AND stops."zoneId" LIKE 'IFF%'),
+                trip_first_stops AS (
+            SELECT DISTINCT ON (st.trip_id)
+                st.trip_id::int AS trip_id,
+                upper(replace(s."zoneId", 'IFF:', '')) AS first_station_code
+            FROM "StaticData-NL".stop_times st
+            JOIN "StaticData-NL".stops s ON st.stop_id = s."stopId"
+            WHERE s."zoneId" IS NOT NULL AND s."zoneId" LIKE 'IFF%'
+            ORDER BY st.trip_id, st.stop_sequence
+                ),
+                journey_part_first_stops AS (
+            SELECT DISTINCT ON (si."journeyNumber", si."journeyPartNumber", si."operationDate")
+                si."journeyNumber",
+                si."journeyPartNumber",
+                si."operationDate",
+                si."stationCode" AS first_station_code
+            FROM "InfoPlus-new".stop_information si
+            WHERE si."stopType" != 'N'
+              AND (si."plannedWillStop" = true OR si."actualWillStop" = true)
+            ORDER BY si."journeyNumber", si."journeyPartNumber", si."operationDate", si."stopOrder"
+                )
+            SELECT jpjl."journeyPartNumber"                                                              AS "trainNumber",
+                   jpjl."shortJourneyPartNumber"                                                         AS "shortTrainNumber",
+                   r."trainType" ->> 'code'                                                              AS "trainType",
+                r.agency,
+                r."operationDate",
+                r."showsInTravelPlanner"                                                              AS "showsInTripPlanner",
+                r."timestamp",
+                coalesce(lj."journeyChanges", jpjl."journeyPartChanges")                              AS "changes",
+                t."tripId"                                                                            AS "tripId",
+                coalesce(t."routeId", t_short."routeId")                                              AS "routeId",
+                rt."routeType"                                                                        AS "routeType",
+                rt."agencyId"                                                                         AS "agencyId",
+                rt."routeLongName"                                                                    AS "routeLongName",
+                coalesce(t."directionId", t_short."directionId")                                      AS "directionId",
+                coalesce(t."shapeId", t_short."shapeId")                                              AS "shapeId",
+                jsonb_agg(
+                CASE
+                WHEN s."stopId" IS NOT NULL OR lateral_stop."stopId" IS NOT NULL THEN
+                jsonb_build_object(
+                'stationCode', si."stationCode",
+                'plannedWillStop', si."plannedWillStop",
+                'actualWillStop', si."actualWillStop",
+                'plannedArrivalTime', si."plannedArrivalTime",
+                'plannedDepartureTime', si."plannedDepartureTime",
+                'departureTime', coalesce(si."actualDepartureTime", si."plannedDepartureTime"),
+                'arrivalTime', coalesce(si."actualArrivalTime", si."plannedArrivalTime"),
+                'departureDelay', si."actualDepartureTime" - si."plannedDepartureTime",
+                'arrivalDelay', si."actualArrivalTime" - si."plannedArrivalTime",
+                'changes', si.changes,
+                'stopId', COALESCE(s."stopId", lateral_stop."stopId"),
+                'platform', s."platformCode",
+                'plannedTrack', coalesce(si."plannedArrivalTracks", si."plannedDepartureTracks"),
+                'actualTrack', coalesce(si."actualArrivalTracks", si."actualDepartureTracks"),
+                'track',
+                coalesce(si."actualArrivalTracks", si."actualDepartureTracks", si."plannedArrivalTracks",
+                si."plannedDepartureTracks"),
+                'sequence', si."stopOrder",
+                'name', COALESCE(s."stopName", lateral_stop."stopName", si."stationCode"),
+                'destination', stat."longName"
+                )
+                END
+                ORDER BY si."stopOrder"
                 ) FILTER (WHERE s."stopId" IS NOT NULL OR lateral_stop."stopId" IS NOT NULL) AS stops
-FROM "InfoPlus-new".ritinfo r
-         JOIN "InfoPlus-new".logical_journeys lj
-              ON r."trainNumber" = lj."trainNumber" AND r."operationDate" = lj."operationDate"
-         JOIN "InfoPlus-new".logical_journey_parts jpjl
-              ON lj."journeyNumber" = jpjl."journeyNumber" AND
-                 r."operationDate" = jpjl."operationDate"
-         JOIN "InfoPlus-new".stop_information si
-              ON jpjl."journeyPartNumber" = si."journeyPartNumber" AND
-                 jpjl."operationDate" = si."operationDate" AND
-                 si."stopType" != 'N' AND
-                 ("plannedWillStop" = true OR "actualWillStop" = true) AND
-                 (coalesce("plannedDepartureTime", "actualArrivalTime") IS NOT NULL OR
-                  coalesce("plannedArrivalTime", "actualArrivalTime") IS NOT NULL)
-         LEFT JOIN trips t
-                   ON jpjl."journeyPartNumber" = t."tripShortName"::int
-                       AND EXISTS (SELECT 1
-                                   FROM cal_dates cd
-                                   WHERE cd."serviceId" = t."serviceId"
-                                     AND cd."date" = r."operationDate")
+            FROM "InfoPlus-new".ritinfo r
+                JOIN "InfoPlus-new".logical_journeys lj
+            ON r."trainNumber" = lj."trainNumber" AND r."operationDate" = lj."operationDate"
+                JOIN "InfoPlus-new".logical_journey_parts jpjl
+                ON lj."journeyNumber" = jpjl."journeyNumber" AND
+                r."operationDate" = jpjl."operationDate"
+                JOIN "InfoPlus-new".stop_information si
+                ON jpjl."journeyNumber" = si."journeyNumber" AND
+                jpjl."journeyPartNumber" = si."journeyPartNumber" AND
+                jpjl."operationDate" = si."operationDate" AND
+                si."stopType" != 'N' AND
+                ("plannedWillStop" = true OR "actualWillStop" = true) AND
+                (coalesce("plannedDepartureTime", "actualArrivalTime") IS NOT NULL OR
+                coalesce("plannedArrivalTime", "actualArrivalTime") IS NOT NULL)
+                JOIN "InfoPlus-new".destinations dest
+                ON si."journeyNumber" = dest."journeyNumber" AND
+                si."journeyPartNumber" = dest."journeyPartNumber" AND
+                si."operationDate" = dest."operationDate" AND
+                si."stationCode" = dest."stationCode"
+                JOIN "InfoPlus-new".stations stat ON stat."stationCode" = coalesce(dest."actualDestination", dest."plannedDestination")
+                LEFT JOIN journey_part_first_stops jpfs
+                ON jpfs."journeyNumber" = jpjl."journeyNumber"
+                AND jpfs."journeyPartNumber" = jpjl."journeyPartNumber"
+                AND jpfs."operationDate" = jpjl."operationDate"
+                LEFT JOIN (
+                    SELECT trips.*, tfs.first_station_code
+                    FROM trips
+                    JOIN trip_first_stops tfs ON tfs.trip_id = trips."tripId"
+                ) t ON jpjl."journeyPartNumber" = t."tripShortName"::int
+                AND EXISTS (SELECT 1
+                FROM cal_dates cd
+                WHERE cd."serviceId" = t."serviceId"
+                AND cd."date" = r."operationDate")
+                AND t.first_station_code = jpfs.first_station_code
 
-         LEFT JOIN trips t_short ON t."tripId" IS NULL AND jpjl."shortJourneyPartNumber" = t_short."tripShortName"::int
-    AND EXISTS (SELECT 1
+                LEFT JOIN (
+                    SELECT trips.*, tfs.first_station_code
+                    FROM trips
+                    JOIN trip_first_stops tfs ON tfs.trip_id = trips."tripId"
+                ) t_short ON t."tripId" IS NULL AND jpjl."shortJourneyPartNumber" = t_short."tripShortName"::int
+                AND EXISTS (SELECT 1
                 FROM cal_dates cd
                 WHERE cd."serviceId" = t_short."serviceId"
-                  AND cd."date" = r."operationDate")
-         LEFT JOIN stops s ON (s."stationCode" = si."stationCode" AND
-                               s."platformCode" =
-                               coalesce(si."actualArrivalTracks", si."actualDepartureTracks", si."plannedArrivalTracks",
-                                        si."plannedDepartureTracks"))
-         LEFT JOIN LATERAL (
-    SELECT "stopId", "stopName"
-    FROM stops lax
-    WHERE lax."stationCode" = si."stationCode"
-    LIMIT 1
-    ) AS lateral_stop ON s."stopId" IS NULL
-         LEFT JOIN "StaticData-NL".routes rt ON rt."routeId" = coalesce(t."routeId", t_short."routeId")
-WHERE r."operationDate" >= :operationDateOfTodayOrYesterday::date
-  AND NOT (
-    r."operationDate" > :operationDateOfTodayOrTomorrow::date
-        AND lj."journeyChanges" IS NULL
-    )
-GROUP BY r."trainNumber", jpjl."journeyPartNumber", r."shortTrainNumber", jpjl."shortJourneyPartNumber",
-         r."trainType", r.agency,
-         r."showsInTravelPlanner", r.timestamp, r."operationDate", t."tripId", coalesce(t."tripId", t_short."tripId"),
-         coalesce(lj."journeyChanges", jpjl."journeyPartChanges"),
-         t."tripId", coalesce(t."routeId", t_short."routeId"),
-         coalesce(t."directionId", t_short."directionId"), coalesce(t."shapeId", t_short."shapeId"), rt."routeType",
-         rt."agencyId", rt."routeLongName";
+                AND cd."date" = r."operationDate")
+                AND t_short.first_station_code = jpfs.first_station_code
+                LEFT JOIN stops s ON (s."stationCode" = si."stationCode" AND
+                s."platformCode" =
+                coalesce(si."actualArrivalTracks", si."actualDepartureTracks", si."plannedArrivalTracks",
+                si."plannedDepartureTracks"))
+                LEFT JOIN LATERAL (
+                SELECT "stopId", "stopName"
+                FROM stops lax
+                WHERE lax."stationCode" = si."stationCode"
+                LIMIT 1
+                ) AS lateral_stop ON s."stopId" IS NULL
+                LEFT JOIN "StaticData-NL".routes rt ON rt."routeId" = coalesce(t."routeId", t_short."routeId")
+            WHERE r."operationDate" >= :operationDateOfTodayOrYesterday::date
+              AND NOT (
+                r."operationDate" > :operationDateOfTodayOrTomorrow::date
+              AND lj."journeyChanges" IS NULL
+                )
+            GROUP BY r."trainNumber", jpjl."journeyNumber", jpjl."journeyPartNumber", r."shortTrainNumber", jpjl."shortJourneyPartNumber",
+                r."trainType", r.agency,
+                r."showsInTravelPlanner", r.timestamp, r."operationDate", t."tripId", coalesce(t."tripId", t_short."tripId"),
+                coalesce(lj."journeyChanges", jpjl."journeyPartChanges"),
+                t."tripId", coalesce(t."routeId", t_short."routeId"),
+                coalesce(t."directionId", t_short."directionId"), coalesce(t."shapeId", t_short."shapeId"), rt."routeType",
+                rt."agencyId", rt."routeLongName";
         `, { operationDateOfTodayOrYesterday, endOperationDate, operationDateOfTodayOrTomorrow }).then(result => {
             console.timeEnd('getCurrentRealtimeTripUpdates');
             return result.rows;

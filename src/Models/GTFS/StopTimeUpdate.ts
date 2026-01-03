@@ -32,7 +32,8 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
             isLastStop,
             isFirstStop,
             plannedTrack,
-            actualTrack
+            actualTrack,
+            destination
         } = update;
 
         const departureBeforeArrival = departureTime !== 0 && arrivalTime !== 0 && departureTime < arrivalTime;
@@ -42,7 +43,7 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
         if(departureBeforeArrival) {
             departureTime = arrivalTime + 60;
         }
-            
+
         let departure = StopTimeEvent.create({
             time: !departureIsZero ? departureTime : arrivalTime,
             delay: departureDelay,
@@ -79,8 +80,9 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
                 scheduledTrack: plannedTrack,
                 actualTrack: actualTrack
             },
+            stopTimeProperties: {
+                stopHeadsign: destination
+            }
         })
-
-
     }
 }
