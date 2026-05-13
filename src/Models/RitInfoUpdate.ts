@@ -302,7 +302,10 @@ export class RitInfoUpdate {
         //Could be incorrect, maybe only 300.000 and 700.000 are added.
         if (!isAdded) {
             // If the short train number does not match the train number, it is an extra train. (E.g. 301234 vs 1234, 701234 vs 1234 or 201234 vs 1234)
-            isAdded = this._shortTrainNumber !== this._trainNumber || (this._trainNumber > 100_000 && this._trainNumber < 900_000);
+            // However, if a static tripId was found, the trip is in the scheduled timetable and should NOT be marked as added,
+            // even if its number falls in the 100k–900k range (e.g. train 703535 which is a regular scheduled IC).
+            const hasStaticTrip = this._tripId !== null;
+            isAdded = (this._shortTrainNumber !== this._trainNumber || (this._trainNumber > 100_000 && this._trainNumber < 900_000)) && !hasStaticTrip;
         }
 
         return isAdded;
