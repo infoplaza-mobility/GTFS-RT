@@ -42,6 +42,8 @@ export class RitInfoStopUpdate extends StopUpdate {
         this.platform = update.platform;
         this.track = update.track;
 
+        this.plannedWillStop = update.plannedWillStop;
+        this.actualWillStop = update.actualWillStop;
 
         this.name = update.name;
 
@@ -100,6 +102,11 @@ export class RitInfoStopUpdate extends StopUpdate {
      * @returns {boolean} True if the stop has been cancelled, false otherwise.
      */
     public isCancelled(): boolean {
+        // If the train will not actually stop here, treat as skipped regardless of changes.
+        // This handles international border stops (e.g. BHF for ICE) where plannedWillStop=true
+        // but actualWillStop=false, causing out-of-order times that cannot be fixed.
+        if (this.actualWillStop === false) return true;
+
         if (!this.changes) return false;
 
         //If the passing has been cancelled, the whole stop has been cancelled.
