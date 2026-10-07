@@ -66,7 +66,9 @@ export class TripMerger {
 
                     const diff = departureTimeB.diff(arrivalTimeA, 'minutes');
 
-                    if (diff >= -5 && diff <= 15 && (lastStopA.actualTrack === firstStopB.actualTrack || lastStopA.plannedTrack === firstStopB.plannedTrack)) {
+                    const hasSameExpectedPlatform = lastStopA.expectedPlatformCode !== null &&
+                        lastStopA.expectedPlatformCode === firstStopB.expectedPlatformCode;
+                    if (diff >= -5 && diff <= 15 && hasSameExpectedPlatform) {
                         // Check for station overlap to prevent doubling back or illogical loops
                         const indexOfConnectionStopInA = tripA.stops.indexOf(lastStopA);
                         const validStopsA = tripA.stops.slice(0, indexOfConnectionStopInA + 1);
@@ -113,15 +115,11 @@ export class TripMerger {
                     ...matchedStopA,
                     ...matchedStopB,
                     changes: [...(matchedStopA.changes || []), ...(matchedStopB.changes || [])],
-                    // Prefer actual times/tracks from both if available
+                    // Arrival comes from A; departure and platform assignment come from B.
                     plannedArrivalTime: matchedStopA.plannedArrivalTime,
                     arrivalTime: matchedStopA.arrivalTime,
                     plannedDepartureTime: matchedStopB.plannedDepartureTime,
-                    departureTime: matchedStopB.departureTime,
-                    // Keep platform from A if matched, or B? They should be same.
-                    platform: matchedStopA.platform || matchedStopB.platform,
-                    actualTrack: matchedStopA.actualTrack || matchedStopB.actualTrack,
-                    plannedTrack: matchedStopA.plannedTrack || matchedStopB.plannedTrack
+                    departureTime: matchedStopB.departureTime
                 };
 
                 // Replace the two stops with the merged stop
@@ -157,7 +155,7 @@ export class TripMerger {
                     sequence: index + 1
                 }));
 
-                console.log(`[TripMerger] Merged train ${update.trainNumber} and train ${tripB.trainNumber} into ${mergedTrip.customRealtimeTripId} at station ${mergedStop.stationCode} track ${mergedStop.actualTrack || mergedStop.plannedTrack}. Material: ${update.materialNumbers?.join(', ')}`);
+                console.log(`[TripMerger] Merged train ${update.trainNumber} and train ${tripB.trainNumber} into ${mergedTrip.customRealtimeTripId} at station ${mergedStop.stationCode} platform ${mergedStop.expectedPlatformCode ?? "unknown"}. Material: ${update.materialNumbers?.join(', ')}`);
 
                 mergedTrips.push(mergedTrip);
 

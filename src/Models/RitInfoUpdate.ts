@@ -175,7 +175,7 @@ export class RitInfoUpdate {
      * @returns {boolean} True if the trip had any platform changes, false otherwise.
      */
     public get hadPlatformChange(): boolean {
-        return this.stops.some(stop => (stop as RitInfoStopUpdate).didTrackChange());
+        return this.stops.some(stop => stop.hasPlatformChange());
     }
 
     /**

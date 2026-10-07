@@ -9,6 +9,8 @@ import { TripMerger } from "../src/Helpers/TripMerger";
 import { IDatabaseRitInfoUpdate } from "../src/Interfaces/DatabaseRitInfoUpdate";
 import { LogicalJourneyChangeType } from "../src/Shared/src/Types/Infoplus/V2/Changes/LogicalJourneyChangeType";
 import { LogicalJourneyPartStationChangeType } from "../src/Shared/src/Types/Infoplus/V2/Changes/LogicalJourneyPartStationChangeType";
+import { ExtendedStopTimeUpdate } from "../src/Models/GTFS/StopTimeUpdate";
+import { RitInfoStopUpdate } from "../src/Models/StopUpdates/RitinfoStopUpdate";
 
 describe("TripMerger", () => {
     it("should merge two trips that match the criteria", () => {
@@ -34,10 +36,9 @@ describe("TripMerger", () => {
                     stationCode: "A",
                     name: "Station A",
                     changes: null,
-                    platform: "1",
-                    track: "1",
-                    plannedTrack: "1",
-                    actualTrack: "1"
+                    plannedPlatformCode: "1",
+                    expectedPlatformCode: "1",
+                    assignedStopId: null
                 },
                 {
                     stopId: 67890,
@@ -54,10 +55,9 @@ describe("TripMerger", () => {
                     stationCode: "B",
                     name: "Station B",
                     changes: null,
-                    platform: "2",
-                    track: "2",
-                    plannedTrack: "2",
-                    actualTrack: "2"
+                    plannedPlatformCode: "2",
+                    expectedPlatformCode: "2",
+                    assignedStopId: null
                 }
             ],
             tripId: 1,
@@ -95,10 +95,9 @@ describe("TripMerger", () => {
                     stationCode: "B",
                     name: "Station B",
                     changes: null,
-                    platform: "2",
-                    track: "2",
-                    plannedTrack: "2",
-                    actualTrack: "2"
+                    plannedPlatformCode: "2",
+                    expectedPlatformCode: "2",
+                    assignedStopId: null
                 },
                 {
                     stopId: 111213,
@@ -115,10 +114,9 @@ describe("TripMerger", () => {
                     stationCode: "C",
                     name: "Station C",
                     changes: null,
-                    platform: "3",
-                    track: "3",
-                    plannedTrack: "3",
-                    actualTrack: "3"
+                    plannedPlatformCode: "3",
+                    expectedPlatformCode: "3",
+                    assignedStopId: null
                 }
             ],
             tripId: 2,
@@ -166,6 +164,48 @@ describe("TripMerger", () => {
         expect(result).toHaveLength(2);
         expect(result[0]).toBe(tripA);
         expect(result[1]).toBe(tripB);
+    });
+
+    for (const [arrivalPlatform, departurePlatform] of [["14a", "14b"], ["14a", null], [null, null]]) {
+        it(`does not merge expected platforms ${arrivalPlatform ?? "unknown"} and ${departurePlatform ?? "unknown"}`, () => {
+            const tripA = mockTrip(100, "A", "B", "10:00", "10:30");
+            const tripB = mockTrip(200, "B", "C", "10:40", "11:00");
+            Object.assign(tripA.stops[1], {
+                plannedPlatformCode: arrivalPlatform === null ? null : "14",
+                expectedPlatformCode: arrivalPlatform
+            });
+            Object.assign(tripB.stops[0], {
+                plannedPlatformCode: departurePlatform === null ? null : "14",
+                expectedPlatformCode: departurePlatform
+            });
+
+            const result = TripMerger.mergeTrips([tripA, tripB]);
+
+            expect(result[0]).toBe(tripA);
+            expect(result[1]).toBe(tripB);
+        });
+    }
+
+    it("keeps the departing trip's plan and native assignment at a merged connection", () => {
+        const tripA = mockTrip(100, "A", "B", "10:00", "10:30");
+        const tripB = mockTrip(200, "B", "C", "10:40", "11:00");
+        Object.assign(tripA.stops[1], {
+            plannedPlatformCode: "14", expectedPlatformCode: "14a", assignedStopId: "906866"
+        });
+        Object.assign(tripB.stops[0], {
+            plannedPlatformCode: "14b", expectedPlatformCode: "14a", assignedStopId: "906866"
+        });
+
+        const [merged] = TripMerger.mergeTrips([tripA, tripB]);
+        const connection = merged.stops[1];
+
+        expect(merged.customRealtimeTripId).toBe("100_200");
+        expect(connection.plannedPlatformCode).toBe("14b");
+        expect(connection.expectedPlatformCode).toBe("14a");
+        expect(connection.assignedStopId).toBe("906866");
+        const published = ExtendedStopTimeUpdate.fromStopUpdate(new RitInfoStopUpdate(connection));
+        expect(published.stopTimeProperties.assignedStopId).toBe("906866");
+        expect(published.stopId).toBe("906866");
     });
 
     it("should merge trips if they share AT LEAST ONE material number", () => {
@@ -356,10 +396,9 @@ function mockTrip(trainNumber: number, startStation: string, endStation: string,
                 stationCode: startStation,
                 name: startStation,
                 changes: [],
-                platform: "1",
-                track: "1",
-                plannedTrack: "1",
-                actualTrack: "1"
+                plannedPlatformCode: "1",
+                expectedPlatformCode: "1",
+                assignedStopId: null
             },
             {
                 stopId: 67890,
@@ -376,10 +415,9 @@ function mockTrip(trainNumber: number, startStation: string, endStation: string,
                 stationCode: endStation,
                 name: endStation,
                 changes: [],
-                platform: "1",
-                track: "1",
-                plannedTrack: "1",
-                actualTrack: "1"
+                plannedPlatformCode: "1",
+                expectedPlatformCode: "1",
+                assignedStopId: null
             }
         ],
         tripId: trainNumber,
@@ -393,5 +431,5 @@ function mockTrip(trainNumber: number, startStation: string, endStation: string,
         timestamp: new Date(),
         operationDate: new Date(),
         materialNumbers: ["1234"]
-    } as any;
+    };
 }

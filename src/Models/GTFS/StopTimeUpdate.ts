@@ -31,8 +31,6 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
             sequence,
             isLastStop,
             isFirstStop,
-            plannedTrack,
-            actualTrack,
             destination
         } = update;
 
@@ -68,19 +66,19 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
             transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SCHEDULED;
 
         const shouldHaveDepartureAndArrival = true;
+        const assignedStopId = update.hasPlatformChange() ? update.assignedStopId : null;
 
         return StopTimeUpdate.create({
-            stopId,
+            stopId: assignedStopId ?? stopId,
             stopSequence: sequence,
             arrival: shouldHaveDepartureAndArrival ? arrival : undefined,
             departure: shouldHaveDepartureAndArrival ? departure : undefined,
             scheduleRelationship,
             ".transit_realtime.ovapiStopTimeUpdate": {
-                stationId: update.stationCode,
-                scheduledTrack: plannedTrack,
-                actualTrack: actualTrack
+                stationId: update.stationCode
             },
             stopTimeProperties: {
+                ...(assignedStopId && { assignedStopId }),
                 stopHeadsign: destination
             }
         })

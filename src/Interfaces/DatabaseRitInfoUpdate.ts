@@ -35,17 +35,17 @@ export interface IDatabaseRitInfoUpdate {
 }
 
 export interface IRitInfoStopUpdate extends IDatabaseStopUpdate {
+    /** Normalized InfoPlus planned platform code, including any section letter. */
+    plannedPlatformCode: string | null;
+    /** Normalized realtime platform code, falling back to the planned platform. */
+    expectedPlatformCode: string | null;
+    /** Existing GTFS stop resolved from expectedPlatformCode; null if unresolved. */
+    assignedStopId: string | null;
     changes: IJourneyChange<LogicalJourneyPartStationChangeType>[] | null;
-    /** PlatformCode in GTFS */
-    platform: string | null;
-    /** Arrival or DepartureTrack Message in Infoplus */
-    track: string | null;
 
     plannedArrivalTime: string | null;
     plannedDepartureTime: string | null;
 
-    plannedTrack: string | null;
-    actualTrack: string | null;
     stationCode: string;
     name: string;
 }
