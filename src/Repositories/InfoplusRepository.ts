@@ -48,7 +48,7 @@ export class InfoplusRepository extends Repository implements IInfoPlusRepositor
                 coalesce(t."shapeId", t_short."shapeId")                                              AS "shapeId",
                 jsonb_agg(
                 CASE
-                WHEN s."stopId" IS NOT NULL OR lateral_stop."stopId" IS NOT NULL THEN
+                WHEN s."stopId" IS NOT NULL OR scheduled_call."stopId" IS NOT NULL OR lateral_stop."stopId" IS NOT NULL THEN
                 jsonb_build_object(
                 'stationCode', si."stationCode",
                 'plannedWillStop', si."plannedWillStop",
@@ -60,20 +60,19 @@ export class InfoplusRepository extends Repository implements IInfoPlusRepositor
                 'departureDelay', si."actualDepartureTime" - si."plannedDepartureTime",
                 'arrivalDelay', si."actualArrivalTime" - si."plannedArrivalTime",
                 'changes', si.changes,
-                'stopId', COALESCE(s."stopId", lateral_stop."stopId"),
-                'platform', s."platformCode",
-                'plannedTrack', coalesce(si."plannedArrivalTracks", si."plannedDepartureTracks"),
-                'actualTrack', coalesce(si."actualArrivalTracks", si."actualDepartureTracks"),
-                'track',
-                coalesce(si."actualArrivalTracks", si."actualDepartureTracks", si."plannedArrivalTracks",
-                si."plannedDepartureTracks"),
+                'stopId', COALESCE(s."stopId", scheduled_call."stopId", lateral_stop."stopId"),
+                'scheduledStopId', scheduled_call."stopId",
+                'scheduledStopSequence', scheduled_call."stopSequence",
+                'assignedStopId', s."stopId"::text,
+                'plannedPlatformCode', platforms."plannedPlatformCode",
+                'expectedPlatformCode', platforms."expectedPlatformCode",
                 'sequence', si."stopOrder",
-                'name', COALESCE(s."stopName", lateral_stop."stopName", si."stationCode"),
+                'name', COALESCE(s."stopName", scheduled_call."stopName", lateral_stop."stopName", si."stationCode"),
                 'destination', stat."longName"
                 )
                 END
                 ORDER BY si."stopOrder"
-                ) FILTER (WHERE s."stopId" IS NOT NULL OR lateral_stop."stopId" IS NOT NULL) AS stops
+                ) FILTER (WHERE s."stopId" IS NOT NULL OR scheduled_call."stopId" IS NOT NULL OR lateral_stop."stopId" IS NOT NULL) AS stops
             FROM "InfoPlus-new".ritinfo r
                 JOIN "InfoPlus-new".logical_journeys lj
             ON r."trainNumber" = lj."trainNumber" AND r."operationDate" = lj."operationDate"
@@ -111,17 +110,78 @@ export class InfoplusRepository extends Repository implements IInfoPlusRepositor
                 AND t_short.first_station_code = jpfs.first_station_code
                 AND t."tripId" IS NULL
 
-                -- Optimization: Use Materialized View for Stops Lookup
-                LEFT JOIN "StaticData-NL".iff_stops s ON (s."stationCode" = si."stationCode" AND
-                s."platformCode" =
-                coalesce(si."actualArrivalTracks", si."actualDepartureTracks", si."plannedArrivalTracks",
-                si."plannedDepartureTracks"))
+                -- Resolve the original static call independently of its expected platform.
+                -- Repeated visits to a station require a unique planned-time match.
                 LEFT JOIN LATERAL (
-                SELECT "stopId", "stopName"
+                    SELECT min(candidate.stop_id) AS "stopId",
+                           min(candidate.stop_sequence) AS "stopSequence",
+                           min(candidate."stopName") AS "stopName"
+                    FROM (
+                        SELECT scheduled.stop_id, scheduled.stop_sequence, original."stopName",
+                               count(*) OVER () AS station_visits,
+                               CASE WHEN si."plannedDepartureTime" IS NOT NULL
+                                   THEN nullif(btrim(scheduled.departure_time), '')::interval =
+                                        (si."plannedDepartureTime" AT TIME ZONE 'Europe/Amsterdam') - si."operationDate"::timestamp
+                                   ELSE nullif(btrim(scheduled.arrival_time), '')::interval =
+                                        (si."plannedArrivalTime" AT TIME ZONE 'Europe/Amsterdam') - si."operationDate"::timestamp
+                               END AS matches_planned_time
+                        FROM "StaticData-NL".stop_times scheduled
+                        JOIN "StaticData-NL".iff_stops original ON original."stopId" = scheduled.stop_id
+                        WHERE scheduled.trip_id = t."tripId"::text
+                          AND original."stationCode" = upper(btrim(si."stationCode"))
+                          AND si."plannedWillStop" = true
+                    ) candidate
+                    WHERE candidate.station_visits = 1 OR candidate.matches_planned_time
+                    HAVING count(*) = 1
+                ) scheduled_call ON true
+
+                -- A stop has one native assignment: prefer its departure platform,
+                -- or its arrival platform at a terminus. Keep section letters.
+                CROSS JOIN LATERAL (
+                    SELECT
+                        CASE WHEN coalesce(si."plannedDepartureTime", si."actualDepartureTime") IS NOT NULL
+                            THEN coalesce(nullif(lower(btrim(si."plannedDepartureTracks")), ''),
+                                          nullif(lower(btrim(si."plannedArrivalTracks")), ''))
+                            ELSE coalesce(nullif(lower(btrim(si."plannedArrivalTracks")), ''),
+                                          nullif(lower(btrim(si."plannedDepartureTracks")), ''))
+                        END AS "plannedPlatformCode",
+                        CASE WHEN coalesce(si."plannedDepartureTime", si."actualDepartureTime") IS NOT NULL
+                            THEN coalesce(nullif(lower(btrim(si."actualDepartureTracks")), ''),
+                                          nullif(lower(btrim(si."actualArrivalTracks")), ''),
+                                          nullif(lower(btrim(si."plannedDepartureTracks")), ''),
+                                          nullif(lower(btrim(si."plannedArrivalTracks")), ''))
+                            ELSE coalesce(nullif(lower(btrim(si."actualArrivalTracks")), ''),
+                                          nullif(lower(btrim(si."actualDepartureTracks")), ''),
+                                          nullif(lower(btrim(si."plannedArrivalTracks")), ''),
+                                          nullif(lower(btrim(si."plannedDepartureTracks")), ''))
+                        END AS "expectedPlatformCode"
+                ) platforms
+                LEFT JOIN LATERAL (
+                    SELECT min(platform."stopId") AS "stopId",
+                           min(platform."stopName") AS "stopName"
+                    FROM "StaticData-NL".iff_stops platform
+                    WHERE platform."stationCode" = upper(btrim(si."stationCode"))
+                      AND nullif(lower(btrim(platform."platformCode")), '') =
+                          platforms."expectedPlatformCode"
+                    HAVING count(DISTINCT platform."stopId") = 1
+                ) s ON true
+                LEFT JOIN LATERAL (
+                SELECT lax."stopId", lax."stopName"
                 FROM "StaticData-NL".iff_stops lax
-                WHERE lax."stationCode" = si."stationCode"
+                LEFT JOIN "StaticData-NL".stop_times scheduled_stop
+                  ON scheduled_stop.trip_id = coalesce(t."tripId", t_short."tripId")::text
+                 AND scheduled_stop.stop_id = lax."stopId"
+                WHERE lax."stationCode" = upper(btrim(si."stationCode"))
+                -- An unresolved assignment must not choose an arbitrary platform.
+                -- Retain the planned/scheduled stop or an existing stop without a platform.
+                  AND (nullif(lower(btrim(lax."platformCode")), '') = platforms."plannedPlatformCode"
+                       OR scheduled_stop.stop_id IS NOT NULL
+                       OR nullif(btrim(lax."platformCode"), '') IS NULL)
+                ORDER BY (nullif(lower(btrim(lax."platformCode")), '') = platforms."plannedPlatformCode") DESC NULLS LAST,
+                         scheduled_stop.stop_sequence NULLS LAST,
+                         lax."stopId"
                 LIMIT 1
-                ) AS lateral_stop ON s."stopId" IS NULL
+                ) AS lateral_stop ON s."stopId" IS NULL AND scheduled_call."stopId" IS NULL
 
                 LEFT JOIN "StaticData-NL".routes rt ON rt."routeId" = coalesce(t."routeId", t_short."routeId")
 

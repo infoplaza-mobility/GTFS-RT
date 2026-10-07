@@ -30,8 +30,9 @@ export class TripMerger {
         }
 
         const tripsToMerge = new Map<IDatabaseRitInfoUpdate, IDatabaseRitInfoUpdate>();
+        const reservedTrips = new Set<IDatabaseRitInfoUpdate>();
         // Iterate over all material numbers and check if we can merge trips.
-        for (const [materialNumber, trips] of tripsByMaterialNumber) {
+        for (const [_ , trips] of tripsByMaterialNumber) {
             // Sort trips by time
             // Sort trips by time
             trips.sort((a, b) => {
@@ -47,7 +48,7 @@ export class TripMerger {
                 if (tripA === tripB) continue;
 
                 // Check if the trips are already merged or marked for merging
-                if (tripsToMerge.has(tripA) || tripsToMerge.has(tripB)) continue;
+                if (reservedTrips.has(tripA) || reservedTrips.has(tripB)) continue;
 
                 // Check if the trips are in the same series (e.g. 6573 and 6580)
                 // If so, they are likely just turning around and starting a new trip, so we should not merge them.
@@ -66,7 +67,9 @@ export class TripMerger {
 
                     const diff = departureTimeB.diff(arrivalTimeA, 'minutes');
 
-                    if (diff >= -5 && diff <= 15 && (lastStopA.actualTrack === firstStopB.actualTrack || lastStopA.plannedTrack === firstStopB.plannedTrack)) {
+                    const hasSameExpectedPlatform = lastStopA.expectedPlatformCode !== null &&
+                        lastStopA.expectedPlatformCode === firstStopB.expectedPlatformCode;
+                    if (diff >= -5 && diff <= 15 && hasSameExpectedPlatform) {
                         // Check for station overlap to prevent doubling back or illogical loops
                         const indexOfConnectionStopInA = tripA.stops.indexOf(lastStopA);
                         const validStopsA = tripA.stops.slice(0, indexOfConnectionStopInA + 1);
@@ -76,6 +79,8 @@ export class TripMerger {
 
                         if (!hasOverlap) {
                             tripsToMerge.set(tripA, tripB);
+                            reservedTrips.add(tripA);
+                            reservedTrips.add(tripB);
                         }
                     }
                 }
@@ -84,9 +89,13 @@ export class TripMerger {
 
         const mergedTrips: IDatabaseRitInfoUpdate[] = [];
         const processedTrips = new Set<IDatabaseRitInfoUpdate>();
+        const continuations = new Set(tripsToMerge.values());
 
         for (const update of updates) {
             if (processedTrips.has(update)) continue;
+            // Its preceding trip emits this continuation as cancelled, even when the database
+            // result lists the continuation before the preceding trip.
+            if (continuations.has(update)) continue;
 
             if (tripsToMerge.has(update)) {
                 const tripB = tripsToMerge.get(update)!;
@@ -112,52 +121,31 @@ export class TripMerger {
                 const mergedStop = {
                     ...matchedStopA,
                     ...matchedStopB,
-                    changes: [...(matchedStopA.changes || []), ...(matchedStopB.changes || [])],
-                    // Prefer actual times/tracks from both if available
+                    changes: [
+                        ...(matchedStopA.changes || []).filter(change => change.changeType !== LogicalJourneyPartStationChangeType.CancelledDeparture),
+                        ...(matchedStopB.changes || []).filter(change => change.changeType !== LogicalJourneyPartStationChangeType.CancelledArrival)
+                    ],
+                    // Arrival comes from A; departure and platform assignment come from B.
                     plannedArrivalTime: matchedStopA.plannedArrivalTime,
                     arrivalTime: matchedStopA.arrivalTime,
+                    arrivalDelay: matchedStopA.arrivalDelay,
                     plannedDepartureTime: matchedStopB.plannedDepartureTime,
-                    departureTime: matchedStopB.departureTime,
-                    // Keep platform from A if matched, or B? They should be same.
-                    platform: matchedStopA.platform || matchedStopB.platform,
-                    actualTrack: matchedStopA.actualTrack || matchedStopB.actualTrack,
-                    plannedTrack: matchedStopA.plannedTrack || matchedStopB.plannedTrack
+                    departureTime: matchedStopB.departureTime
                 };
 
                 // Replace the two stops with the merged stop
                 mergedTrip.stops.splice(indexOfConnectionStop, 2, mergedStop);
 
-                // Fix non-increasing times by propagating delay from the connection point onwards
-                for (let j = indexOfConnectionStop; j < mergedTrip.stops.length; j++) {
-                    const currentStop = mergedTrip.stops[j];
-                    const previousStop = mergedTrip.stops[j - 1];
-                    if (!previousStop) continue;
-
-                    const prevDept = dayjs(previousStop.departureTime || previousStop.plannedDepartureTime);
-                    let currArr = dayjs(currentStop.arrivalTime || currentStop.plannedArrivalTime);
-
-                    // Ensure at least 30 seconds between stops to avoid GTFS-RT validation issues and overlapping times
-                    if (currArr.isBefore(prevDept.add(30, 'seconds'))) {
-                        const newArr = prevDept.add(30, 'seconds');
-                        console.log(`[TripMerger] Fixing non-increasing time for merged trip ${mergedTrip.customRealtimeTripId} at ${currentStop.stationCode}: ${currArr.toISOString()} -> ${newArr.toISOString()} (Reason: Adjacency to previous departure ${prevDept.toISOString()})`);
-
-                        const diffSeconds = newArr.diff(currArr, 'seconds');
-                        currentStop.arrivalTime = newArr.toISOString();
-
-                        // Also push the departure time forward by the same amount if it exists
-                        if (currentStop.departureTime) {
-                            currentStop.departureTime = dayjs(currentStop.departureTime).add(diffSeconds, 'seconds').toISOString();
-                        }
-                    }
-                }
-
                 // Recalculate stop sequence for the merged trip
                 mergedTrip.stops = mergedTrip.stops.map((stop, index) => ({
                     ...stop,
-                    sequence: index + 1
+                    sequence: index + 1,
+                    // Calls from two static trips cannot identify the original trip's pattern.
+                    scheduledStopId: null,
+                    scheduledStopSequence: null
                 }));
 
-                console.log(`[TripMerger] Merged train ${update.trainNumber} and train ${tripB.trainNumber} into ${mergedTrip.customRealtimeTripId} at station ${mergedStop.stationCode} track ${mergedStop.actualTrack || mergedStop.plannedTrack}. Material: ${update.materialNumbers?.join(', ')}`);
+                console.log(`[TripMerger] Merged train ${update.trainNumber} and train ${tripB.trainNumber} into ${mergedTrip.customRealtimeTripId} at station ${mergedStop.stationCode} platform ${mergedStop.expectedPlatformCode ?? "unknown"}. Material: ${update.materialNumbers?.join(', ')}`);
 
                 mergedTrips.push(mergedTrip);
 

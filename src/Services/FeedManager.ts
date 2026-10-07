@@ -4,8 +4,8 @@
  * Questions? Email: tristantriest@gmail.com
  */
 import { TrainUpdateCollection } from "../Models/TrainUpdateCollection";
-import { LogicalJourneyChangeType } from "../Shared/src/Types/Infoplus/V2/Changes/LogicalJourneyChangeType";
 import { IDatabaseRitInfoUpdate } from "../Interfaces/DatabaseRitInfoUpdate";
+import { evaluateTrainFeedHealth, TrainFeedHealth } from "../Models/TrainFeedHealth";
 
 import { TripIdWithDate } from "../Interfaces/TVVManager";
 import { TripMerger } from "../Helpers/TripMerger";
@@ -29,6 +29,16 @@ export class FeedManager implements IFeedManager {
 
     private static instance: FeedManager | null;
     private readonly _infoplusRepository: IInfoPlusRepository;
+    private health: TrainFeedHealth = {
+        status: "unhealthy",
+        lastUpdatedAt: null,
+        lastGeneratedAt: null,
+        updateCount: 0,
+        cancelledUpdateCount: 0,
+        ritInfoUpdateCount: 0,
+        activeRitInfoUpdateCount: 0,
+        reasons: ["not_generated"]
+    };
 
     private constructor(infoPlusRepository: IInfoPlusRepository) {
         this._infoplusRepository = infoPlusRepository;
@@ -44,6 +54,21 @@ export class FeedManager implements IFeedManager {
     public async updateTrainFeed(tripIdsToRemove: TripIdWithDate[]): Promise<void> {
         console.time('Updating train feed...');
         console.log('Updating train feed...')
+        try {
+            await this.generateTrainFeed(tripIdsToRemove);
+        } catch (e) {
+            this.health = { ...this.health, status: "unhealthy", reasons: ["refresh_failed"] };
+            console.error(`[FeedManager] Error while updating train feed`, e);
+        } finally {
+            console.timeEnd('Updating train feed...');
+        }
+    }
+
+    public getHealth(): TrainFeedHealth {
+        return { ...this.health, reasons: [...this.health.reasons] };
+    }
+
+    private async generateTrainFeed(tripIdsToRemove: TripIdWithDate[]): Promise<void> {
         //Get the current operationDate in YYYY-MM-DD format
         const currentOperationDate = dayjs()
             .tz('Europe/Amsterdam')
@@ -76,12 +101,16 @@ export class FeedManager implements IFeedManager {
         }
 
         console.time('Getting realtime trip updates from database...')
-        const trainUpdates = await this._infoplusRepository.getCurrentRealtimeTripUpdates(
-            operationDateOfYesterdayOrToday,
-            operationDateOfTodayOrTomorrow,
-            endOperationDate
-        );
-        console.timeEnd('Getting realtime trip updates from database...')
+        let trainUpdates: IDatabaseRitInfoUpdate[];
+        try {
+            trainUpdates = await this._infoplusRepository.getCurrentRealtimeTripUpdates(
+                operationDateOfYesterdayOrToday,
+                operationDateOfTodayOrTomorrow,
+                endOperationDate
+            );
+        } finally {
+            console.timeEnd('Getting realtime trip updates from database...')
+        }
 
         const mergedUpdates = TripMerger.mergeTrips(trainUpdates);
 
@@ -91,22 +120,18 @@ export class FeedManager implements IFeedManager {
         trainUpdateCollection.checkForErrors();
         const trainUpdateFeed: FeedMessage = trainUpdateCollection.toFeedMessage();
 
-        try {
-            const constructedFeedMessage: FeedMessage = FeedMessage.fromObject(trainUpdateFeed);
-            console.log(`[FeedManager] Constructed feed message with ${constructedFeedMessage.entity.length} entities.`);
+        const constructedFeedMessage: FeedMessage = FeedMessage.fromObject(trainUpdateFeed);
+        console.log(`[FeedManager] Constructed feed message with ${constructedFeedMessage.entity.length} entities.`);
 
-            this.saveToFile(Buffer.from(FeedMessage.encode(constructedFeedMessage).finish()), 'trainUpdates.pb');
-            this.saveToFile(Buffer.from(JSON.stringify(constructedFeedMessage.toJSON())), 'trainUpdates.json');
-        } catch (e) {
-            console.error(`[FeedManager] Error while saving train feed`, e);
-        }
-
-        console.timeEnd('Updating train feed...');
+        const protobuf = Buffer.from(FeedMessage.encode(constructedFeedMessage).finish());
+        const json = Buffer.from(JSON.stringify(constructedFeedMessage.toJSON()));
+        await this.saveToFile(protobuf, 'trainUpdates.pb');
+        await this.saveToFile(json, 'trainUpdates.json');
+        this.health = evaluateTrainFeedHealth(trainUpdates, constructedFeedMessage, new Date());
     }
 
-    private saveToFile(buffer: Buffer, fileName: string): void {
-        // @ts-ignore
-        Bun.write(`./publish/${fileName}`, buffer);
+    private async saveToFile(buffer: Buffer, fileName: string): Promise<void> {
+        await Bun.write(`./publish/${fileName}`, buffer);
 
         console.log(`[FeedManager] Saved updates to ${fileName}`);
     }

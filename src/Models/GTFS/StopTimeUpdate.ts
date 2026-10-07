@@ -22,65 +22,32 @@ export class ExtendedStopTimeUpdate extends StopTimeUpdate {
      */
     public static fromStopUpdate(update: RitInfoStopUpdate): StopTimeUpdate {
 
-        let {
-            departureDelay,
-            arrivalDelay,
-            departureTime,
-            arrivalTime,
-            stopId,
-            sequence,
-            isLastStop,
-            isFirstStop,
-            plannedTrack,
-            actualTrack,
-            destination
-        } = update;
-
-        const departureBeforeArrival = departureTime !== 0 && arrivalTime !== 0 && departureTime < arrivalTime;
-        const arrivalIsZero = arrivalTime === 0;
-        const departureIsZero = departureTime === 0;
-        // If the departure is before the arrival, this must be an error, so we add 1 minute to the arrival time and make it the new departure time.
-        if(departureBeforeArrival) {
-            departureTime = arrivalTime + 60;
-        }
-
-        let departure = StopTimeEvent.create({
-            time: !departureIsZero ? departureTime : arrivalTime,
-            delay: departureDelay,
-            uncertainty: null
-        });
-
-        let arrival = StopTimeEvent.create({
-            time: !arrivalIsZero ? arrivalTime : departureTime,
-            delay: arrivalDelay,
-            uncertainty: null
-        });
-
-        if(isFirstStop)
-            arrival = departure;
-
-        if(isLastStop)
-            departure = arrival;
+        const { departureDelay, arrivalDelay, departureTime, arrivalTime, stopId, sequence, destination } = update;
+        const departure = departureTime > 0 ? StopTimeEvent.create({ time: departureTime, delay: departureDelay }) : undefined;
+        const arrival = arrivalTime > 0 ? StopTimeEvent.create({ time: arrivalTime, delay: arrivalDelay }) : undefined;
 
         //The stop is skipped entirely if the passing is cancelled.
         const scheduleRelationship = update.isCancelled() ?
             transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SKIPPED :
             transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SCHEDULED;
 
-        const shouldHaveDepartureAndArrival = true;
+        const shouldHaveDepartureAndArrival = !update.isCancelled();
+        const assignedStopId = update.hasPlatformChange() ? update.assignedStopId : null;
 
         return StopTimeUpdate.create({
-            stopId,
+            stopId: assignedStopId ?? stopId,
             stopSequence: sequence,
             arrival: shouldHaveDepartureAndArrival ? arrival : undefined,
             departure: shouldHaveDepartureAndArrival ? departure : undefined,
             scheduleRelationship,
             ".transit_realtime.ovapiStopTimeUpdate": {
                 stationId: update.stationCode,
-                scheduledTrack: plannedTrack,
-                actualTrack: actualTrack
+                // Keep the deprecated strings for consumers that still read the OVAPI extension.
+                scheduledTrack: update.plannedPlatformCode,
+                actualTrack: update.expectedPlatformCode
             },
             stopTimeProperties: {
+                ...(assignedStopId && { assignedStopId }),
                 stopHeadsign: destination
             }
         })

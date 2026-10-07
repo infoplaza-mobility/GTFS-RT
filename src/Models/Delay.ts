@@ -23,11 +23,15 @@ export class Delay {
      * Returns the delay in seconds.
      */
     public toSeconds(): number {
-        const parts = this._delay.split(':');
-        const hours = parseInt(parts[0]);
-        const minutes = parseInt(parts[1]);
-        const seconds = parseInt(parts[2]);
+        return Delay.parseSeconds(this._delay) ?? 0;
+    }
 
-        return (hours * 3600) + (minutes * 60) + seconds;
+    public static parseSeconds(delay: string | number | null): number | null {
+        if (typeof delay === "number") return Number.isFinite(delay) ? Math.trunc(delay) : null;
+        if (!delay) return null;
+        const parts = /^([+-])?(?:(\d+) days? )?(\d+):([0-5]\d):([0-5]\d(?:\.\d+)?)$/.exec(delay.trim());
+        if (!parts) return null;
+        const seconds = Number(parts[2] ?? 0) * 86400 + Number(parts[3]) * 3600 + Number(parts[4]) * 60 + Number(parts[5]);
+        return Math.trunc(parts[1] === "-" ? -seconds : seconds);
     }
 }

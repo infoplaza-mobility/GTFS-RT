@@ -14,11 +14,12 @@ export class RitInfoStopUpdate extends StopUpdate {
 
     private readonly changes: IJourneyChange<LogicalJourneyPartStationChangeType>[];
 
-    public readonly plannedTrack: string | null;
-    public readonly actualTrack: string | null;
+    public readonly plannedPlatformCode: string | null;
+    public readonly expectedPlatformCode: string | null;
 
-    private readonly platform: string | null;
-    private readonly track: string | null;
+    public readonly assignedStopId: string | null;
+    public readonly scheduledStopId: string | null;
+    public readonly scheduledStopSequence: number | null;
 
     private readonly plannedWillStop: boolean;
     private readonly actualWillStop: boolean;
@@ -33,22 +34,16 @@ export class RitInfoStopUpdate extends StopUpdate {
         this.changes = update.changes;
         this.stationCode = update.stationCode;
 
-        if(update.plannedTrack)
-            this.plannedTrack = update.plannedTrack.toString();
-
-        if(update.actualTrack)
-            this.actualTrack = update.track.toString();
-
-        this.platform = update.platform;
-        this.track = update.track;
+        this.plannedPlatformCode = update.plannedPlatformCode;
+        this.expectedPlatformCode = update.expectedPlatformCode;
+        this.assignedStopId = update.assignedStopId;
+        this.scheduledStopId = update.scheduledStopId;
+        this.scheduledStopSequence = update.scheduledStopSequence;
 
         this.plannedWillStop = update.plannedWillStop;
         this.actualWillStop = update.actualWillStop;
 
         this.name = update.name;
-
-        if(this.platform !== this.track)
-            console.log(`[RitInfoStopUpdate] Platform and Track are not the same for stop ${this.stationCode}! Platform: ${this.platform}, Track: ${this.track}`)
     }
 
 
@@ -120,32 +115,24 @@ export class RitInfoStopUpdate extends StopUpdate {
     }
 
     /**
-     * Did this stop have a track change?
-     * @returns {boolean} True if the stop had a track change, false otherwise.
+     * Does this stop have a reported or predicted platform change?
      */
-    public didTrackChange(): boolean {
-
-        if(this.isCancelled())
+    public hasPlatformChange(): boolean {
+        if (this.isCancelled())
             return false;
 
-        let hasChange = false;
+        const hasReportedChange = this.changes?.some(change =>
+            change.changeType == LogicalJourneyPartStationChangeType.ChangedArrivalPlatform ||
+            change.changeType == LogicalJourneyPartStationChangeType.ChangedDeparturePlatform ||
+            change.changeType == LogicalJourneyPartStationChangeType.FixedArrivalPlatform ||
+            change.changeType == LogicalJourneyPartStationChangeType.FixedDeparturePlatform
+        ) ?? false;
+        const hasDifferentPlatform = this.expectedPlatformCode !== null &&
+            this.expectedPlatformCode !== this.plannedPlatformCode;
+        const hasDifferentScheduledStop = this.scheduledStopId !== null &&
+            this.assignedStopId !== null && this.assignedStopId !== this.scheduledStopId;
 
-        if(this.changes)
-            hasChange = this.changes.some(change =>
-                change.changeType == LogicalJourneyPartStationChangeType.ChangedArrivalPlatform ||
-                change.changeType == LogicalJourneyPartStationChangeType.ChangedDeparturePlatform ||
-                change.changeType == LogicalJourneyPartStationChangeType.FixedArrivalPlatform ||
-                change.changeType == LogicalJourneyPartStationChangeType.FixedDeparturePlatform
-            );
-
-        if(hasChange)
-            return true;
-
-
-        //Check for changes with the planned arrival/departure track
-        return this.plannedTrack != this.actualTrack;
-
-
+        return hasReportedChange || hasDifferentPlatform || hasDifferentScheduledStop;
     }
 
     /**
