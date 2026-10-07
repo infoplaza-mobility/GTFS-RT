@@ -152,7 +152,10 @@ export class TripMerger {
                 // Recalculate stop sequence for the merged trip
                 mergedTrip.stops = mergedTrip.stops.map((stop, index) => ({
                     ...stop,
-                    sequence: index + 1
+                    sequence: index + 1,
+                    // Calls from two static trips cannot identify the original trip's pattern.
+                    scheduledStopId: null,
+                    scheduledStopSequence: null
                 }));
 
                 console.log(`[TripMerger] Merged train ${update.trainNumber} and train ${tripB.trainNumber} into ${mergedTrip.customRealtimeTripId} at station ${mergedStop.stationCode} platform ${mergedStop.expectedPlatformCode ?? "unknown"}. Material: ${update.materialNumbers?.join(', ')}`);

@@ -1,11 +1,14 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project version="4">
-  <component name="dataSourceStorageLocal" created-in="WS-262.10968.77">
-    <data-source name="r-ov@r-ov.nl" uuid="52ff5e7f-af4d-4f13-82af-ffe73c4c10ed">
+<DataSourcesHistory>
+  <DataSourceFromHistory isRemovedFromProject="false">
+    <data-source source="LOCAL" name="r-ov@r-ov.nl" uuid="52ff5e7f-af4d-4f13-82af-ffe73c4c10ed">
       <database-info product="PostgreSQL" version="17.5 (Debian 17.5-1.pgdg110+1)" jdbc-version="4.2" driver-name="PostgreSQL JDBC Driver" driver-version="42.7.3" dbms="POSTGRES" exact-version="17.5" exact-driver-version="42.7">
         <identifier-quote-string>&quot;</identifier-quote-string>
       </database-info>
       <case-sensitivity plain-identifiers="lower" quoted-identifiers="exact" />
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://r-ov.nl:5432/r-ov</jdbc-url>
       <secret-storage>session</secret-storage>
       <user-name>postgres</user-name>
       <schema-mapping>
@@ -15,6 +18,7 @@
           </node>
         </introspection-scope>
       </schema-mapping>
+      <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
-  </component>
-</project>
+  </DataSourceFromHistory>
+</DataSourcesHistory>

@@ -11,6 +11,8 @@ import { LogicalJourneyChangeType } from "../src/Shared/src/Types/Infoplus/V2/Ch
 import { LogicalJourneyPartStationChangeType } from "../src/Shared/src/Types/Infoplus/V2/Changes/LogicalJourneyPartStationChangeType";
 import { ExtendedStopTimeUpdate } from "../src/Models/GTFS/StopTimeUpdate";
 import { RitInfoStopUpdate } from "../src/Models/StopUpdates/RitinfoStopUpdate";
+import { TrainUpdate } from "../src/Models/TrainUpdate";
+import { transit_realtime } from "../src/Compiled/compiled";
 
 describe("TripMerger", () => {
     it("should merge two trips that match the criteria", () => {
@@ -24,6 +26,7 @@ describe("TripMerger", () => {
                 {
                     stopId: 12345,
                     sequence: 1,
+                    scheduledStopId: "12345", scheduledStopSequence: 1,
                     arrivalTime: null,
                     arrivalDelay: 0,
                     departureTime: "2024-01-01T10:00:00Z",
@@ -43,6 +46,7 @@ describe("TripMerger", () => {
                 {
                     stopId: 67890,
                     sequence: 2,
+                    scheduledStopId: "67890", scheduledStopSequence: 2,
                     arrivalTime: "2024-01-01T10:30:00Z",
                     arrivalDelay: 0,
                     departureTime: null,
@@ -83,6 +87,7 @@ describe("TripMerger", () => {
                 {
                     stopId: 67890,
                     sequence: 1,
+                    scheduledStopId: "67890", scheduledStopSequence: 1,
                     arrivalTime: null,
                     arrivalDelay: 0,
                     departureTime: "2024-01-01T10:40:00Z",
@@ -102,6 +107,7 @@ describe("TripMerger", () => {
                 {
                     stopId: 111213,
                     sequence: 2,
+                    scheduledStopId: "111213", scheduledStopSequence: 2,
                     arrivalTime: "2024-01-01T11:00:00Z",
                     arrivalDelay: 0,
                     departureTime: null,
@@ -206,6 +212,16 @@ describe("TripMerger", () => {
         const published = ExtendedStopTimeUpdate.fromStopUpdate(new RitInfoStopUpdate(connection));
         expect(published.stopTimeProperties.assignedStopId).toBe("906866");
         expect(published.stopId).toBe("906866");
+    });
+
+    it("publishes a merged route as a replacement rather than reusing calls from two static trips", () => {
+        const tripA = mockTrip(1000, "A", "B", "10:00", "10:30");
+        const tripB = mockTrip(2000, "B", "C", "10:40", "11:00");
+        const [merged] = TripMerger.mergeTrips([tripA, tripB]);
+        expect(merged.stops.every(stop => stop.scheduledStopSequence === null && stop.scheduledStopId === null)).toBe(true);
+        const published = TrainUpdate.fromRitInfoUpdate(merged);
+        expect(published.trip.scheduleRelationship).toBe(transit_realtime.TripDescriptor.ScheduleRelationship.REPLACEMENT);
+        expect(published.stopTimeUpdate.map(stop => stop.stopSequence)).toEqual([1, 2, 3]);
     });
 
     it("should merge trips if they share AT LEAST ONE material number", () => {
@@ -384,6 +400,7 @@ function mockTrip(trainNumber: number, startStation: string, endStation: string,
             {
                 stopId: 12345,
                 sequence: 1,
+                scheduledStopId: "12345", scheduledStopSequence: 1,
                 arrivalTime: null,
                 arrivalDelay: null,
                 departureTime: startTime ? `2024-01-01T${startTime}:00Z` : null,
@@ -403,6 +420,7 @@ function mockTrip(trainNumber: number, startStation: string, endStation: string,
             {
                 stopId: 67890,
                 sequence: 2,
+                scheduledStopId: "67890", scheduledStopSequence: 2,
                 arrivalTime: endTime ? `2024-01-01T${endTime}:00Z` : null,
                 arrivalDelay: null,
                 departureTime: null,

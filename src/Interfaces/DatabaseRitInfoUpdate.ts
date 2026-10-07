@@ -35,6 +35,10 @@ export interface IDatabaseRitInfoUpdate {
 }
 
 export interface IRitInfoStopUpdate extends IDatabaseStopUpdate {
+    /** Original GTFS call matched by trip and station, before any platform assignment. */
+    scheduledStopId: string | null;
+    /** stop_times.stop_sequence for that original call; null if the call is ambiguous or unmatched. */
+    scheduledStopSequence: number | null;
     /** Normalized InfoPlus planned platform code, including any section letter. */
     plannedPlatformCode: string | null;
     /** Normalized realtime platform code, falling back to the planned platform. */

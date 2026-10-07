@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="GTFS-RT - production database" type="BunRunConfiguration">
+    <option name="program" value="scripts/dev-prod-db.ts" />
+    <option name="workingDirectory" value="$PROJECT_DIR$" />
+    <method v="2" />
+  </configuration>
+</component>

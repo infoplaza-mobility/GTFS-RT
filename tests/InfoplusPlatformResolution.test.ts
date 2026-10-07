@@ -65,7 +65,7 @@ integration("InfoPlus platform resolution to native GTFS-RT", () => {
                 "routeId" int, "directionId" int, "shapeId" int
             );
             CREATE TABLE "StaticData-NL".stop_times (
-                trip_id varchar, stop_id varchar, stop_sequence int
+                trip_id varchar, stop_id varchar, stop_sequence int, arrival_time varchar, departure_time varchar
             );
             CREATE TABLE "StaticData-NL".routes (
                 "routeId" int, "routeType" int, "agencyId" text, "routeLongName" text
@@ -85,12 +85,16 @@ integration("InfoPlus platform resolution to native GTFS-RT", () => {
                 ('journey', 1234, '2026-10-07', 'UT', 'EHV', null);
             INSERT INTO "InfoPlus-new".stations VALUES ('EHV', 'Eindhoven Centraal');
             INSERT INTO "StaticData-NL".mv_active_schedule VALUES (12345, 1234, '2026-10-07', 'UT', 1, 0, 1);
-            INSERT INTO "StaticData-NL".stop_times VALUES ('12345', '906665', 1);
+            INSERT INTO "StaticData-NL".stop_times VALUES ('12345', '906665', 1, '12:00:00', '12:01:00');
             INSERT INTO "StaticData-NL".routes VALUES (1, 2, 'NS', 'Utrecht - Eindhoven');
         `);
     });
 
     beforeEach(async () => {
+        await transaction.withSchema("StaticData-NL").table("stop_times").delete();
+        await transaction.withSchema("StaticData-NL").table("stop_times").insert({
+            trip_id: "12345", stop_id: "906665", stop_sequence: 1, arrival_time: "12:00:00", departure_time: "12:01:00"
+        });
         await transaction.withSchema("StaticData-NL").table("iff_stops").delete();
         await transaction.withSchema("StaticData-NL").table("iff_stops").insert([
             { stopId: "906665", stationCode: "UT", platformCode: "14", stopName: "Utrecht Centraal" },
@@ -101,9 +105,11 @@ integration("InfoPlus platform resolution to native GTFS-RT", () => {
         await setTracks({
             plannedArrivalTracks: "14", plannedDepartureTracks: "14",
             actualArrivalTracks: null, actualDepartureTracks: "14a",
+            plannedArrivalTime: "2026-10-07T10:00:00Z",
+            actualArrivalTime: "2026-10-07T10:00:00Z",
             plannedDepartureTime: "2026-10-07T10:01:00Z",
             actualDepartureTime: "2026-10-07T10:01:00Z",
-            actualWillStop: true
+            plannedWillStop: true, actualWillStop: true
         });
     });
 
@@ -126,16 +132,18 @@ integration("InfoPlus platform resolution to native GTFS-RT", () => {
         });
         expect(transit_realtime.FeedMessage.verify(feed)).toBeNull();
         const decoded = decodeNativeFeed(transit_realtime.FeedMessage.encode(feed).finish());
-        return { resolved: rows[0].stops[0], published: decoded.entity[0].tripUpdate.stopTimeUpdate[0] };
+        const tripUpdate = decoded.entity[0].tripUpdate;
+        return { resolved: rows[0].stops[0], published: tripUpdate.stopTimeUpdate[0], trip: tripUpdate.trip };
     }
 
     for (const [track, id] of [["14", "906665"], ["14a", "906866"], ["14b", "906865"]] as const) {
         it(`resolves platform ${track} at Utrecht before publishing`, async () => {
             await setTracks({ plannedDepartureTracks: "12", actualDepartureTracks: track });
-            const { resolved, published } = await readStop();
+            const { resolved, published, trip } = await readStop();
             expect(resolved.assignedStopId).toBe(id);
             expect(published.stopTimeProperties.assignedStopId).toBe(id);
-            expect(published.stopId).toBe(id);
+            expect(trip.scheduleRelationship).toBe(transit_realtime.TripDescriptor.ScheduleRelationship.SCHEDULED);
+            expect(Object.hasOwn(published, "stopId")).toBe(false);
             expect(published.stopSequence).toBe(1);
         });
     }
@@ -149,6 +157,7 @@ integration("InfoPlus platform resolution to native GTFS-RT", () => {
     });
 
     it("normalizes the plan and prediction once without inventing a platform change", async () => {
+        await transaction.withSchema("StaticData-NL").table("stop_times").update({ stop_id: "906866" });
         await setTracks({ plannedDepartureTracks: " 14A ", actualDepartureTracks: "14a" });
         const { resolved, published } = await readStop();
         expect(resolved.plannedPlatformCode).toBe("14a");
@@ -215,5 +224,81 @@ integration("InfoPlus platform resolution to native GTFS-RT", () => {
         expect(resolved.assignedStopId).toBeNull();
         expect(published.stopId).toBe("906665");
         expect(Object.hasOwn(published.stopTimeProperties, "assignedStopId")).toBe(false);
+    });
+
+    it("publishes the imported sequence instead of the InfoPlus order", async () => {
+        await transaction.withSchema("StaticData-NL").table("stop_times").update({ stop_sequence: 23 });
+        const { resolved, published, trip } = await readStop();
+        expect(resolved.sequence).toBe(1);
+        expect(resolved.scheduledStopId).toBe("906665");
+        expect(resolved.scheduledStopSequence).toBe(23);
+        expect(published.stopSequence).toBe(23);
+        expect(trip.scheduleRelationship).toBe(transit_realtime.TripDescriptor.ScheduleRelationship.SCHEDULED);
+    });
+
+    it("matches repeated station visits by planned time independently of the expected platform", async () => {
+        await transaction.withSchema("StaticData-NL").table("stop_times").update({ departure_time: "09:01:00" });
+        await transaction.withSchema("StaticData-NL").table("stop_times").insert({
+            trip_id: "12345", stop_id: "906865", stop_sequence: 5, arrival_time: "12:00:00", departure_time: "12:01:00"
+        });
+        const { resolved, published, trip } = await readStop();
+        expect(resolved.scheduledStopId).toBe("906865");
+        expect(published.stopSequence).toBe(5);
+        expect(published.stopTimeProperties.assignedStopId).toBe("906866");
+        expect(trip.scheduleRelationship).toBe(transit_realtime.TripDescriptor.ScheduleRelationship.SCHEDULED);
+    });
+
+    for (const departureTime of ["13:01:00", "12:01:00"]) {
+        it(`does not choose an ambiguous or unmatched repeated visit (${departureTime})`, async () => {
+            await transaction.withSchema("StaticData-NL").table("stop_times").update({ departure_time: departureTime });
+            await transaction.withSchema("StaticData-NL").table("stop_times").insert({
+                trip_id: "12345", stop_id: "906865", stop_sequence: 5,
+                arrival_time: "12:00:00", departure_time: departureTime
+            });
+            const { resolved, published, trip } = await readStop();
+            expect(resolved.scheduledStopId).toBeNull();
+            expect(resolved.scheduledStopSequence).toBeNull();
+            expect(trip.scheduleRelationship).toBe(transit_realtime.TripDescriptor.ScheduleRelationship.REPLACEMENT);
+            expect(published.stopId).toBe("906866");
+        });
+    }
+
+    it("matches GTFS times beyond 24 hours using the operation date and Dutch local time", async () => {
+        await transaction.withSchema("StaticData-NL").table("stop_times").insert({
+            trip_id: "12345", stop_id: "906865", stop_sequence: 7, arrival_time: "26:00:00", departure_time: "26:01:00"
+        });
+        await setTracks({
+            plannedArrivalTime: "2026-10-08T00:00:00Z", actualArrivalTime: "2026-10-08T00:00:00Z",
+            plannedDepartureTime: "2026-10-08T00:01:00Z", actualDepartureTime: "2026-10-08T00:01:00Z"
+        });
+        const { published, trip } = await readStop();
+        expect(published.stopSequence).toBe(7);
+        expect(trip.startDate).toBe("20261007");
+        expect(trip.scheduleRelationship).toBe(transit_realtime.TripDescriptor.ScheduleRelationship.SCHEDULED);
+    });
+
+    it("assigns the expected platform when the InfoPlus plan differs from static GTFS", async () => {
+        await setTracks({ plannedDepartureTracks: "14a", actualDepartureTracks: "14a" });
+        const { resolved, published, trip } = await readStop();
+        expect(resolved.scheduledStopId).toBe("906665");
+        expect(published.stopTimeProperties.assignedStopId).toBe("906866");
+        expect(Object.hasOwn(published, "stopId")).toBe(false);
+        expect(trip.scheduleRelationship).toBe(transit_realtime.TripDescriptor.ScheduleRelationship.SCHEDULED);
+    });
+
+    it("uses a replacement when the station is not part of the matched static trip", async () => {
+        await transaction.withSchema("StaticData-NL").table("stop_times").update({ stop_id: "999999" });
+        const { resolved, trip } = await readStop();
+        expect(resolved.scheduledStopSequence).toBeNull();
+        expect(trip.scheduleRelationship).toBe(transit_realtime.TripDescriptor.ScheduleRelationship.REPLACEMENT);
+    });
+
+    it("retains the original GTFS identity for a skipped scheduled call", async () => {
+        await setTracks({ actualWillStop: false });
+        const { published, trip } = await readStop();
+        expect(trip.scheduleRelationship).toBe(transit_realtime.TripDescriptor.ScheduleRelationship.SCHEDULED);
+        expect(published.stopId).toBe("906665");
+        expect(published.stopSequence).toBe(1);
+        expect(published.scheduleRelationship).toBe(transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SKIPPED);
     });
 });

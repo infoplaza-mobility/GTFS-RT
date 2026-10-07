@@ -169,14 +169,21 @@ export class RitInfoUpdate {
         return this.stops.map(stop => ExtendedStopTimeUpdate.fromStopUpdate(stop));
     }
 
+    /** Every supplied call must identify a distinct original GTFS occurrence in trip order. */
+    public get hasMatchingScheduledStops(): boolean {
+        if (!this.tripId || this.stops.length === 0)
+            return false;
 
-    /**
-     * Did this trip have any platform changes?
-     * @returns {boolean} True if the trip had any platform changes, false otherwise.
-     */
-    public get hadPlatformChange(): boolean {
-        return this.stops.some(stop => stop.hasPlatformChange());
+        let previousSequence = -1;
+        return this.stops.every(stop => {
+            const sequence = stop.scheduledStopSequence;
+            if (!stop.scheduledStopId || !Number.isInteger(sequence) || sequence < 0 || sequence <= previousSequence)
+                return false;
+            previousSequence = sequence;
+            return true;
+        });
     }
+
 
     /**
      * Does this trip have any changed stops?
@@ -258,20 +265,10 @@ export class RitInfoUpdate {
      * @returns {string} The start date of the trip.
      */
     public get startDate(): string {
-        const firstStop = this.stops.first();
-
-        if (!firstStop || !firstStop.departureTimeAsDate) {
-            const y = this._operationDate.getFullYear();
-            const m = String(this._operationDate.getMonth() + 1).padStart(2, '0');
-            const d = String(this._operationDate.getDate()).padStart(2, '0');
-            return `${y}${m}${d}`;
-        }
-
-        return firstStop
-            .departureTimeAsDate
-            .toISOString()
-            .slice(0, 10)
-            .replaceAll('-', '');
+        const y = this._operationDate.getFullYear();
+        const m = String(this._operationDate.getMonth() + 1).padStart(2, '0');
+        const d = String(this._operationDate.getDate()).padStart(2, '0');
+        return `${y}${m}${d}`;
     }
 
     /**

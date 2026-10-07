@@ -18,6 +18,8 @@ export class RitInfoStopUpdate extends StopUpdate {
     private readonly expectedPlatformCode: string | null;
 
     public readonly assignedStopId: string | null;
+    public readonly scheduledStopId: string | null;
+    public readonly scheduledStopSequence: number | null;
 
     private readonly plannedWillStop: boolean;
     private readonly actualWillStop: boolean;
@@ -35,6 +37,8 @@ export class RitInfoStopUpdate extends StopUpdate {
         this.plannedPlatformCode = update.plannedPlatformCode;
         this.expectedPlatformCode = update.expectedPlatformCode;
         this.assignedStopId = update.assignedStopId;
+        this.scheduledStopId = update.scheduledStopId;
+        this.scheduledStopSequence = update.scheduledStopSequence;
 
         this.plannedWillStop = update.plannedWillStop;
         this.actualWillStop = update.actualWillStop;
@@ -125,8 +129,10 @@ export class RitInfoStopUpdate extends StopUpdate {
         ) ?? false;
         const hasDifferentPlatform = this.expectedPlatformCode !== null &&
             this.expectedPlatformCode !== this.plannedPlatformCode;
+        const hasDifferentScheduledStop = this.scheduledStopId !== null &&
+            this.assignedStopId !== null && this.assignedStopId !== this.scheduledStopId;
 
-        return hasReportedChange || hasDifferentPlatform;
+        return hasReportedChange || hasDifferentPlatform || hasDifferentScheduledStop;
     }
 
     /**

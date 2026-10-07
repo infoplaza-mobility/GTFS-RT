@@ -48,7 +48,7 @@ export class InfoplusRepository extends Repository implements IInfoPlusRepositor
                 coalesce(t."shapeId", t_short."shapeId")                                              AS "shapeId",
                 jsonb_agg(
                 CASE
-                WHEN s."stopId" IS NOT NULL OR lateral_stop."stopId" IS NOT NULL THEN
+                WHEN s."stopId" IS NOT NULL OR scheduled_call."stopId" IS NOT NULL OR lateral_stop."stopId" IS NOT NULL THEN
                 jsonb_build_object(
                 'stationCode', si."stationCode",
                 'plannedWillStop', si."plannedWillStop",
@@ -60,17 +60,19 @@ export class InfoplusRepository extends Repository implements IInfoPlusRepositor
                 'departureDelay', si."actualDepartureTime" - si."plannedDepartureTime",
                 'arrivalDelay', si."actualArrivalTime" - si."plannedArrivalTime",
                 'changes', si.changes,
-                'stopId', COALESCE(s."stopId", lateral_stop."stopId"),
+                'stopId', COALESCE(s."stopId", scheduled_call."stopId", lateral_stop."stopId"),
+                'scheduledStopId', scheduled_call."stopId",
+                'scheduledStopSequence', scheduled_call."stopSequence",
                 'assignedStopId', s."stopId"::text,
                 'plannedPlatformCode', platforms."plannedPlatformCode",
                 'expectedPlatformCode', platforms."expectedPlatformCode",
                 'sequence', si."stopOrder",
-                'name', COALESCE(s."stopName", lateral_stop."stopName", si."stationCode"),
+                'name', COALESCE(s."stopName", scheduled_call."stopName", lateral_stop."stopName", si."stationCode"),
                 'destination', stat."longName"
                 )
                 END
                 ORDER BY si."stopOrder"
-                ) FILTER (WHERE s."stopId" IS NOT NULL OR lateral_stop."stopId" IS NOT NULL) AS stops
+                ) FILTER (WHERE s."stopId" IS NOT NULL OR scheduled_call."stopId" IS NOT NULL OR lateral_stop."stopId" IS NOT NULL) AS stops
             FROM "InfoPlus-new".ritinfo r
                 JOIN "InfoPlus-new".logical_journeys lj
             ON r."trainNumber" = lj."trainNumber" AND r."operationDate" = lj."operationDate"
@@ -107,6 +109,31 @@ export class InfoplusRepository extends Repository implements IInfoPlusRepositor
                 AND t_short.date = r."operationDate"
                 AND t_short.first_station_code = jpfs.first_station_code
                 AND t."tripId" IS NULL
+
+                -- Resolve the original static call independently of its expected platform.
+                -- Repeated visits to a station require a unique planned-time match.
+                LEFT JOIN LATERAL (
+                    SELECT min(candidate.stop_id) AS "stopId",
+                           min(candidate.stop_sequence) AS "stopSequence",
+                           min(candidate."stopName") AS "stopName"
+                    FROM (
+                        SELECT scheduled.stop_id, scheduled.stop_sequence, original."stopName",
+                               count(*) OVER () AS station_visits,
+                               CASE WHEN si."plannedDepartureTime" IS NOT NULL
+                                   THEN nullif(btrim(scheduled.departure_time), '')::interval =
+                                        (si."plannedDepartureTime" AT TIME ZONE 'Europe/Amsterdam') - si."operationDate"::timestamp
+                                   ELSE nullif(btrim(scheduled.arrival_time), '')::interval =
+                                        (si."plannedArrivalTime" AT TIME ZONE 'Europe/Amsterdam') - si."operationDate"::timestamp
+                               END AS matches_planned_time
+                        FROM "StaticData-NL".stop_times scheduled
+                        JOIN "StaticData-NL".iff_stops original ON original."stopId" = scheduled.stop_id
+                        WHERE scheduled.trip_id = t."tripId"::text
+                          AND original."stationCode" = upper(btrim(si."stationCode"))
+                          AND si."plannedWillStop" = true
+                    ) candidate
+                    WHERE candidate.station_visits = 1 OR candidate.matches_planned_time
+                    HAVING count(*) = 1
+                ) scheduled_call ON true
 
                 -- A stop has one native assignment: prefer its departure platform,
                 -- or its arrival platform at a terminus. Keep section letters.
@@ -154,7 +181,7 @@ export class InfoplusRepository extends Repository implements IInfoPlusRepositor
                          scheduled_stop.stop_sequence NULLS LAST,
                          lax."stopId"
                 LIMIT 1
-                ) AS lateral_stop ON s."stopId" IS NULL
+                ) AS lateral_stop ON s."stopId" IS NULL AND scheduled_call."stopId" IS NULL
 
                 LEFT JOIN "StaticData-NL".routes rt ON rt."routeId" = coalesce(t."routeId", t_short."routeId")
 

@@ -34,7 +34,6 @@ export class TrainUpdate extends TripUpdate {
             timestamp,
             shapeId,
             hadChangedStops,
-            hadPlatformChange,
             hasChangedTrip,
             isSpecialTrain,
             hasModifiedStopBehaviour,
@@ -77,7 +76,7 @@ export class TrainUpdate extends TripUpdate {
 
         let shouldRemoveSkippedStops = false;
 
-        if (hasChangedTrip || hadPlatformChange || hadChangedStops || hasModifiedStopBehaviour) {
+        if (hasChangedTrip || hadChangedStops || hasModifiedStopBehaviour || !createdTrip.hasMatchingScheduledStops) {
 
             // if(hasChangedTrip)
             //     console.log(`[TrainUpdate] Trip ${tripId} had a changed trip. Change types: ` + createdTrip.changes!.map(change => change.changeType).join(', '));
@@ -124,6 +123,20 @@ export class TrainUpdate extends TripUpdate {
 
         if (shouldRemoveSkippedStops)
             stopTimeUpdates = stopTimeUpdates.filter(stopTimeUpdate => stopTimeUpdate.scheduleRelationship !== transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SKIPPED);
+
+        if (scheduleRelationship === ScheduleRelationship.SCHEDULED) {
+            for (let i = 0; i < stopTimeUpdates.length; i++) {
+                const stopTimeUpdate = stopTimeUpdates[i];
+                const originalCall = createdTrip.stops.get(i);
+                stopTimeUpdate.stopSequence = originalCall.scheduledStopSequence;
+                // Match the original scheduled call by sequence; the assignment supplies its new platform.
+                // Replacement and added trips still need stop_id to define their complete stop list.
+                if (stopTimeUpdate.stopTimeProperties?.assignedStopId)
+                    delete stopTimeUpdate.stopId;
+                else
+                    stopTimeUpdate.stopId = originalCall.scheduledStopId;
+            }
+        }
 
         const tripDescriptor: TripDescriptor = TripDescriptor.create({
             tripId,
@@ -199,4 +212,3 @@ export class TrainUpdate extends TripUpdate {
         )
     }
 }
-

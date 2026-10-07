@@ -34,9 +34,35 @@ producer retains the planned platform, the static scheduled stop at that station
 or an existing stop without a platform when available. It does not publish an
 arbitrary platform as the expected assignment.
 
-Each published assignment includes `stop_sequence`. The accompanying
-`stop_id` equals `assigned_stop_id`, as required by the
-[GTFS Realtime reference](https://gtfs.org/documentation/realtime/reference/#message-stoptimeproperties).
+Platform-only changes keep the trip's schedule relationship `SCHEDULED` when
+each supplied call resolves to its original static GTFS occurrence.
+Each published assignment includes `stop_sequence`, identifying the original
+scheduled call, and omits `stop_id` on that call. OTP then uses
+`assigned_stop_id` to replace the platform stop in its realtime pattern.
+
+The producer resolves `scheduledStopId` and `scheduledStopSequence` from
+`StaticData-NL.stop_times` for the matched static trip and station, independently
+of the expected platform. A station visited more than once requires a unique
+match on the planned departure time, or planned arrival time at a terminus.
+Times use the operation date and `Europe/Amsterdam`, including GTFS times beyond
+24 hours. The trip's `start_date` also uses the operation date, so after-midnight
+or partial updates retain the original service day. An ambiguous or unmatched
+call prevents the trip from being published as `SCHEDULED`.
+
+Scheduled updates use the imported sequences even when earlier calls are absent
+or sequence values are not consecutive. Their sequences must be distinct and
+increase in trip order. Calls without an assignment retain the original static
+stop ID. A platform differing from the original static stop receives an
+assignment even when the InfoPlus planned and expected platform codes agree.
+
+Route and stop-pattern changes retain `REPLACEMENT`. Added trips and special
+trains retain their existing relationships as well. For replacement or added
+trips, `stop_id` remains required to define the stop list and equals
+`assigned_stop_id` wherever an assignment is present, following the
+[GTFS Realtime reference](https://gtfs.org/documentation/realtime/reference/#message-stoptimeupdate).
+Unmatched, ambiguous, duplicate, or reordered calls use `REPLACEMENT` with a
+complete generated stop list and consecutive sequences. Merged trips also use
+`REPLACEMENT`, since their calls originate from two different static trips.
 For example, the local train GTFS snapshot has these Utrecht Centraal stops:
 
 | Platform | Stop ID |
