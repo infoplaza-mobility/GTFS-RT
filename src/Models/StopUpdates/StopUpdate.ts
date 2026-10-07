@@ -39,10 +39,10 @@ export abstract class StopUpdate implements IStopUpdate {
     protected constructor(update: IDatabaseStopUpdate) {
         this._departureDelay = update.departureDelay;
         this._arrivalDelay = update.arrivalDelay;
-        this._arrivalTime = update.arrivalTime ? new Date(update.arrivalTime) : null;
-        this._departureTime = update.departureTime ? new Date(update.departureTime) : null;
-        this._plannedArrivalTime = update.plannedArrivalTime ? new Date(update.plannedArrivalTime) : null;
-        this._plannedDepartureTime = update.plannedDepartureTime ? new Date(update.plannedDepartureTime) : null;
+        this._arrivalTime = StopUpdate.parseTime(update.arrivalTime);
+        this._departureTime = StopUpdate.parseTime(update.departureTime);
+        this._plannedArrivalTime = StopUpdate.parseTime(update.plannedArrivalTime);
+        this._plannedDepartureTime = StopUpdate.parseTime(update.plannedDepartureTime);
         this._sequence = update.sequence;
         this._stopId = update.stopId;
         this._destination = update.destination;
@@ -95,137 +95,68 @@ export abstract class StopUpdate implements IStopUpdate {
         return this._isLastStopBeforeOnlyCancelledStops;
     }
 
-    /**
-     * Get the departure delay in seconds.
-     * @returns {number} The departure delay in seconds.
-     * @returns {number} 0 if there is no departure delay.
-     */
+    /** Actual timestamps take precedence; reported delays are only missing-time fallbacks. */
     public get departureDelay(): number {
-        if (!this._departureDelay)
-            return 0;
-
-        if(typeof this._departureDelay === 'number')
-            return this._departureDelay;
-
-        return new Delay(this._departureDelay).toSeconds();
+        if (this._plannedDepartureTime && this.departureTime > 0)
+            return this.departureTime - this._plannedDepartureTime.getTime() / 1000;
+        return Delay.parseSeconds(this._departureDelay) ?? 0;
     }
 
     public set departureDelay(departureDelay: number) {
         this._departureDelay = departureDelay;
     }
 
-    /**
-     * Get the arrival delay in seconds.
-     * @returns {number} The arrival delay in seconds.
-     * @returns {number} 0 if there is no arrival delay.
-     */
     public get arrivalDelay(): number {
-        if (!this._arrivalDelay)
-            return 0;
-
-        if(typeof this._arrivalDelay === 'number')
-            return this._arrivalDelay;
-
-        return new Delay(this._arrivalDelay).toSeconds();
+        if (this._plannedArrivalTime && this.arrivalTime > 0)
+            return this.arrivalTime - this._plannedArrivalTime.getTime() / 1000;
+        return Delay.parseSeconds(this._arrivalDelay) ?? 0;
     }
 
     public set arrivalDelay(arrivalDelay: number) {
         this._arrivalDelay = arrivalDelay;
     }
 
-    /**
-     * Get the departure time.
-     * @returns {Long} The departure time in seconds since epoch.
-     */
+    /** Getters only resolve missing times. Chronological repairs belong to StopUpdateCollection. */
     public get departureTime(): number {
-        if(this._departureTime && this._arrivalTime) {
-            // Check if we have a valid dwell time; else we fix it.
-            // Compare time values directly to avoid precision issues with Date object comparison
-            const departureTimeValue = this._departureTime.getTime();
-            const arrivalTimeValue = this._arrivalTime.getTime();
-            if(departureTimeValue >= arrivalTimeValue) {
-                return departureTimeValue / 1000;
-            }
-
-            //We do not have a valid dwell time, fix it by getting the planned dwell time (which should be valid) and adding that to the arrival time.
-            if(this._plannedArrivalTime && this._plannedDepartureTime) {
-                const plannedDwellTime = (this._plannedDepartureTime.getTime() - this._plannedArrivalTime.getTime()) / 1000;
-                return (arrivalTimeValue / 1000) + plannedDwellTime;
-            }
-
-            //If we do not have planned times, just add 1 second to the arrival time.
-            return (arrivalTimeValue / 1000) + 1;
-        }
-
-        if(this._departureTime)
-            return this._departureTime.getTime() / 1000;
-
-        if(!this._departureTime && !this._arrivalTime) {
-            if(this._plannedDepartureTime)
-                return this._plannedDepartureTime.getTime() / 1000;
-
-            if(this._plannedArrivalTime)
-                return this._plannedArrivalTime.getTime() / 1000;
-
-            return 0;
-        }
-
-        if(this._arrivalTime) {
-            return this._arrivalTime.getTime() / 1000;
-        }
+        return this._departureTime?.getTime() / 1000 ||
+            this.plannedTimeWithDelay(this._plannedDepartureTime, this._departureDelay) ||
+            this._arrivalTime?.getTime() / 1000 ||
+            this.plannedTimeWithDelay(this._plannedArrivalTime, this._arrivalDelay);
     }
 
-    /**
-     * Set the departure time.
-     * @param {Long} departureTime The departure time in seconds since epoch.
-     */
     public set departureTime(departureTime: number) {
-        this._departureTime = new Date(departureTime * 1000);
+        this._departureTime = StopUpdate.parseTime(departureTime);
     }
 
-    /**
-     * Get the arrival time.
-     * @returns {Long} The arrival time in seconds since epoch.
-     */
     public get arrivalTime(): number {
-        if(this._arrivalTime)
-            return this._arrivalTime.getTime() / 1000;
-
-        //If we do not have a realtime arrival time, but we do have scheduled arrival time, use that + the arrival delay.
-        if(this._plannedArrivalTime)
-        {
-            let plannedArrivalTimeSeconds = this._plannedArrivalTime.getTime() / 1000;
-            plannedArrivalTimeSeconds += this.departureDelay;
-            return plannedArrivalTimeSeconds;
-        }
-
-        if (!this._arrivalTime && !this._departureTime)
-            return 0;
-
-        //If we do not have an arrival time, but we do have a departure time, use the departure time.
-        if(!this._arrivalTime)
-            return this._departureTime.getTime() / 1000;
-
-        if (this.isLastStop)
-            return this._arrivalTime.getTime() / 1000 - 1;
-
-        return this._arrivalTime.getTime() / 1000;
+        return this._arrivalTime?.getTime() / 1000 ||
+            this.plannedTimeWithDelay(this._plannedArrivalTime, this._arrivalDelay) ||
+            this._departureTime?.getTime() / 1000 ||
+            this.plannedTimeWithDelay(this._plannedDepartureTime, this._departureDelay);
     }
 
-    /**
-     * Set the arrival time.
-     * @param {Long} arrivalTime The arrival time in seconds since epoch.
-    */
     public set arrivalTime(arrivalTime: number) {
-        this._arrivalTime = new Date(arrivalTime * 1000);
+        this._arrivalTime = StopUpdate.parseTime(arrivalTime);
     }
 
     public get arrivalTimeAsDate(): Date | null {
-        return new Date(this.arrivalTime * 1000);
+        return this.arrivalTime > 0 ? new Date(this.arrivalTime * 1000) : null;
     }
 
     public get departureTimeAsDate(): Date | null {
-        return new Date(this.departureTime * 1000);
+        return this.departureTime > 0 ? new Date(this.departureTime * 1000) : null;
+    }
+
+    private plannedTimeWithDelay(planned: Date | null, delay: string | number | null): number {
+        return planned ? planned.getTime() / 1000 + (Delay.parseSeconds(delay) ?? 0) : 0;
+    }
+
+    private static parseTime(value: number | string | null): Date | null {
+        if (value == null) return null;
+        const milliseconds = typeof value === "number" ? value * 1000 : Date.parse(value);
+        // GTFS-RT event times are integer epoch seconds; keep delay calculations in the same units.
+        return Number.isFinite(milliseconds) && milliseconds > 0
+            ? new Date(Math.floor(milliseconds / 1000) * 1000) : null;
     }
 
     /**

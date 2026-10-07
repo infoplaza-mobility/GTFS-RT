@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <dataSource name="r-ov@r-ov.nl">
-  <database-model serializer="dbm" dbms="POSTGRES" family-id="POSTGRES" format-version="4.54">
+  <database-model serializer="dbm" dbms="POSTGRES" family-id="POSTGRES" format-version="4.55">
     <root id="1">
       <DateStyle>mdy</DateStyle>
       <Grants>1||-9223372036854775808|c|G
@@ -98186,7 +98186,7 @@ CASE
     WHEN ((&quot;logicalJourneyPartNumber&quot; &gt;= 900000) AND (&quot;logicalJourneyPartNumber&quot; &lt;= 999999)) THEN &quot;logicalJourneyPartNumber&quot;
     ELSE NULL::integer
 END</DefaultExpression>
-      <IdentityKind>always</IdentityKind>
+      <GeneratedKind>unknown-migrated</GeneratedKind>
       <Position>9</Position>
       <StateNumber>902</StateNumber>
       <StoredType>integer|0s</StoredType>
@@ -99110,7 +99110,7 @@ CASE
     WHEN (((&quot;arrivalTrackMessage&quot; -&gt; &apos;Uitingen&apos;::text) -&gt;&gt; &apos;Uiting&apos;::text) IS NOT NULL) THEN ((&quot;arrivalTrackMessage&quot; -&gt; &apos;Uitingen&apos;::text) -&gt;&gt; &apos;Uiting&apos;::text)
     ELSE NULL::text
 END</DefaultExpression>
-      <IdentityKind>always</IdentityKind>
+      <GeneratedKind>unknown-migrated</GeneratedKind>
       <Position>32</Position>
       <StateNumber>902</StateNumber>
       <StoredType>text|0s</StoredType>
@@ -99122,7 +99122,7 @@ CASE
     WHEN (((&quot;departureTrackMessage&quot; -&gt; &apos;Uitingen&apos;::text) -&gt;&gt; &apos;Uiting&apos;::text) IS NOT NULL) THEN ((&quot;departureTrackMessage&quot; -&gt; &apos;Uitingen&apos;::text) -&gt;&gt; &apos;Uiting&apos;::text)
     ELSE NULL::text
 END</DefaultExpression>
-      <IdentityKind>always</IdentityKind>
+      <GeneratedKind>unknown-migrated</GeneratedKind>
       <Position>33</Position>
       <StateNumber>902</StateNumber>
       <StoredType>text|0s</StoredType>

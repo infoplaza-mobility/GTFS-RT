@@ -7,7 +7,7 @@
 import path from "path";
 
 import {FeedManager} from "./Services/FeedManager";
-import express from 'express';
+import { createApp } from "./Http/createApp";
 import {ITVVManager, TripIdWithDate, TVVManager} from "./Interfaces/TVVManager";
 import {InfoplusRepository} from "./Repositories/InfoplusRepository";
 import {StaticDataRepository} from "./Repositories/StaticDataRepository";
@@ -82,10 +82,7 @@ export class Main {
    * @private
    */
   private startWebServer() {
-    const app = express();
-
-    // Serve the ProtoBuf files in the root/publish directory.
-    app.use(express.static(path.join(__dirname, '../publish')));
+    const app = createApp(this._feedManager, path.join(__dirname, '../publish'));
 
     app.listen(9595, () => {
         console.log('Listening on port 9595');

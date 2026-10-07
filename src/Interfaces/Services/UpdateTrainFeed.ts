@@ -5,6 +5,7 @@
  */
 
 import {TripIdWithDate} from "../TVVManager";
+import { TrainFeedHealth } from "../../Models/TrainFeedHealth";
 
 export interface IFeedManager {
     /**
@@ -14,4 +15,7 @@ export interface IFeedManager {
      * @param tripIdsToRemove The trip IDs to mark als "REMOVED"/"CANCELLED" in the feed
      */
     updateTrainFeed(tripIdsToRemove: TripIdWithDate[]): Promise<void>;
+
+    /** Health and counts of the last successfully published train feed. */
+    getHealth(): TrainFeedHealth;
 }
