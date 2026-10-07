@@ -74,7 +74,6 @@ export class TrainUpdate extends TripUpdate {
 
         let scheduleRelationship = ScheduleRelationship.SCHEDULED;
 
-        let shouldRemoveSkippedStops = false;
 
         if (hasChangedTrip || hadChangedStops || hasModifiedStopBehaviour || !createdTrip.hasMatchingScheduledStops) {
 
@@ -82,11 +81,6 @@ export class TrainUpdate extends TripUpdate {
             //     console.log(`[TrainUpdate] Trip ${tripId} had a changed trip. Change types: ` + createdTrip.changes!.map(change => change.changeType).join(', '));
 
             scheduleRelationship = ScheduleRelationship.REPLACEMENT;
-            /**
-             * Remove all skipped stops, as OTP expects no skipped stops.
-             * @deprecated OTP Does allow skipped stops, but they *need* an arrival and departure event.
-             */
-            shouldRemoveSkippedStops = false;
         }
 
         // If this is a special train, we want to mark it as a replacement, as the sequence numbers do not match with the static GTFS.
@@ -107,11 +101,6 @@ export class TrainUpdate extends TripUpdate {
             tripId = tripId + '_added';
             scheduleRelationship = ScheduleRelationship.ADDED;
 
-            /**
-             * Remove all skipped stops, as OTP expects no skipped stops.
-             * @deprecated OTP Does allow skipped stops, but they *need* an arrival and departure event.
-             */
-            shouldRemoveSkippedStops = false;
         }
 
         if (isCancelled)
@@ -121,8 +110,12 @@ export class TrainUpdate extends TripUpdate {
         if (isCancelled && isAdded)
             return null;
 
-        if (shouldRemoveSkippedStops)
-            stopTimeUpdates = stopTimeUpdates.filter(stopTimeUpdate => stopTimeUpdate.scheduleRelationship !== transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SKIPPED);
+        if (scheduleRelationship === ScheduleRelationship.REPLACEMENT || scheduleRelationship === ScheduleRelationship.ADDED) {
+            // Complete new patterns contain only served calls. Skipped calls retain their static
+            // identity in SCHEDULED updates, where their arrival/departure events are omitted.
+            stopTimeUpdates = stopTimeUpdates.filter(stop => stop.scheduleRelationship !== transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SKIPPED);
+            stopTimeUpdates.forEach((stop, index) => { stop.stopSequence = index + 1; });
+        }
 
         if (scheduleRelationship === ScheduleRelationship.SCHEDULED) {
             for (let i = 0; i < stopTimeUpdates.length; i++) {
@@ -203,12 +196,16 @@ export class TrainUpdate extends TripUpdate {
     public toFeedEntity(): FeedEntity {
         return FeedEntity.create(
             {
-                id: this.trip.tripId,
+                id: this.entityId,
                 tripUpdate: {
                     ...this,
                 },
 
             }
         )
+    }
+
+    public get entityId(): string {
+        return `${this.trip.tripId}_${this.trip.startDate}`;
     }
 }

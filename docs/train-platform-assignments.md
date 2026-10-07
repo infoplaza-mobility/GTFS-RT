@@ -74,11 +74,17 @@ For example, the local train GTFS snapshot has these Utrecht Centraal stops:
 These IDs are examples from the local snapshot. The producer uses the imported
 GTFS lookup, rather than hardcoded station or platform IDs.
 
-The OVAPI `scheduled_track` and `actual_track` fields are deprecated and are
-no longer emitted. Their protobuf field numbers remain defined for decoding
-historical feeds. Consumers should read the scheduled platform from static GTFS
-and the expected platform from the stop referenced by `assigned_stop_id`.
-The OVAPI `station_id` field continues to be emitted.
+The deprecated OVAPI `scheduled_track` and `actual_track` fields continue to be
+emitted for compatibility with existing production consumers, alongside native
+platform assignments. `scheduled_track` contains `plannedPlatformCode`, and
+`actual_track` contains `expectedPlatformCode`, including its fallback to the
+plan when a realtime platform is unavailable. There is no separate OVAPI
+`expected_track` field. Track strings are emitted even when no platform change
+is detected or the expected platform cannot be resolved to a GTFS stop ID;
+unavailable values are omitted. Section letters are preserved in both formats.
+New consumers should read the scheduled platform from static GTFS and the
+expected platform from the stop referenced by `assigned_stop_id`.
+The OVAPI `station_id` field also continues to be emitted.
 
 Trip merging requires a known, matching expected platform at the connection
 station. Matching planned platforms alone does not join trips with different

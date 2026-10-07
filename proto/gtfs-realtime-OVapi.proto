@@ -53,10 +53,11 @@ message OVapiStopTimeUpdate {
   optional string stop_headsign = 1;
 
   // The planned platform-code where the trip is scheduled to depart from
-  // Deprecated: read the scheduled platform from the static GTFS stop.
+  // Deprecated, but still emitted for legacy consumers. New consumers should read the static GTFS stop.
   optional string scheduled_track = 2 [deprecated = true];
   // (optional) The actual platform-code where the deviates from the scheduled platform.
-  // Deprecated: use StopTimeUpdate.stop_time_properties.assigned_stop_id.
+  // Carries the expected realtime platform, falling back to the planned platform.
+  // Deprecated, but still emitted for legacy consumers. Use StopTimeUpdate.stop_time_properties.assigned_stop_id.
   optional string actual_track = 3 [deprecated = true];
   // (optional) The (internal)identifier of a trainstation where the stoptimeupdate applies to
   optional string station_id = 4;

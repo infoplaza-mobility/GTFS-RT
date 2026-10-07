@@ -23,22 +23,22 @@ export class TrainUpdateCollection extends Collection<FeedEntity> {
      * @returns {TrainUpdateCollection} The converted TrainUpdateCollection.
      */
     public static fromDatabaseResult(updates: IDatabaseRitInfoUpdate[]): TrainUpdateCollection {
-        const trainUpdates = updates.map(
-            update => {
-                const trainUpdate = TrainUpdate.fromRitInfoUpdate(update);
-
-                if(trainUpdate) {
-                    //If the train update has a custom trip ID, add it to the TrainUpdatesWithCustomTripId array.
-                    //We do this so we can check if this update is there the next iteration as well, if not, we add a new stop time update
-                    //that cancels the trip.
-                    if(trainUpdate.hasCustomTripId && !this.TrainUpdatesWithCustomTripId.find(u => u.trip.tripId == trainUpdate.trip.tripId)) {
-                        this.TrainUpdatesWithCustomTripId.push(trainUpdate);
-                    }
-
-                    return trainUpdate;
-                }
+        const updatesByInstance = new Map<string, TrainUpdate>();
+        const sourceTimestamps = new Map<string, number>();
+        for (const update of updates) {
+            const trainUpdate = TrainUpdate.fromRitInfoUpdate(update);
+            if (!trainUpdate) continue;
+            const existing = updatesByInstance.get(trainUpdate.entityId);
+            if (!existing || update.timestamp.getTime() >= sourceTimestamps.get(trainUpdate.entityId)) {
+                updatesByInstance.set(trainUpdate.entityId, trainUpdate);
+                sourceTimestamps.set(trainUpdate.entityId, update.timestamp.getTime());
             }
-        ).filter(update => !!update) as TrainUpdate[];
+        }
+        const trainUpdates = [...updatesByInstance.values()];
+        for (const trainUpdate of trainUpdates) {
+            if (trainUpdate.hasCustomTripId && !this.TrainUpdatesWithCustomTripId.some(update => update.entityId === trainUpdate.entityId))
+                this.TrainUpdatesWithCustomTripId.push(trainUpdate);
+        }
 
         const collection = new TrainUpdateCollection(
             trainUpdates.map(
@@ -75,7 +75,7 @@ export class TrainUpdateCollection extends Collection<FeedEntity> {
         const lengthBefore = TrainUpdateCollection.TrainUpdatesWithCustomTripId.length;
 
         //Remove the updates from the TrainUpdatesWithCustomTripId array
-        TrainUpdateCollection.TrainUpdatesWithCustomTripId = TrainUpdateCollection.TrainUpdatesWithCustomTripId.filter(update => !trainUpdates.find(u => u.trip.tripId == update.trip.tripId));
+        TrainUpdateCollection.TrainUpdatesWithCustomTripId = TrainUpdateCollection.TrainUpdatesWithCustomTripId.filter(update => !trainUpdates.some(u => u.entityId === update.entityId));
 
         const lengthAfter = TrainUpdateCollection.TrainUpdatesWithCustomTripId.length;
         console.info(`[TrainUpdateCollection | AddDeletedUpdates] Removed ${lengthBefore - lengthAfter} updates from the TrainUpdatesWithCustomTripId array.`);
@@ -95,26 +95,25 @@ export class TrainUpdateCollection extends Collection<FeedEntity> {
      */
     public checkForErrors() {
         this.forEach(update => {
-            const tripUpdate = update.tripUpdate
+            const tripUpdate = update.tripUpdate;
+            if (!tripUpdate) return;
             const stops = tripUpdate.stopTimeUpdate;
-
-            for (let i = 0; i < stops.length; i++) {
-                const stop = stops[i];
-
-                const dwellTime = (stop.departure.time as number) - (stop.arrival.time as number);
-
-                if(dwellTime < 0) {
+            let previousDeparture: number | null = null;
+            let previousStopId: string | null = null;
+            for (const stop of stops) {
+                // Skipped calls do not constrain the times of calls that are still served.
+                if (stop.scheduleRelationship === transit_realtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SKIPPED)
+                    continue;
+                const arrival = stop.arrival?.time != null ? Number(stop.arrival.time) : null;
+                const departure = stop.departure?.time != null ? Number(stop.departure.time) : null;
+                if (arrival != null && departure != null && departure < arrival) {
                     console.warn(`[TrainUpdateCollection] Negative dwell time found for ${update.tripUpdate.trip.tripId}, at stop: ${stop.stopId}`)
                 }
-
-                if(i === 0) continue;
-
-                const previousStop = stops[i - 1];
-                const hopTime = (stop.arrival.time as number) - (previousStop.departure.time as number);
-
-                if(hopTime < 0) {
-                    console.warn(`[TrainUpdateCollection] Negative hop time found for ${update.tripUpdate.trip.tripId}, at stops:${previousStop.stopId} -> ${stop.stopId}`)
+                if (arrival != null && previousDeparture != null && arrival < previousDeparture) {
+                    console.warn(`[TrainUpdateCollection] Negative hop time found for ${update.tripUpdate.trip.tripId}, at stops:${previousStopId} -> ${stop.stopId}`)
                 }
+                previousDeparture = departure ?? arrival ?? previousDeparture;
+                previousStopId = stop.stopId ?? `sequence ${stop.stopSequence}`;
             }
         })
     }
@@ -130,7 +129,7 @@ export class TrainUpdateCollection extends Collection<FeedEntity> {
         console.log(`[TrainUpdateCollection | checkForRemovedUpdatesWithCustomTripId] Checking for removed updates. Current size of TrainUpdatesWithCustomTripId: ${this.TrainUpdatesWithCustomTripId.length}`)
 
         this.TrainUpdatesWithCustomTripId.forEach(update => {
-            if(!collectionToCheckAgainst.find(u => u.trip.tripId == update.trip.tripId))
+            if(!collectionToCheckAgainst.some(u => u.entityId === update.entityId))
                 removedUpdates.push(update);
         })
         return removedUpdates;

@@ -65,15 +65,16 @@ describe("Native train platform assignments", () => {
             expect(nativeStop.stopTimeProperties.stopHeadsign).toBe("Eindhoven Centraal");
             const extension = extendedStop[".transit_realtime.ovapiStopTimeUpdate"];
             expect(extension.stationId).toBe("UT");
-            expect(Object.hasOwn(extension, "scheduledTrack")).toBe(false);
-            expect(Object.hasOwn(extension, "actualTrack")).toBe(false);
+            expect(extension.scheduledTrack).toBe("12");
+            expect(extension.actualTrack).toBe(platformCode);
         });
     }
 
     it("does not claim an assignment for an unknown platform", () => {
-        const { nativeStop } = encodeStop({ assignedStopId: null, expectedPlatformCode: "99" });
+        const { nativeStop, extendedStop } = encodeStop({ assignedStopId: null, expectedPlatformCode: "99" });
         expect(Object.hasOwn(nativeStop.stopTimeProperties, "assignedStopId")).toBe(false);
         expect(nativeStop.stopId).toBe("906665");
+        expect(extendedStop[".transit_realtime.ovapiStopTimeUpdate"].actualTrack).toBe("99");
     });
 
     it("does not claim an assignment when no expected platform is available", () => {
@@ -82,8 +83,16 @@ describe("Native train platform assignments", () => {
     });
 
     it("does not claim an assignment when the expected platform equals the plan", () => {
-        const { nativeStop } = encodeStop({ plannedPlatformCode: "14a", expectedPlatformCode: "14a", scheduledStopId: "906866" });
+        const { nativeStop, extendedStop } = encodeStop({ plannedPlatformCode: "14a", expectedPlatformCode: "14a", scheduledStopId: "906866" });
         expect(Object.hasOwn(nativeStop.stopTimeProperties, "assignedStopId")).toBe(false);
+        expect(extendedStop[".transit_realtime.ovapiStopTimeUpdate"]).toMatchObject({ scheduledTrack: "14a", actualTrack: "14a" });
+    });
+
+    it("omits unavailable legacy tracks instead of inventing a platform", () => {
+        const { extendedStop } = encodeStop({ plannedPlatformCode: null, expectedPlatformCode: null, assignedStopId: null });
+        const extension = extendedStop[".transit_realtime.ovapiStopTimeUpdate"];
+        expect(Object.hasOwn(extension, "scheduledTrack")).toBe(false);
+        expect(Object.hasOwn(extension, "actualTrack")).toBe(false);
     });
 
     it("uses explicit platform-change messages when the track labels are equal", () => {
@@ -162,6 +171,14 @@ describe("Train relationships with platform assignments", () => {
         expect(Object.hasOwn(changedStop, "stopId")).toBe(false);
         expect(published.stopTimeUpdate[0].stopId).toBe("100");
         expect(published.stopTimeUpdate[2].stopId).toBe("200");
+
+        const train = TrainUpdate.fromRitInfoUpdate(scheduledTrain());
+        const feed = transit_realtime.FeedMessage.create({
+            header: { gtfsRealtimeVersion: "2.0" }, entity: [train.toFeedEntity()]
+        });
+        const extended = transit_realtime.FeedMessage.decode(transit_realtime.FeedMessage.encode(feed).finish());
+        expect(extended.entity[0].tripUpdate.stopTimeUpdate[1][".transit_realtime.ovapiStopTimeUpdate"])
+            .toMatchObject({ scheduledTrack: "14", actualTrack: "14a" });
     });
 
     it("keeps reported platform changes scheduled even when the platform labels are equal", () => {

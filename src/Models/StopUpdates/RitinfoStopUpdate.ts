@@ -14,8 +14,8 @@ export class RitInfoStopUpdate extends StopUpdate {
 
     private readonly changes: IJourneyChange<LogicalJourneyPartStationChangeType>[];
 
-    private readonly plannedPlatformCode: string | null;
-    private readonly expectedPlatformCode: string | null;
+    public readonly plannedPlatformCode: string | null;
+    public readonly expectedPlatformCode: string | null;
 
     public readonly assignedStopId: string | null;
     public readonly scheduledStopId: string | null;
