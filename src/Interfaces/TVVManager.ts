@@ -7,6 +7,14 @@
 import {IInfoPlusRepository} from "./Repositories/InfoplusRepository";
 
 import {IStaticDataRepository} from "./Repositories/IStaticDataRepository";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const OPERATION_TIMEZONE = "Europe/Amsterdam";
 
 /**
  * The TVV (TreinVervangend Vervoer) manager is responsible for keeping track of any TVV trips that are in the planned data,
@@ -36,42 +44,25 @@ export class TVVManager implements ITVVManager {
     /** @inheritDoc */
     public async findTVVNotInInfoPlus(): Promise<TripIdWithDate[]> {
 
-        const currentDate = new Date().toISOString().split("T")[0];
-        let fetchedTripIds = await this.fetchTVVNotInInfoPlus(currentDate);
-
-        const tripIdsWithDates = fetchedTripIds.map((tripId) => {
-            return {tripId, operationDate: currentDate};
-        });
+        // Operation dates and the day-boundary windows are defined in Dutch local time,
+        // not in the container's UTC clock.
+        const now = dayjs().tz(OPERATION_TIMEZONE);
+        const dates = [now.format("YYYY-MM-DD")];
 
         //If the hour is before 4AM, we need to check the previous day
-        const currentHour = new Date().getHours();
-
-        if(currentHour < 4) {
-            const previousDate = new Date(new Date().getTime() - 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-            const previousFetchedTripIds = await this.fetchTVVNotInInfoPlus(previousDate);
-
-            const previousFetchedTripIdsWithDate = previousFetchedTripIds.map((tripId) => {
-                return {tripId, operationDate: previousDate};
-            });
-
-            //Merge the two arrays and remove duplicates
-            return [...tripIdsWithDates, ...previousFetchedTripIdsWithDate].filter((value, index, self) => self.indexOf(value) === index);
-        }
+        if (now.hour() < 4)
+            dates.push(now.subtract(1, "day").format("YYYY-MM-DD"));
 
         //If the hour is 11PM or later, we need to check the next day
-        if(currentHour >= 23) {
-            const nextDate = new Date(new Date().getTime() + 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-            const nextFetchedTripIds = await this.fetchTVVNotInInfoPlus(nextDate);
+        if (now.hour() >= 23)
+            dates.push(now.add(1, "day").format("YYYY-MM-DD"));
 
-            const nextFetchedTripIdsWithDate = nextFetchedTripIds.map((tripId) => {
-                return {tripId, operationDate: nextDate};
-            });
-
-            //Merge the two arrays and remove duplicates
-            return [...tripIdsWithDates, ...nextFetchedTripIdsWithDate].filter((value, index, self) => self.indexOf(value) === index);
+        const unique = new Map<string, TripIdWithDate>();
+        for (const date of dates) {
+            for (const tripId of await this.fetchTVVNotInInfoPlus(date))
+                unique.set(`${tripId}|${date}`, { tripId, operationDate: date });
         }
-
-        return tripIdsWithDates;
+        return [...unique.values()];
     }
 
     private async fetchTVVNotInInfoPlus(date: string): Promise<number[]> {

@@ -1,4 +1,5 @@
-import { afterAll, afterEach, describe, expect, it, spyOn } from "bun:test";
+import { afterAll, afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
+import { promises as fsPromises } from "fs";
 import { once } from "events";
 import { mkdtemp, rm, writeFile } from "fs/promises";
 import { AddressInfo } from "net";
@@ -9,7 +10,7 @@ import { createApp } from "../src/Http/createApp";
 import { IDatabaseRitInfoUpdate } from "../src/Interfaces/DatabaseRitInfoUpdate";
 import { IInfoPlusRepository } from "../src/Interfaces/Repositories/InfoplusRepository";
 import { evaluateTrainFeedHealth } from "../src/Models/TrainFeedHealth";
-import { FeedManager } from "../src/Services/FeedManager";
+import { FEED_STALE_AFTER_MS, FeedManager } from "../src/Services/FeedManager";
 import { LogicalJourneyChangeType } from "../src/Shared/src/Types/Infoplus/V2/Changes/LogicalJourneyChangeType";
 import { decodeNativeFeed } from "./nativeFeed";
 
@@ -111,8 +112,10 @@ describe("FeedManager health state", () => {
     };
     const manager = FeedManager.getInstance(repository);
     let writer: ReturnType<typeof spyOn>;
+    let renamer: ReturnType<typeof spyOn>;
 
-    afterEach(() => writer?.mockRestore());
+    beforeEach(() => { renamer = spyOn(fsPromises, "rename").mockResolvedValue(undefined); });
+    afterEach(() => { writer?.mockRestore(); renamer?.mockRestore(); });
 
     it("starts unhealthy before the first feed is generated", () => {
         expect(manager.getHealth().status).toBe("unhealthy");
@@ -132,6 +135,9 @@ describe("FeedManager health state", () => {
         expect(health.lastUpdatedAt).toBe(sourceTimestamp.toISOString());
         expect(health.lastGeneratedAt).not.toBeNull();
         expect(writer).toHaveBeenCalledTimes(2);
+        // Written to a temporary file first, then atomically renamed into place.
+        expect(writer.mock.calls[0][0]).toBe("./publish/trainUpdates.pb.tmp");
+        expect(renamer).toHaveBeenCalledWith("./publish/trainUpdates.pb.tmp", "./publish/trainUpdates.pb");
         const published = decodeNativeFeed(writer.mock.calls[0][1] as Uint8Array);
         expect(published.entity).toHaveLength(health.updateCount);
     });
@@ -155,6 +161,25 @@ describe("FeedManager health state", () => {
         await manager.updateTrainFeed([]);
         expect(manager.getHealth().status).toBe("healthy");
         expect(manager.getHealth().reasons).toEqual([]);
+    });
+
+    it("reports a stale feed when nothing was published for too long", async () => {
+        updates = ritInfoUpdates(200);
+        writer = spyOn(Bun, "write").mockResolvedValue(1);
+        await manager.updateTrainFeed([]);
+        const generatedAt = Date.parse(manager.getHealth().lastGeneratedAt!);
+        expect(manager.getHealth(new Date(generatedAt + FEED_STALE_AFTER_MS - 1000)).status).toBe("healthy");
+        const stale = manager.getHealth(new Date(generatedAt + FEED_STALE_AFTER_MS + 1000));
+        expect(stale.status).toBe("unhealthy");
+        expect(stale.reasons).toEqual(["stale"]);
+    });
+
+    it("does not publish a feed when the atomic rename fails", async () => {
+        updates = ritInfoUpdates(200);
+        writer = spyOn(Bun, "write").mockResolvedValue(1);
+        renamer.mockRejectedValue(new Error("test rename failure"));
+        await manager.updateTrainFeed([]);
+        expect(manager.getHealth().reasons).toEqual(["refresh_failed"]);
     });
 
     it("does not report success before the feed writes complete", async () => {
