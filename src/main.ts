@@ -16,6 +16,7 @@ import {IInfoPlusRepository} from "./Interfaces/Repositories/InfoplusRepository"
 import {IStaticDataRepository} from "./Interfaces/Repositories/IStaticDataRepository";
 import {IFeedManager} from "./Interfaces/Services/UpdateTrainFeed";
 import { runRepeatedly } from "./Helpers/Scheduler";
+import { startWatchdog } from "./Helpers/Watchdog";
 
 // A single rejected promise must not take the whole generator down (this used to crash Bun and
 // restart the container whenever the database was briefly unavailable).
@@ -51,6 +52,10 @@ export class Main {
     // prevent the train feed from being generated (it previously blocked the feed timer).
     this.setUpTVVTimer();
     this.setUpTimer();
+
+    // Last line of defence: exit (and let Docker restart us) when no feed was published for 10 minutes.
+    startWatchdog(() => this._feedManager.getHealth(),
+        process.env.WATCHDOG_MAX_STALE_MS ? parseInt(process.env.WATCHDOG_MAX_STALE_MS, 10) : 10 * 60 * 1000);
   }
 
   /**
