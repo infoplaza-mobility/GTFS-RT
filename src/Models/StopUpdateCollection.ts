@@ -12,6 +12,18 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
 
     private readonly tripId?: string;
 
+    /**
+     * Repairs made since the last reset. The feed manager logs one summary line per run instead
+     * of one line per trip (which produced ~900 MB of logs per day).
+     */
+    public static readonly repairStatistics = { trips: 0, hops: 0, dwells: 0 };
+
+    public static resetRepairStatistics() {
+        StopUpdateCollection.repairStatistics.trips = 0;
+        StopUpdateCollection.repairStatistics.hops = 0;
+        StopUpdateCollection.repairStatistics.dwells = 0;
+    }
+
     constructor(items: RitInfoStopUpdate[], tripId?: string) {
         super(items);
         this.tripId = tripId;
@@ -68,8 +80,13 @@ export class StopUpdateCollection extends Collection<RitInfoStopUpdate> {
             }
             previousServedStop = stop;
         }
-        if (repairedHops || repairedDwells)
-            console.warn(`[StopUpdateCollection ${this.tripId}] Repaired ${repairedHops} negative hop times and ${repairedDwells} negative dwell times. Source timestamps are inconsistent.`);
+        if (repairedHops || repairedDwells) {
+            StopUpdateCollection.repairStatistics.trips++;
+            StopUpdateCollection.repairStatistics.hops += repairedHops;
+            StopUpdateCollection.repairStatistics.dwells += repairedDwells;
+            if (process.env.LOG_LEVEL === "debug")
+                console.warn(`[StopUpdateCollection ${this.tripId}] Repaired ${repairedHops} negative hop times and ${repairedDwells} negative dwell times. Source timestamps are inconsistent.`);
+        }
     }
 
     private plannedDuration(from: Date | null, to: Date | null): number {
